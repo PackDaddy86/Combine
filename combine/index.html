@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine Events</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #0a1f2d, #183545);
+            color: white;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            color: #c60c30;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .events-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .event-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .event-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        
+        .event-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #00c6ff;
+        }
+        
+        .event-name {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #FFC107;
+        }
+        
+        .event-description {
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+        
+        .result {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #4CAF50;
+        }
+        
+        .play-btn {
+            background: #013369;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        
+        .play-btn:hover {
+            background: #0263b0;
+        }
+        
+        .locked {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .coming-soon {
+            font-style: italic;
+            color: #FF9800;
+        }
+        
+        .reset-button {
+            background: #c60c30;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            margin-top: 20px;
+        }
+        
+        .reset-button:hover {
+            background: #ff3737;
+        }
+        
+        .disabled-button {
+            background: #666;
+            color: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .shake {
+            animation: shake 0.5s;
+        }
+        
+        @keyframes shake {
+            0% { transform: translateX(0); }
+            20% { transform: translateX(-5px); }
+            40% { transform: translateX(5px); }
+            60% { transform: translateX(-5px); }
+            80% { transform: translateX(5px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .actions {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .view-ras-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #013369;
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s;
+        }
+        
+        .view-ras-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>NFL COMBINE EVENTS</h1>
+            <p>Test your skills in various NFL Combine events</p>
+            <div class="actions">
+                <a href="ras/" class="view-ras-button">VIEW YOUR RAS CARD</a>
+            </div>
+        </header>
+        
+        <div class="events-grid">
+            <div class="event-card">
+                <h3>40-YARD DASH</h3>
+                <div class="event-description">Sprinting 40 yards as fast as possible.</div>
+                <div class="result">Result: <span id="forty-result">--</span></div>
+                <button class="play-btn" id="forty-play-btn" onclick="playGame('forty')">PLAY</button>
+            </div>
+            <div class="event-card">
+                <h3>VERTICAL JUMP</h3>
+                <div class="event-description">Jump as high as you can.</div>
+                <div class="result">Result: <span id="vertical-result">--</span></div>
+                <button class="play-btn" id="vertical-play-btn" onclick="playGame('vertical')">PLAY</button>
+            </div>
+            <div class="event-card">
+                <h3>BENCH PRESS</h3>
+                <div class="event-description">Press 225 pounds as many times as possible.</div>
+                <div class="result">Result: <span id="bench-result">--</span></div>
+                <button class="play-btn" id="bench-play-btn" onclick="playGame('bench')">PLAY</button>
+            </div>
+            <div class="event-card">
+                <h3>BROAD JUMP</h3>
+                <div class="event-description">Jump as far as possible from a standing position.</div>
+                <div class="result">Result: <span id="broad-result">--</span></div>
+                <button class="play-btn" id="broad-play-btn" onclick="playGame('broad')">PLAY</button>
+            </div>
+            <div class="event-card">
+                <h3>3-CONE DRILL</h3>
+                <div class="event-description">Navigate cones in an L-shape pattern.</div>
+                <div class="result">Result: <span id="cone-result">--</span></div>
+                <button class="play-btn" id="cone-play-btn" onclick="playGame('cone')">PLAY</button>
+            </div>
+            <div class="event-card">
+                <h3>20-YARD SHUTTLE</h3>
+                <div class="event-description">5-10-5 lateral movement drill.</div>
+                <div class="result">Result: <span id="shuttle-result">--</span></div>
+                <button class="play-btn" id="shuttle-play-btn" onclick="playGame('shuttle')">PLAY</button>
+            </div>
+        </div>
+        
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Check for results and display them
+                updateResultsAndButtons();
+            });
+            
+            function updateResultsAndButtons() {
+                // 40 Yard Dash
+                const fortyTime = localStorage.getItem('fortyYardDash');
+                if (fortyTime) {
+                    document.getElementById('forty-result').textContent = `${fortyTime} seconds`;
+                    updatePlayButton('forty-play-btn', true);
+                }
+                
+                // Vertical jump
+                const verticalJump = localStorage.getItem('verticalJump');
+                if (verticalJump) {
+                    document.getElementById('vertical-result').textContent = `${verticalJump} inches`;
+                    updatePlayButton('vertical-play-btn', true);
+                }
+                
+                // Bench press
+                const benchReps = localStorage.getItem('benchPress');
+                if (benchReps) {
+                    document.getElementById('bench-result').textContent = `${benchReps} reps`;
+                    updatePlayButton('bench-play-btn', true);
+                }
+                
+                // Broad jump
+                const broadJump = localStorage.getItem('broadJump');
+                if (broadJump) {
+                    document.getElementById('broad-result').textContent = `${broadJump}`;
+                    updatePlayButton('broad-play-btn', true);
+                }
+                
+                // 3-Cone drill
+                const coneDrill = localStorage.getItem('coneDrill');
+                if (coneDrill) {
+                    document.getElementById('cone-result').textContent = `${coneDrill}s`;
+                    updatePlayButton('cone-play-btn', true);
+                }
+                
+                // Check for results from the JSON storage format
+                const combineResults = JSON.parse(localStorage.getItem('combineResults')) || {};
+                
+                // 20-Yard Shuttle
+                if (combineResults.shuttle && combineResults.shuttle.time) {
+                    document.getElementById('shuttle-result').textContent = `${combineResults.shuttle.time}s`;
+                    updatePlayButton('shuttle-play-btn', true);
+                }
+                
+                // Add reset button if all events are completed
+                const allCompleted = areAllEventsCompleted();
+                if (allCompleted) {
+                    addResetButton();
+                    
+                    // Re-enable all play buttons if all are completed
+                    ['forty-play-btn', 'vertical-play-btn', 'bench-play-btn', 
+                     'broad-play-btn', 'cone-play-btn', 'shuttle-play-btn'].forEach(btnId => {
+                        const btn = document.getElementById(btnId);
+                        if (btn) {
+                            btn.disabled = false;
+                            btn.classList.remove('disabled-button');
+                            btn.textContent = 'PLAY AGAIN';
+                        }
+                    });
+                }
+            }
+            
+            function updatePlayButton(buttonId, hasCompleted) {
+                const button = document.getElementById(buttonId);
+                if (button && hasCompleted) {
+                    // If this event is completed but not all events are completed
+                    if (!areAllEventsCompleted()) {
+                        button.disabled = true;
+                        button.classList.add('disabled-button');
+                        button.textContent = 'COMPLETE ALL EVENTS FIRST';
+                    } else {
+                        button.disabled = false;
+                        button.classList.remove('disabled-button');
+                        button.textContent = 'PLAY AGAIN';
+                    }
+                }
+            }
+            
+            function playGame(gameType) {
+                // Check if button is disabled
+                const buttonId = `${gameType}-play-btn`;
+                const button = document.getElementById(buttonId);
+                
+                if (button && button.disabled) {
+                    // Add shake animation
+                    button.classList.add('shake');
+                    setTimeout(() => {
+                        button.classList.remove('shake');
+                    }, 500);
+                    return;
+                }
+                
+                // Navigate to the game
+                switch(gameType) {
+                    case 'forty':
+                        window.location.href = '40yard/';
+                        break;
+                    case 'vertical':
+                        window.location.href = 'vertical/';
+                        break;
+                    case 'bench':
+                        window.location.href = 'bench/';
+                        break;
+                    case 'broad':
+                        window.location.href = 'broad/';
+                        break;
+                    case 'cone':
+                        window.location.href = 'cone/';
+                        break;
+                    case 'shuttle':
+                        window.location.href = 'shuttle/';
+                        break;
+                }
+            }
+            
+            function areAllEventsCompleted() {
+                // Check if all events have been completed at least once
+                const combineResults = JSON.parse(localStorage.getItem('combineResults')) || {};
+                const fortyYardDash = localStorage.getItem('fortyYardDash');
+                const verticalJump = localStorage.getItem('verticalJump');
+                const benchPress = localStorage.getItem('benchPress');
+                const broadJump = localStorage.getItem('broadJump');
+                const coneDrill = localStorage.getItem('coneDrill');
+                const shuttleCompleted = combineResults.shuttle && combineResults.shuttle.time;
+                
+                // Each event must have a result recorded
+                return fortyYardDash && verticalJump && benchPress && 
+                       broadJump && coneDrill && shuttleCompleted;
+            }
+            
+            function addResetButton() {
+                // Create reset button if it doesn't exist
+                if (!document.getElementById('reset-combine')) {
+                    const container = document.querySelector('.container');
+                    
+                    const resetButton = document.createElement('button');
+                    resetButton.id = 'reset-combine';
+                    resetButton.className = 'reset-button';
+                    resetButton.textContent = 'RESET ALL COMBINE EVENTS';
+                    
+                    resetButton.addEventListener('click', function() {
+                        if (confirm('Are you sure you want to reset all combine event results? This cannot be undone.')) {
+                            // Clear all localStorage items
+                            localStorage.removeItem('fortyYardDash');
+                            localStorage.removeItem('verticalJump');
+                            localStorage.removeItem('benchPress');
+                            localStorage.removeItem('broadJump');
+                            localStorage.removeItem('coneDrill');
+                            localStorage.removeItem('combineResults');
+                            
+                            // Refresh the page to update display
+                            location.reload();
+                        }
+                    });
+                    
+                    container.appendChild(resetButton);
+                }
+            }
+        </script>
+    </div>
+</body>
+</html>

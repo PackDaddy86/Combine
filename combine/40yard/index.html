@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine 40-Yard Dash Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>NFL COMBINE 40-YARD DASH</h1>
+        <div class="athlete-track">
+            <div class="athlete-sprite" id="runner"></div>
+            <div class="finish-line"></div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+        <div class="hud">
+            <div class="time-display">Time: <span id="time">0.00s</span></div>
+            <div class="instructions">HAMMER SPACEBAR TO RUN!</div>
+        </div>
+    </div>
+    <div class="results-screen hidden">
+        <div class="results-card">
+            <h2>OFFICIAL COMBINE TIME</h2>
+            <div class="final-time">4.42s</div>
+            <button class="restart-btn">TRY AGAIN</button>
+            <button class="return-btn">BACK TO COMBINE</button>
+        </div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>

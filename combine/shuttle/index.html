@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20-Yard Shuttle | NFL Combine</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">NFL COMBINE</div>
+            <h1 class="game-title">20-YARD SHUTTLE</h1>
+            <a href="../index.html" class="back-button">← BACK</a>
+        </header>
+
+        <div class="game-container">
+            <div class="field-container">
+                <div class="field">
+                    <!-- Field markers -->
+                    <div class="marker left-marker">5yd</div>
+                    <div class="marker center-marker">START</div>
+                    <div class="marker right-marker">5yd</div>
+                    
+                    <!-- Player element -->
+                    <div id="player" class="player">
+                        <div class="direction-indicator"></div>
+                    </div>
+                    
+                    <!-- Path visualization -->
+                    <div class="path-line"></div>
+                </div>
+                
+                <div class="drill-sequence">
+                    <div class="sequence-step" data-step="1">1</div>
+                    <div class="sequence-step" data-step="2">2</div>
+                    <div class="sequence-step" data-step="3">3</div>
+                    <div class="sequence-step" data-step="4">4</div>
+                </div>
+            </div>
+
+            <div class="controls-container">
+                <div class="timer">
+                    <span id="timer-display">0.00</span>s
+                </div>
+                
+                <div class="start-button" id="start-button">
+                    START DRILL
+                </div>
+                
+                <div class="arrow-controls">
+                    <div class="control-prompt">Use Arrow Keys for movement!</div>
+                    <div class="arrow-keys">
+                        <div class="arrow up">▲</div>
+                        <div class="arrow-row">
+                            <div class="arrow left">◀</div>
+                            <div class="arrow down">▼</div>
+                            <div class="arrow right">▶</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="current-target" id="current-target">
+                Press START to begin drill
+            </div>
+            
+            <div class="instructions-container">
+                <div class="instruction-title">HOW TO PLAY</div>
+                <div class="instruction-steps">
+                    <p><strong>1.</strong> Start at the center line</p>
+                    <p><strong>2.</strong> Run 5 yards to the right</p>
+                    <p><strong>3.</strong> Run 10 yards to the left</p>
+                    <p><strong>4.</strong> Finish by running back to the center</p>
+                </div>
+                <div class="instruction-note">
+                    <p>Use the arrow keys to move your player.</p>
+                    <p>The NFL Combine record is 3.81 seconds. Elite players finish in under 4.0 seconds.</p>
+                    <p>Follow the direction indicators and approach markers from the correct angle!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-screen" id="results-screen">
+            <div class="results-container">
+                <h2>RESULTS</h2>
+                <div class="result-time">
+                    Your Time: <span id="result-time">0.00</span>s
+                </div>
+                <div class="result-rating">
+                    Rating: <span id="result-rating">--</span>
+                </div>
+                <div class="result-feedback" id="result-feedback">
+                    <!-- Feedback message will be inserted here -->
+                </div>
+                <button class="try-again-button" id="try-again-button">TRY AGAIN</button>
+                <a href="../index.html" class="return-button">RETURN TO COMBINE</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>

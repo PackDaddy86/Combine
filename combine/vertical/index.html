@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine Vertical Jump Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>NFL COMBINE VERTICAL JUMP</h1>
+        
+        <div class="jump-area">
+            <div class="measurement-bar">
+                <div class="measurement-tick" style="bottom: 100%;">46"</div>
+                <div class="measurement-tick" style="bottom: 85%;">40"</div>
+                <div class="measurement-tick" style="bottom: 70%;">36"</div>
+                <div class="measurement-tick" style="bottom: 55%;">32"</div>
+                <div class="measurement-tick" style="bottom: 40%;">28"</div>
+                <div class="measurement-tick" style="bottom: 25%;">24"</div>
+                <div class="measurement-tick" style="bottom: 10%;">20"</div>
+            </div>
+            
+            <div class="power-meter">
+                <div class="power-indicator"></div>
+                <div class="power-target"></div>
+            </div>
+            
+            <div class="athlete-container">
+                <div class="athlete" id="jumper"></div>
+                <div class="platform"></div>
+            </div>
+        </div>
+        
+        <div class="hud">
+            <div class="jump-height">Height: <span id="height">0</span> inches</div>
+            <div class="instructions">HOLD SPACEBAR TO CHARGE, RELEASE TO JUMP!</div>
+        </div>
+    </div>
+    
+    <div class="results-screen hidden">
+        <div class="results-card">
+            <h2>OFFICIAL VERTICAL JUMP</h2>
+            <div class="final-height">0"</div>
+            <div class="rating-label">RATING</div>
+            <div class="rating"></div>
+            <button class="restart-btn">TRY AGAIN</button>
+            <button class="return-btn">BACK TO COMBINE</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

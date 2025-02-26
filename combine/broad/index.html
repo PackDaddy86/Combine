@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine Broad Jump Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>NFL COMBINE BROAD JUMP</h1>
+        
+        <div class="jump-area">
+            <div class="jumper-container">
+                <div class="jumper" id="jumper"></div>
+                <div class="ground"></div>
+            </div>
+            
+            <div class="measurement-area">
+                <div class="power-meter-container">
+                    <div class="power-meter">
+                        <div class="power-bar"></div>
+                    </div>
+                    <div class="power-label">POWER</div>
+                </div>
+                
+                <div class="angle-meter-container">
+                    <div class="angle-meter">
+                        <div class="angle-indicator"></div>
+                        <div class="angle-optimal-zone"></div>
+                    </div>
+                    <div class="angle-label">ANGLE</div>
+                </div>
+                
+                <div class="instruction-text">
+                    HOLD SPACE to build power, then TAP SPACE to set jump angle!
+                </div>
+            </div>
+            
+            <div class="jump-track">
+                <div class="distance-markers">
+                    <div class="marker marker-0">0'</div>
+                    <div class="marker marker-2">2'</div>
+                    <div class="marker marker-4">4'</div>
+                    <div class="marker marker-6">6'</div>
+                    <div class="marker marker-8">8'</div>
+                    <div class="marker marker-10">10'</div>
+                    <div class="marker marker-12">12'</div>
+                </div>
+                <div class="jumper-indicator"></div>
+            </div>
+            
+            <div class="distance-display">
+                Distance: <span id="distance">0'0"</span>
+            </div>
+        </div>
+        
+        <div class="jump-button" id="jump-button">
+            READY
+        </div>
+        
+        <div class="attempts-display">
+            <div class="attempt attempt-1">Attempt 1: <span>-</span></div>
+            <div class="attempt attempt-2">Attempt 2: <span>-</span></div>
+            <div class="attempt attempt-3">Attempt 3: <span>-</span></div>
+        </div>
+    </div>
+    
+    <div class="results-screen hidden">
+        <div class="results-card">
+            <h2>BROAD JUMP RESULT</h2>
+            <div class="final-distance">0'0"</div>
+            <div class="rating-label">RATING</div>
+            <div class="rating"></div>
+            <button class="restart-btn">TRY AGAIN</button>
+            <button class="return-btn">BACK TO COMBINE</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

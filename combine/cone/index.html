@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine 3-Cone Drill Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>NFL COMBINE 3-CONE DRILL</h1>
+        
+        <div class="field-container">
+            <div class="field">
+                <div class="cone cone-1">1</div>
+                <div class="cone cone-2">2</div>
+                <div class="cone cone-3">3</div>
+                <div class="player" id="player"></div>
+                <div class="path-line"></div>
+                <div class="direction-indicator"></div>
+            </div>
+            
+            <div class="drill-sequence">
+                <div class="sequence-step" data-step="1">1</div>
+                <div class="sequence-step" data-step="2">2</div>
+                <div class="sequence-step" data-step="3">3</div>
+                <div class="sequence-step" data-step="4">4</div>
+                <div class="sequence-step" data-step="5">5</div>
+                <div class="sequence-step" data-step="6">6</div>
+            </div>
+        </div>
+        
+        <div class="controls-container">
+            <div class="timer">
+                <span id="timer-display">0.00</span>s
+            </div>
+            
+            <div class="start-button" id="start-button">
+                START DRILL
+            </div>
+            
+            <div class="arrow-controls">
+                <div class="control-prompt">Use Arrow Keys for movement!</div>
+                <div class="arrow-keys">
+                    <div class="arrow up">▲</div>
+                    <div class="arrow-row">
+                        <div class="arrow left">◀</div>
+                        <div class="arrow down">▼</div>
+                        <div class="arrow right">▶</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="current-target" id="current-target">
+            Press START to begin drill
+        </div>
+        
+        <div class="instruction-container">
+            <div class="instruction-title">HOW TO PLAY</div>
+            <div class="instruction-steps">
+                <div class="sequence-step" data-step="1">
+                    <span class="step-number">1</span>
+                    <span class="step-text">Start at Cone 1 (bottom left)</span>
+                </div>
+                <div class="sequence-step" data-step="2">
+                    <span class="step-number">2</span>
+                    <span class="step-text">Run to Cone 2 (bottom right)</span>
+                </div>
+                <div class="sequence-step" data-step="3">
+                    <span class="step-number">3</span>
+                    <span class="step-text">Run back to Cone 1 (bottom left)</span>
+                </div>
+                <div class="sequence-step" data-step="4">
+                    <span class="step-number">4</span>
+                    <span class="step-text">Run around to Cone 3 (top right)</span>
+                </div>
+                <div class="sequence-step" data-step="5">
+                    <span class="step-number">5</span>
+                    <span class="step-text">Run back to Cone 2 (bottom right)</span>
+                </div>
+                <div class="sequence-step" data-step="6">
+                    <span class="step-number">6</span>
+                    <span class="step-text">Finish at Cone 1 (bottom left)</span>
+                </div>
+            </div>
+            <div class="instruction-note">
+                <p>Use the arrow keys to move your player.</p>
+                <p>The NFL Combine record is 6.28 seconds. Elite players finish in under 7 seconds.</p>
+                <p>Follow the green arrows and try to beat the record!</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="results-screen hidden">
+        <div class="results-card">
+            <h2>3-CONE DRILL RESULT</h2>
+            <div class="final-time">0.00s</div>
+            <div class="rating-label">RATING</div>
+            <div class="rating"></div>
+            <button class="restart-btn">TRY AGAIN</button>
+            <button class="return-btn">BACK TO COMBINE</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

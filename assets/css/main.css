@@ -1,0 +1,36 @@
+body {
+    margin: 0;
+    font-family: 'Arial', sans-serif;
+    background: #002244;
+    color: white;
+}
+
+.draft-header {
+    background: linear-gradient(to right, #013369, #002244);
+    padding: 2rem;
+    text-align: center;
+    border-bottom: 3px solid #c60c30;
+}
+
+.cta-button {
+    background: #c60c30;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 4px;
+    text-decoration: none;
+    display: inline-block;
+    transition: transform 0.3s ease;
+    margin: 2rem 0;
+}
+
+.cta-button:hover {
+    transform: scale(1.05);
+}
+
+.home-page {
+    /* Add base styles for home page here */
+}
+
+.combine-hub {
+    /* Add base styles for combine hub here */
+}

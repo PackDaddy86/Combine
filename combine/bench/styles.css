@@ -1,0 +1,256 @@
+body {
+    margin: 0;
+    background: linear-gradient(to bottom, #0a1f2d, #183545);
+    color: white;
+    font-family: 'Arial Black', sans-serif;
+    overflow-x: hidden;
+}
+
+.game-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    color: #c60c30;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: 2rem;
+}
+
+.bench-area {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.bar-track {
+    width: 100%;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    margin-bottom: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.ball-container {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    height: 60px;
+    width: 60px;
+    transition: left 0.1s linear;
+}
+
+.target-ball {
+    width: 60px;
+    height: 60px;
+    background: #013369;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 10px rgba(0, 198, 255, 0.5);
+}
+
+.target-center {
+    width: 30px;
+    height: 30px;
+    background: #4CAF50;
+    border-radius: 50%;
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.bench-player {
+    position: relative;
+    width: 200px;
+    height: 150px;
+}
+
+.player-sprite {
+    position: absolute;
+    width: 200px;
+    height: 120px;
+    background-image: url('/sprites/bench-rest.png');
+    background-size: contain;
+    background-repeat: no-repeat;
+    z-index: 2;
+}
+
+.bench-rack {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 20px;
+    background: #424242;
+    border-radius: 4px;
+    z-index: 1;
+}
+
+.meter-container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.rep-meter {
+    position: relative;
+    width: 80%;
+    height: 40px;
+}
+
+.rep-track {
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    position: relative;
+}
+
+.target-zone {
+    position: absolute;
+    height: 100%;
+    width: 20%;
+    background: rgba(76, 175, 80, 0.3);
+    border-radius: 20px;
+    left: 40%;
+}
+
+.rep-indicator {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    background: #FFC107;
+    border-radius: 50%;
+    left: 0;
+    transition: left 0.1s linear;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.7);
+}
+
+.hud {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.rep-count {
+    font-weight: bold;
+}
+
+#reps {
+    color: #FFC107;
+}
+
+.instructions {
+    font-size: 1.2rem;
+    color: #c60c30;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.hidden { 
+    display: none !important; 
+}
+
+.results-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.results-card {
+    background: #0a1f2d;
+    padding: 2rem;
+    border: 3px solid #FFC107;
+    text-align: center;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+.final-reps {
+    font-size: 4rem;
+    color: #FFC107;
+    margin: 1rem 0;
+    text-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+.rating-label {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+}
+
+.rating {
+    font-size: 2rem;
+    color: #00c6ff;
+    margin: 0.5rem 0 1.5rem 0;
+}
+
+.restart-btn {
+    background: #0072ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+    margin-right: 1rem;
+}
+
+.restart-btn:hover {
+    transform: scale(1.05);
+    background: #0080ff;
+}
+
+.return-btn {
+    background: #c60c30;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.return-btn:hover {
+    transform: scale(1.05);
+    background: #d41235;
+}
+
+/* Animation classes */
+.press-up {
+    background-image: url('/sprites/bench-up.png') !important;
+}
+
+.success-hit {
+    background: #4CAF50 !important;
+    box-shadow: 0 0 15px #4CAF50 !important;
+}
+
+.miss-hit {
+    background: #F44336 !important;
+    box-shadow: 0 0 15px #F44336 !important;
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine RAS Card</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="../index.html" class="back-button">← BACK TO COMBINE</a>
+            <h1>RELATIVE ATHLETIC SCORE</h1>
+        </header>
+
+        <div class="card-container">
+            <div class="ras-card">
+                <!-- Header Section with Logo and Player Info -->
+                <div class="card-header">
+                    <div class="logo-left">RAS</div>
+                    <div class="pro-bowl-logo">
+                        <img src="../sprites/nfl-logo.png" alt="NFL Logo" class="nfl-logo">
+                        <div class="trophy"></div>
+                    </div>
+                    <div class="logo-right">
+                        <img src="../sprites/football-icon.png" alt="Football Icon" class="football-icon">
+                    </div>
+                </div>
+
+                <!-- Player Info Banner -->
+                <div class="player-info">
+                    <h2 id="player-name">YOUR NAME | POS | SCHOOL | YEAR</h2>
+                </div>
+
+                <!-- Main Metrics Grid -->
+                <div class="metrics-grid">
+                    <!-- Hand Size and Arm Length -->
+                    <div class="metric-row top-row">
+                        <div class="metric-label">HAND SIZE</div>
+                        <div class="ras-score-container">
+                            <div class="ras-logo">RAS</div>
+                            <div class="ras-value" id="overall-ras">0.00</div>
+                        </div>
+                        <div class="metric-label">ARM LENGTH</div>
+                    </div>
+
+                    <!-- Composite Size Grade -->
+                    <div class="grade-row">
+                        <div class="composite-grade size-grade" id="size-grade">COMPOSITE SIZE GRADE : OKAY</div>
+                        <div class="composite-grade speed-grade" id="speed-grade">COMPOSITE SPEED GRADE : GOOD</div>
+                    </div>
+
+                    <!-- Height and 40-Yard Dash -->
+                    <div class="metric-row">
+                        <div class="metric-label">HEIGHT</div>
+                        <div class="metric-value" id="height-value">0'0"</div>
+                        <div class="metric-score" id="height-score">0.00</div>
+                        <div class="metric-label">40 YD DASH</div>
+                        <div class="metric-value" id="forty-value">0.00</div>
+                        <div class="metric-score" id="forty-score">0.00</div>
+                    </div>
+
+                    <!-- Weight and 20-Yard Split -->
+                    <div class="metric-row">
+                        <div class="metric-label">WEIGHT</div>
+                        <div class="metric-value" id="weight-value">0</div>
+                        <div class="metric-score" id="weight-score">0.00</div>
+                        <div class="metric-label">20 YD SPLIT</div>
+                        <div class="metric-value" id="twenty-value">0.00</div>
+                        <div class="metric-score" id="twenty-score">0.00</div>
+                    </div>
+
+                    <!-- Bench and 10-Yard Split -->
+                    <div class="metric-row">
+                        <div class="metric-label">BENCH</div>
+                        <div class="metric-value" id="bench-value">0</div>
+                        <div class="metric-score" id="bench-score">0.00</div>
+                        <div class="metric-label">10 YD SPLIT</div>
+                        <div class="metric-value" id="ten-value">0.00</div>
+                        <div class="metric-score" id="ten-score">0.00</div>
+                    </div>
+
+                    <!-- Composite Explosion and Agility Grades -->
+                    <div class="grade-row">
+                        <div class="composite-grade explosion-grade" id="explosion-grade">COMPOSITE EXPLOSION GRADE : GOOD</div>
+                    </div>
+
+                    <!-- Vertical and Broad -->
+                    <div class="metric-row">
+                        <div class="metric-label">VERTICAL</div>
+                        <div class="metric-value" id="vertical-value">0.0</div>
+                        <div class="metric-score" id="vertical-score">0.00</div>
+                        <div class="metric-label">BROAD</div>
+                        <div class="metric-value" id="broad-value">0'0"</div>
+                        <div class="metric-score" id="broad-score">0.00</div>
+                    </div>
+
+                    <!-- Separate Agility Grade -->
+                    <div class="grade-row">
+                        <div class="composite-grade agility-grade" id="agility-grade">COMPOSITE AGILITY GRADE : OKAY</div>
+                    </div>
+
+                    <!-- Shuttle and 3-Cone -->
+                    <div class="metric-row">
+                        <div class="metric-label">SHUTTLE</div>
+                        <div class="metric-value" id="shuttle-value">0.00</div>
+                        <div class="metric-score" id="shuttle-score">0.00</div>
+                        <div class="metric-label">3-CONE</div>
+                        <div class="metric-value" id="cone-value">0.00</div>
+                        <div class="metric-score" id="cone-score">0.00</div>
+                    </div>
+                </div>
+
+                <!-- Footer -->
+                <div class="card-footer">
+                    ATHLETIC TESTING ON A SCALE OF 0 TO 10
+                </div>
+            </div>
+        </div>
+
+        <!-- Player Information Form -->
+        <div class="player-form">
+            <h2>EDIT PLAYER INFORMATION</h2>
+            <form id="player-info-form">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" id="name" placeholder="e.g. AARON RODGERS">
+                </div>
+
+                <div class="form-group">
+                    <label for="position">Position:</label>
+                    <input type="text" id="position" placeholder="e.g. QB">
+                </div>
+
+                <div class="form-group">
+                    <label for="school">School:</label>
+                    <input type="text" id="school" placeholder="e.g. CALIFORNIA">
+                </div>
+
+                <div class="form-group">
+                    <label for="year">Year:</label>
+                    <input type="text" id="year" placeholder="e.g. 2005">
+                </div>
+
+                <div class="form-group">
+                    <label for="height">Height:</label>
+                    <input type="text" id="height" placeholder="e.g. 6'2\"">
+                </div>
+
+                <div class="form-group">
+                    <label for="weight">Weight:</label>
+                    <input type="text" id="weight" placeholder="e.g. 225">
+                </div>
+
+                <button type="button" id="update-info">UPDATE INFO</button>
+            </form>
+
+            <div class="share-buttons">
+                <button id="save-card">SAVE AS IMAGE</button>
+                <button id="share-card">SHARE RESULTS</button>
+                <a href="../index.html" class="return-button">RETURN TO COMBINE</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script src="ras.js"></script>
+</body>
+</html>

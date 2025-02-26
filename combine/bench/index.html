@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine Bench Press Challenge</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <h1>NFL COMBINE BENCH PRESS</h1>
+        
+        <div class="bench-area">
+            <div class="bar-track">
+                <div class="ball-container">
+                    <div class="target-ball">
+                        <div class="target-center"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bench-player">
+                <div class="player-sprite" id="bencher"></div>
+                <div class="bench-rack"></div>
+            </div>
+        </div>
+        
+        <div class="meter-container">
+            <div class="rep-meter">
+                <div class="rep-track">
+                    <div class="target-zone"></div>
+                </div>
+                <div class="rep-indicator"></div>
+            </div>
+        </div>
+        
+        <div class="hud">
+            <div class="rep-count">Reps: <span id="reps">0</span></div>
+            <div class="instructions">
+                HIT SPACEBAR WHEN THE BALL IS IN THE GREEN ZONE!
+            </div>
+        </div>
+    </div>
+    
+    <div class="results-screen hidden">
+        <div class="results-card">
+            <h2>BENCH PRESS RESULT</h2>
+            <div class="final-reps">0 REPS</div>
+            <div class="rating-label">RATING</div>
+            <div class="rating"></div>
+            <button class="restart-btn">TRY AGAIN</button>
+            <button class="return-btn">BACK TO COMBINE</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+</body>
+</html>

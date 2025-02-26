@@ -1,0 +1,224 @@
+body {
+    margin: 0;
+    background: linear-gradient(to bottom, #0a1f2d, #183545);
+    color: white;
+    font-family: 'Arial Black', sans-serif;
+    overflow-x: hidden;
+}
+
+.game-container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 20px;
+    text-align: center;
+}
+
+h1 {
+    color: #c60c30;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-bottom: 2rem;
+}
+
+.jump-area {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    height: 400px;
+    margin: 2rem 0;
+}
+
+.measurement-bar {
+    position: absolute;
+    left: 20%;
+    height: 100%;
+    width: 4px;
+    background: linear-gradient(to top, #013369, #c60c30);
+}
+
+.measurement-tick {
+    position: absolute;
+    left: -30px;
+    width: 64px;
+    height: 2px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-size: 0.8rem;
+    color: #ffd700;
+}
+
+.power-meter {
+    position: absolute;
+    left: 35%;
+    height: 100%;
+    width: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.power-indicator {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 0%;
+    background: linear-gradient(to top, #00c6ff, #0072ff, #c60c30);
+    transition: height 0.1s ease;
+    border-radius: 15px;
+}
+
+.power-target {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    height: 10px;
+    background: rgba(255, 215, 0, 0.7);
+    border-radius: 5px;
+    box-shadow: 0 0 15px #ffd700;
+}
+
+.athlete-container {
+    position: absolute;
+    right: 20%;
+    bottom: 0;
+    width: 150px;
+    height: 100%;
+}
+
+.athlete {
+    position: absolute;
+    bottom: 40px;
+    width: 128px;
+    height: 128px;
+    background-size: 100% 100%;
+    background-image: url('/sprites/jumper-ready.png');
+    z-index: 10;
+    transition: bottom 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+}
+
+.platform {
+    position: absolute;
+    bottom: 0;
+    width: 150px;
+    height: 40px;
+    background: #013369;
+    border-top: 4px solid #c60c30;
+    border-radius: 6px;
+}
+
+.hud {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    margin-top: 1rem;
+}
+
+.jump-height {
+    font-weight: bold;
+}
+
+#height {
+    color: #ffd700;
+}
+
+.instructions {
+    font-size: 1.2rem;
+    color: #c60c30;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.hidden { 
+    display: none !important; 
+}
+
+.results-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.results-card {
+    background: #0a1f2d;
+    padding: 2rem;
+    border: 3px solid #ffd700;
+    text-align: center;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.7);
+}
+
+.final-height {
+    font-size: 4rem;
+    color: #ffd700;
+    margin: 1rem 0;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.rating-label {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+}
+
+.rating {
+    font-size: 2rem;
+    color: #00c6ff;
+    margin: 0.5rem 0 1.5rem 0;
+}
+
+.restart-btn {
+    background: #0072ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+    margin-right: 1rem;
+}
+
+.restart-btn:hover {
+    transform: scale(1.05);
+    background: #0080ff;
+}
+
+.return-btn {
+    background: #c60c30;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.return-btn:hover {
+    transform: scale(1.05);
+    background: #d41235;
+}
+
+@keyframes jump {
+    0% { bottom: 40px; }
+    50% { bottom: var(--jump-height); }
+    100% { bottom: 40px; }
+}
+
+.jumping {
+    animation: jump 1.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+}
