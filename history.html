@@ -163,19 +163,19 @@
             color: white;
             margin-top: 2rem;
         }
+        
+        .history-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 1rem;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <div class="logo">NFL Combine Training</div>
-        <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="combine/">Combine</a>
-            <a href="history.html" class="active">Your Results</a>
-        </div>
-    </header>
+    <!-- Header will be included here -->
+    <div id="header-include"></div>
 
-    <div class="container">
+    <div class="history-container">
         <h1>Your Training Results</h1>
         
         <div class="results-container">
@@ -209,6 +209,12 @@
     
     <!-- Firebase Configuration -->
     <script src="assets/js/firebase-config.js"></script>
+    
+    <!-- Include script -->
+    <script src="assets/js/include.js"></script>
+    
+    <!-- Navigation Script -->
+    <script src="assets/js/navigation.js"></script>
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {

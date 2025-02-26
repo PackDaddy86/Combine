@@ -1,0 +1,124 @@
+<!-- Main Navigation -->
+<nav class="main-nav">
+    <div class="nav-container">
+        <a href="/index.html" class="site-logo">
+            <img src="/combine/sprites/nfl-logo.png" alt="NFL Logo">
+            <h1>NFL Combine Training</h1>
+        </a>
+        
+        <button class="mobile-menu-btn">☰</button>
+        
+        <ul class="nav-links">
+            <li><a href="/index.html">Home</a></li>
+            <li><a href="/combine/">Combine</a></li>
+            <li><a href="/combine/ras/">RAS Calculator</a></li>
+            <li><a href="/history.html">Your Results</a></li>
+            <li><a href="/login.html" id="account-link">Account</a></li>
+        </ul>
+    </div>
+</nav>
+
+<!-- Styles for navigation -->
+<style>
+    /* Main Navigation Bar */
+    .main-nav {
+        background-color: #013369;
+        color: white;
+        padding: 0;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        position: relative;
+        z-index: 100;
+    }
+
+    .nav-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 1rem;
+    }
+
+    .site-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        color: white;
+    }
+
+    .site-logo img {
+        height: 40px;
+        margin-right: 10px;
+    }
+
+    .site-logo h1 {
+        font-size: 1.5rem;
+        margin: 0;
+    }
+
+    .nav-links {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-links li {
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-links a {
+        color: white;
+        text-decoration: none;
+        padding: 1rem;
+        display: block;
+        transition: background-color 0.3s;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+        background-color: #00295c;
+    }
+
+    .mobile-menu-btn {
+        display: none;
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .mobile-menu-btn {
+            display: block;
+        }
+
+        .nav-links {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: #013369;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .nav-links.show {
+            display: flex;
+        }
+
+        .nav-links li {
+            width: 100%;
+            text-align: center;
+        }
+
+        .nav-links a {
+            padding: 1rem;
+            border-top: 1px solid #00295c;
+        }
+    }
+</style>

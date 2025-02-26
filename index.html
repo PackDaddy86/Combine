@@ -7,9 +7,132 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <link rel="stylesheet" href="assets/css/auth.css">
     <link rel="stylesheet" href="assets/css/main.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .draft-header {
+            background-color: #f0f0f0;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Additional styling for main page */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        .intro-section {
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .events-grid h2, .coming-soon h2 {
+            text-align: center;
+            margin: 2rem 0 1rem;
+        }
+
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            width: 250px;
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .event-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .event-card h3 {
+            margin-top: 0;
+            color: #013369;
+        }
+
+        .event-button {
+            display: inline-block;
+            background: #013369;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .event-button:hover {
+            background: #00295c;
+        }
+
+        .disabled {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+
+        .coming-soon-label {
+            display: inline-block;
+            background: #d4d4d4;
+            color: #666;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin-top: 1rem;
+        }
+
+        .cta-button {
+            display: inline-block;
+            background: #013369;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 1rem;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .cta-button:hover {
+            background: #00295c;
+        }
+
+        .login-button {
+            display: inline-block;
+            background: white;
+            color: #013369;
+            border: 2px solid #013369;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        .login-button:hover {
+            background: #013369;
+            color: white;
+        }
+    </style>
 </head>
 <body>
+    <!-- Header will be included here -->
+    <div id="header-include"></div>
+
     <header class="draft-header">
         <h1>NFL Combine Training</h1>
         <p>Test your skills in various NFL Combine events!</p>
@@ -18,31 +141,62 @@
         </div>
         <a href="combine/" class="cta-button">Start Training</a>
     </header>
-    
-    <main class="home-page">
-        <div style="text-align: center; padding: 2rem;">
-            <h2>Welcome to the NFL Combine Training Hub</h2>
-            <p>
-                Challenge yourself with virtual combine events, track your performance,
-                and see how you stack up against NFL prospects.
-            </p>
-            <div style="margin: 3rem auto; max-width: 800px;">
-                <h3>Featured Events</h3>
-                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; margin-top: 1.5rem;">
-                    <div style="background: #013369; padding: 1.5rem; border-radius: 8px; width: 250px;">
-                        <h4>40-Yard Dash</h4>
-                        <p>Test your speed in this classic NFL combine event</p>
-                    </div>
-                    <div style="background: #013369; padding: 1.5rem; border-radius: 8px; width: 250px;">
-                        <h4>Coming Soon</h4>
-                        <p>More events are being developed</p>
-                    </div>
+
+    <main class="container">
+        <section class="intro-section">
+            <h2>Welcome to NFL Combine Training</h2>
+            <p>Train like a pro and test your skills in various NFL Combine events. Compare your results with NFL prospects and track your progress over time.</p>
+        </section>
+
+        <section class="events-grid">
+            <h2>Available Events</h2>
+            <div class="card-container">
+                <div class="event-card">
+                    <h3>40-Yard Dash</h3>
+                    <p>Test your speed in the most famous combine event</p>
+                    <a href="combine/forty" class="event-button">Start Training</a>
+                </div>
+                
+                <div class="event-card">
+                    <h3>Bench Press</h3>
+                    <p>Test your strength with the bench press challenge</p>
+                    <a href="combine/bench" class="event-button">Start Training</a>
+                </div>
+                
+                <div class="event-card">
+                    <h3>Vertical Jump</h3>
+                    <p>Measure your vertical leap</p>
+                    <a href="combine/vertical" class="event-button">Start Training</a>
+                </div>
+                
+                <div class="event-card">
+                    <h3>RAS Calculator</h3>
+                    <p>Calculate your Relative Athletic Score</p>
+                    <a href="combine/ras" class="event-button">Calculate RAS</a>
                 </div>
             </div>
-        </div>
+        </section>
+        
+        <section class="coming-soon">
+            <h2>Coming Soon</h2>
+            <p>More combine events are being developed</p>
+            <div class="card-container">
+                <div class="event-card disabled">
+                    <h3>3-Cone Drill</h3>
+                    <p>Test your agility and change of direction</p>
+                    <span class="coming-soon-label">Coming Soon</span>
+                </div>
+                
+                <div class="event-card disabled">
+                    <h3>Shuttle Run</h3>
+                    <p>Measure your lateral quickness and explosion</p>
+                    <span class="coming-soon-label">Coming Soon</span>
+                </div>
+            </div>
+        </section>
     </main>
-    
-    <footer style="text-align: center; padding: 1rem; background: #013369; margin-top: 2rem;">
+
+    <footer style="text-align: center; padding: 1rem; background: #013369; margin-top: 2rem; color: white;">
         <p>&copy; 2025 NFL Combine Training</p>
     </footer>
     
@@ -56,5 +210,10 @@
     <!-- Firebase Configuration -->
     <script src="assets/js/firebase-config.js"></script>
     
+    <!-- Include script -->
+    <script src="assets/js/include.js"></script>
+    
+    <!-- Navigation Script -->
+    <script src="assets/js/navigation.js"></script>
 </body>
 </html>
