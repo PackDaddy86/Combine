@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFL Combine RAS Card</title>
+    <title>RAS Calculator - NFL Combine</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div id="header-include"></div>
+
     <div class="container">
         <header>
             <a href="../index.html" class="back-button">← BACK TO COMBINE</a>
@@ -165,5 +168,19 @@
 
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="ras.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="../../assets/js/firebase-config.js"></script>
+    
+    <!-- Include script -->
+    <script src="../../assets/js/include.js"></script>
+    
+    <!-- Navigation Script -->
+    <script src="../../assets/js/navigation.js"></script>
 </body>
 </html>
