@@ -6,8 +6,21 @@
     <title>NFL Combine 40-Yard Dash Challenge</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/assets/js/firebase-config.js"></script>
+    <script src="/assets/js/user-data.js"></script>
+    
+    <!-- Include.js for header -->
+    <script src="/assets/js/include.js"></script>
 </head>
 <body>
+    <!-- Header placeholder -->
+    <div id="header-placeholder"></div>
+    
     <div class="game-container">
         <h1>NFL COMBINE 40-YARD DASH</h1>
         <div class="athlete-track">
@@ -31,5 +44,17 @@
         </div>
     </div>
     <script src="game.js"></script>
+    
+    <script>
+        // Load the header
+        document.addEventListener('DOMContentLoaded', async function() {
+            await includeHTML('header-placeholder', '/assets/includes/header.html');
+            
+            // Initialize navigation
+            if (typeof initNavigation === 'function') {
+                initNavigation();
+            }
+        });
+    </script>
 </body>
 </html>

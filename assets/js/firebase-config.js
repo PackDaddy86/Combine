@@ -22,12 +22,39 @@ auth.onAuthStateChanged(user => {
     console.log('User logged in:', user.email);
     // User is signed in, show user-specific content
     showUserContent(user);
+    
+    // Clear localStorage when logging in to prevent data leakage between accounts
+    clearLocalStorageData();
+    
+    // Load this user's specific data
+    loadUserData(user.uid);
   } else {
     console.log('User logged out');
     // User is signed out, show login form
     showLoginForm();
+    
+    // Clear localStorage when logging out
+    clearLocalStorageData();
   }
 });
+
+// Clear localStorage data to prevent sharing between accounts
+function clearLocalStorageData() {
+  // List of keys to clear (game-specific data)
+  const keysToRemove = [
+    'combineResults',
+    'rasResults',
+    'fortyYardDash',
+    'verticalJump',
+    'benchPress',
+    'broadJump',
+    'coneDrill',
+    'shuttleRun'
+  ];
+  
+  keysToRemove.forEach(key => localStorage.removeItem(key));
+  console.log('Cleared localStorage to prevent data sharing between accounts');
+}
 
 // Show login form or sign up option
 function showLoginForm() {
@@ -163,9 +190,6 @@ function showUserContent(user) {
   document.getElementById('logout-button').addEventListener('click', () => {
     auth.signOut();
   });
-  
-  // Load user data from Firestore
-  loadUserData(user.uid);
 }
 
 // Load user data from Firestore
@@ -174,12 +198,45 @@ function loadUserData(userId) {
     .then(doc => {
       if (doc.exists) {
         const userData = doc.data();
-        console.log("User data:", userData);
+        console.log("User data loaded:", userData);
         
         // Populate localStorage with user data for games that need it
         if (userData.games) {
           if (userData.games.combine) {
             localStorage.setItem('combineResults', JSON.stringify(userData.games.combine));
+            
+            // Set individual combine event values
+            const combineData = userData.games.combine;
+            if (combineData.fortyYardDash) localStorage.setItem('fortyYardDash', combineData.fortyYardDash);
+            if (combineData.verticalJump) localStorage.setItem('verticalJump', combineData.verticalJump);
+            if (combineData.benchPress) localStorage.setItem('benchPress', combineData.benchPress);
+            if (combineData.broadJump) localStorage.setItem('broadJump', combineData.broadJump);
+            if (combineData.coneDrill) localStorage.setItem('coneDrill', combineData.coneDrill);
+            if (combineData.shuttleRun) localStorage.setItem('shuttleRun', combineData.shuttleRun);
+            
+            // Update UI if available
+            if (typeof updateResultsAndButtons === 'function') {
+              try {
+                updateResultsAndButtons();
+              } catch (e) {
+                console.log("Could not update combine UI:", e);
+              }
+            }
+          }
+          
+          if (userData.games.rasResults) {
+            localStorage.setItem('rasResults', JSON.stringify(userData.games.rasResults));
+            
+            // Update RAS UI if we're on that page
+            if (window.location.pathname.includes('/ras/')) {
+              if (typeof updateSavedResultsList === 'function') {
+                try {
+                  updateSavedResultsList();
+                } catch (e) {
+                  console.log("Could not update RAS UI:", e);
+                }
+              }
+            }
           }
           
           if (userData.games.playerInfo) {
@@ -187,7 +244,7 @@ function loadUserData(userId) {
           }
         }
       } else {
-        console.log("No user data found");
+        console.log("No user data found - new user");
       }
     })
     .catch(error => {

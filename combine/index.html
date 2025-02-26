@@ -249,37 +249,26 @@
                 }
                 
                 // 3-Cone drill
-                const coneDrill = localStorage.getItem('coneDrill');
-                if (coneDrill) {
-                    document.getElementById('cone-result').textContent = `${coneDrill}s`;
+                const coneTime = localStorage.getItem('coneDrill');
+                if (coneTime) {
+                    document.getElementById('cone-result').textContent = `${coneTime} seconds`;
                     updatePlayButton('cone-play-btn', true);
                 }
                 
-                // Check for results from the JSON storage format
-                const combineResults = JSON.parse(localStorage.getItem('combineResults')) || {};
-                
-                // 20-Yard Shuttle
-                if (combineResults.shuttle && combineResults.shuttle.time) {
-                    document.getElementById('shuttle-result').textContent = `${combineResults.shuttle.time}s`;
+                // 20-Yard shuttle
+                const shuttleTime = localStorage.getItem('shuttleRun');
+                if (shuttleTime) {
+                    document.getElementById('shuttle-result').textContent = `${shuttleTime} seconds`;
                     updatePlayButton('shuttle-play-btn', true);
                 }
                 
-                // Add reset button if all events are completed
-                const allCompleted = areAllEventsCompleted();
-                if (allCompleted) {
+                // Check if all events are completed to add a reset button
+                if (areAllEventsCompleted()) {
                     addResetButton();
-                    
-                    // Re-enable all play buttons if all are completed
-                    ['forty-play-btn', 'vertical-play-btn', 'bench-play-btn', 
-                     'broad-play-btn', 'cone-play-btn', 'shuttle-play-btn'].forEach(btnId => {
-                        const btn = document.getElementById(btnId);
-                        if (btn) {
-                            btn.disabled = false;
-                            btn.classList.remove('disabled-button');
-                            btn.textContent = 'PLAY AGAIN';
-                        }
-                    });
                 }
+                
+                // Save all combine results to one object for Firestore
+                saveAllCombineResults();
             }
             
             function updatePlayButton(buttonId, hasCompleted) {
@@ -343,11 +332,10 @@
                 const benchPress = localStorage.getItem('benchPress');
                 const broadJump = localStorage.getItem('broadJump');
                 const coneDrill = localStorage.getItem('coneDrill');
-                const shuttleCompleted = combineResults.shuttle && combineResults.shuttle.time;
+                const shuttleRun = localStorage.getItem('shuttleRun');
                 
-                // Each event must have a result recorded
-                return fortyYardDash && verticalJump && benchPress && 
-                       broadJump && coneDrill && shuttleCompleted;
+                // Check if any event is completed
+                return fortyYardDash || verticalJump || benchPress || broadJump || coneDrill || shuttleRun;
             }
             
             function addResetButton() {
@@ -368,6 +356,7 @@
                             localStorage.removeItem('benchPress');
                             localStorage.removeItem('broadJump');
                             localStorage.removeItem('coneDrill');
+                            localStorage.removeItem('shuttleRun');
                             localStorage.removeItem('combineResults');
                             
                             // Refresh the page to update display
@@ -378,15 +367,44 @@
                     container.appendChild(resetButton);
                 }
             }
+            
+            // Save all combine results to one object and sync with Firebase
+            function saveAllCombineResults() {
+                const results = {
+                    fortyYardDash: localStorage.getItem('fortyYardDash'),
+                    verticalJump: localStorage.getItem('verticalJump'),
+                    benchPress: localStorage.getItem('benchPress'),
+                    broadJump: localStorage.getItem('broadJump'),
+                    coneDrill: localStorage.getItem('coneDrill'),
+                    shuttleRun: localStorage.getItem('shuttleRun'),
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                // Only save non-null values
+                Object.keys(results).forEach(key => {
+                    if (!results[key]) delete results[key];
+                });
+                
+                // Store in localStorage
+                localStorage.setItem('combineResults', JSON.stringify(results));
+                
+                // Save to Firebase if possible and if user is logged in
+                if (typeof firebase !== 'undefined' && firebase.auth && typeof saveUserData === 'function') {
+                    const user = firebase.auth().currentUser;
+                    if (user) {
+                        saveUserData('combine', results);
+                    }
+                }
+            }
         </script>
         
         <!-- Firebase SDK -->
-        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
-        <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-        
-        <!-- Firebase Configuration -->
-        <script src="../assets/js/firebase-config.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+        <script src="/assets/js/firebase-config.js"></script>
+        <script src="/assets/js/user-data.js"></script>
+        <script src="combine-auth.js"></script>
         
         <!-- Include script -->
         <script src="../assets/js/include.js"></script>

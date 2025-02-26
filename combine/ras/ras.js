@@ -330,9 +330,12 @@ function calculateRASScores() {
             // Save back to localStorage
             localStorage.setItem('rasResults', JSON.stringify(savedResults));
             
-            // If Firebase saveUserData function exists, use it to save to the user's account
-            if (typeof saveUserData === 'function') {
-                saveUserData('rasResults', savedResults);
+            // Save to Firebase if the user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth && typeof saveUserData === 'function') {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    saveUserData('rasResults', savedResults);
+                }
             }
         } catch (error) {
             console.error('Error saving to localStorage:', error);

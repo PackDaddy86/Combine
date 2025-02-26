@@ -112,11 +112,17 @@ class GameEngine {
         const finalTime = Math.max(rawTime, 4.2);
         this.gameState.isRunning = false;
         
-        // Store the time in localStorage - using 'fortyYardDash' key to match with the main page
-        localStorage.setItem('fortyYardDash', finalTime.toFixed(2));
+        // Store the time using our helper function for user-specific data
+        const formattedTime = finalTime.toFixed(2);
+        if (typeof saveCombineEventData === 'function') {
+            saveCombineEventData('fortyYardDash', formattedTime);
+        } else {
+            // Fallback to localStorage only
+            localStorage.setItem('fortyYardDash', formattedTime);
+        }
         
         document.querySelector('.results-screen').classList.remove('hidden');
-        document.querySelector('.final-time').textContent = finalTime.toFixed(2) + 's';
+        document.querySelector('.final-time').textContent = formattedTime + 's';
         
         this.stopSpriteAnimation();
         this.elements.progressFill.style.width = '0%';
@@ -147,4 +153,18 @@ class GameEngine {
 }
 
 // Initialize game when loaded
-window.addEventListener('load', () => new GameEngine());
+window.addEventListener('load', () => {
+    // Initialize the game
+    const game = new GameEngine();
+    
+    // Check if Firebase is available and user is logged in
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                console.log('40-yard dash: User logged in, using user-specific data');
+            } else {
+                console.log('40-yard dash: No user logged in, using local data only');
+            }
+        });
+    }
+});
