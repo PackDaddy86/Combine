@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Combine Leaderboard</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/assets/js/firebase-config.js"></script>
+    <script src="/assets/js/user-data.js"></script>
+    <script src="../combine-auth.js"></script>
+    
+    <!-- Include.js for header -->
+    <script src="/assets/js/include.js"></script>
+    
+    <style>
+        .leaderboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .leaderboard-section {
+            margin-bottom: 30px;
+            background-color: rgba(0,0,0,0.7);
+            border-radius: 8px;
+            padding: 15px;
+        }
+        
+        .leaderboard-section h2 {
+            color: #f8f8f8;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: #f8f8f8;
+        }
+        
+        .leaderboard-table th {
+            background-color: #2c3e50;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .leaderboard-table td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .leaderboard-table tr:hover {
+            background-color: rgba(52, 152, 219, 0.2);
+        }
+        
+        .rank {
+            font-weight: bold;
+            color: #3498db;
+            text-align: center;
+            width: 50px;
+        }
+        
+        .gold {
+            color: gold;
+        }
+        
+        .silver {
+            color: silver;
+        }
+        
+        .bronze {
+            color: #cd7f32;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #f8f8f8;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header placeholder -->
+    <div id="header-placeholder"></div>
+    
+    <div class="leaderboard-container">
+        <h1>NFL COMBINE LEADERBOARD</h1>
+        
+        <div class="leaderboard-section">
+            <h2>Best 40-Yard Dash Times</h2>
+            <div id="fortyYardDash-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="leaderboard-section">
+            <h2>Best Vertical Jump</h2>
+            <div id="verticalJump-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="leaderboard-section">
+            <h2>Best Bench Press Reps</h2>
+            <div id="benchPress-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="leaderboard-section">
+            <h2>Best Broad Jump</h2>
+            <div id="broadJump-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="leaderboard-section">
+            <h2>Best 3-Cone Drill Times</h2>
+            <div id="coneDrill-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="leaderboard-section">
+            <h2>Best Shuttle Run Times</h2>
+            <div id="shuttleRun-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+        
+        <div class="leaderboard-section">
+            <h2>Best Overall RAS Scores</h2>
+            <div id="ras-leaderboard">
+                <p class="loading">Loading data...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script src="leaderboard.js"></script>
+</body>
+</html>

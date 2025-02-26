@@ -264,35 +264,48 @@ function saveUserData(gameType, data) {
   
   const userRef = db.collection('users').doc(user.uid);
   
-  // Use a direct update instead of a transaction for simplicity and reliability
-  const updateObject = {};
-  updateObject[`games.${gameType}`] = data;
-  
-  return userRef.update(updateObject)
-    .then(() => {
-      console.log(`Data for ${gameType} saved to Firestore successfully`);
-    })
-    .catch((error) => {
-      console.error("Error saving data to Firestore:", error);
+  // First, check if the document exists and has the correct structure
+  return userRef.get().then(doc => {
+    if (doc.exists) {
+      // Document exists, update it with the proper games structure
+      console.log("User document exists, updating games data");
       
-      // If the document doesn't exist yet, create it
-      if (error.code === 'not-found') {
-        console.log("User document not found, creating new document");
-        const newUserData = {
-          email: user.email,
-          createdAt: new Date(),
-          games: {
-            [gameType]: data
-          }
-        };
-        
-        return userRef.set(newUserData)
-          .then(() => {
-            console.log(`Created new user document and saved ${gameType} data`);
-          })
-          .catch((setError) => {
-            console.error("Error creating user document:", setError);
-          });
-      }
-    });
+      // Get current data
+      const userData = doc.data();
+      // Create games object if it doesn't exist
+      const games = userData.games || {};
+      // Update the specific game type
+      games[gameType] = data;
+      
+      // Update the document with the new games object
+      return userRef.update({ games: games })
+        .then(() => {
+          console.log(`Data for ${gameType} saved to Firestore successfully`);
+        })
+        .catch(error => {
+          console.error("Error updating games data:", error);
+        });
+    } else {
+      // Document doesn't exist, create it with proper structure
+      console.log("User document not found, creating new document");
+      const newUserData = {
+        email: user.email,
+        createdAt: new Date(),
+        games: {
+          [gameType]: data
+        }
+      };
+      
+      return userRef.set(newUserData)
+        .then(() => {
+          console.log(`Created new user document and saved ${gameType} data`);
+        })
+        .catch(error => {
+          console.error("Error creating user document:", error);
+        });
+    }
+  })
+  .catch(error => {
+    console.error("Error accessing user document:", error);
+  });
 }
