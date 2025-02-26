@@ -115,9 +115,23 @@ class GameEngine {
         // Store the time using our helper function for user-specific data
         const formattedTime = finalTime.toFixed(2);
         if (typeof saveCombineEventData === 'function') {
-            saveCombineEventData('fortyYardDash', formattedTime);
+            // First, check if user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    console.log(`Saving 40-yard dash time to Firestore for user ${user.uid}: ${formattedTime}`);
+                    saveCombineEventData('fortyYardDash', formattedTime);
+                } else {
+                    console.log('No user logged in, saving to localStorage only');
+                    localStorage.setItem('fortyYardDash', formattedTime);
+                }
+            } else {
+                console.log('Firebase not available, using helper function');
+                saveCombineEventData('fortyYardDash', formattedTime);
+            }
         } else {
             // Fallback to localStorage only
+            console.log('Helper function not available, saving to localStorage only');
             localStorage.setItem('fortyYardDash', formattedTime);
         }
         

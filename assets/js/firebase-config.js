@@ -256,36 +256,43 @@ function loadUserData(userId) {
 function saveUserData(gameType, data) {
   const user = auth.currentUser;
   if (!user) {
-    console.log("No user logged in, data saved to localStorage only");
+    console.log("No user logged in, data NOT saved to Firestore");
     return;
   }
   
+  console.log(`Saving data for ${gameType} to Firestore for user ${user.uid}`, data);
+  
   const userRef = db.collection('users').doc(user.uid);
   
-  // Use a transaction to update nested data
-  return db.runTransaction(transaction => {
-    return transaction.get(userRef).then(doc => {
-      if (!doc.exists) {
-        // Create user document if it doesn't exist
-        transaction.set(userRef, {
+  // Use a direct update instead of a transaction for simplicity and reliability
+  const updateObject = {};
+  updateObject[`games.${gameType}`] = data;
+  
+  return userRef.update(updateObject)
+    .then(() => {
+      console.log(`Data for ${gameType} saved to Firestore successfully`);
+    })
+    .catch((error) => {
+      console.error("Error saving data to Firestore:", error);
+      
+      // If the document doesn't exist yet, create it
+      if (error.code === 'not-found') {
+        console.log("User document not found, creating new document");
+        const newUserData = {
           email: user.email,
           createdAt: new Date(),
           games: {
             [gameType]: data
           }
-        });
-      } else {
-        // Update existing document
-        const userData = doc.data();
-        const games = userData.games || {};
-        games[gameType] = data;
+        };
         
-        transaction.update(userRef, { games: games });
+        return userRef.set(newUserData)
+          .then(() => {
+            console.log(`Created new user document and saved ${gameType} data`);
+          })
+          .catch((setError) => {
+            console.error("Error creating user document:", setError);
+          });
       }
     });
-  }).then(() => {
-    console.log(`Data for ${gameType} saved to Firestore`);
-  }).catch(error => {
-    console.error("Error saving data:", error);
-  });
 }
