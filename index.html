@@ -1,7 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFL Combine Training</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="assets/css/auth.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -9,6 +13,9 @@
     <header class="draft-header">
         <h1>NFL Combine Training</h1>
         <p>Test your skills in various NFL Combine events!</p>
+        <div id="user-status">
+            <a href="login.html" class="login-button">Login / Sign Up</a>
+        </div>
         <a href="combine/" class="cta-button">Start Training</a>
     </header>
     
@@ -38,5 +45,16 @@
     <footer style="text-align: center; padding: 1rem; background: #013369; margin-top: 2rem;">
         <p>&copy; 2025 NFL Combine Training</p>
     </footer>
+    
+    <script src="assets/js/main.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="assets/js/firebase-config.js"></script>
+    
 </body>
 </html>

@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Results - NFL Combine Training</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="assets/css/auth.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        
+        header {
+            background-color: #013369;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            margin-left: 1rem;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #013369;
+            margin: 2rem 0;
+        }
+        
+        .results-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .result-tabs {
+            display: flex;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 1rem;
+        }
+        
+        .tab-button {
+            padding: 0.75rem 1rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        
+        .tab-button.active {
+            font-weight: bold;
+            color: #013369;
+            border-bottom: 2px solid #013369;
+        }
+        
+        .result-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        
+        .result-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            background: #fafafa;
+        }
+        
+        .result-card h3 {
+            margin-top: 0;
+            color: #013369;
+            font-size: 1.2rem;
+        }
+        
+        .result-card p {
+            margin: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .result-card .date {
+            color: #666;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .result-card .score {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        
+        .result-card .score.high {
+            color: #28a745;
+        }
+        
+        .result-card .score.medium {
+            color: #ffc107;
+        }
+        
+        .result-card .score.low {
+            color: #dc3545;
+        }
+        
+        .result-card .view-button {
+            display: block;
+            width: 100%;
+            padding: 0.5rem;
+            background-color: #013369;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            text-align: center;
+            text-decoration: none;
+            margin-top: 1rem;
+            cursor: pointer;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+        
+        .empty-state p {
+            margin-bottom: 1rem;
+        }
+        
+        .empty-state a {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            background-color: #013369;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background: #013369;
+            color: white;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">NFL Combine Training</div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="combine/">Combine</a>
+            <a href="history.html" class="active">Your Results</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Your Training Results</h1>
+        
+        <div class="results-container">
+            <div class="result-tabs">
+                <button class="tab-button active" data-tab="ras">RAS Scores</button>
+                <button class="tab-button" data-tab="events">Combine Events</button>
+            </div>
+            
+            <div id="ras-results" class="tab-content">
+                <div id="ras-cards" class="result-cards">
+                    <!-- RAS result cards will be inserted here via JavaScript -->
+                </div>
+            </div>
+            
+            <div id="events-results" class="tab-content" style="display:none">
+                <div id="events-cards" class="result-cards">
+                    <!-- Event result cards will be inserted here via JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 NFL Combine Training</p>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="assets/js/firebase-config.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    // Toggle active class
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Show corresponding tab
+                    const tabId = button.getAttribute('data-tab');
+                    document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+                    document.getElementById(`${tabId}-results`).style.display = 'block';
+                });
+            });
+            
+            // Check if user is logged in
+            if (typeof auth !== 'undefined') {
+                auth.onAuthStateChanged(user => {
+                    if (user) {
+                        // User is logged in, load their results
+                        loadUserResults(user.uid);
+                    } else {
+                        // User is not logged in, show login prompt
+                        showLoginPrompt();
+                    }
+                });
+            } else {
+                // Firebase not loaded yet, retry
+                setTimeout(() => {
+                    if (typeof auth !== 'undefined') {
+                        auth.onAuthStateChanged(user => {
+                            if (user) {
+                                loadUserResults(user.uid);
+                            } else {
+                                showLoginPrompt();
+                            }
+                        });
+                    } else {
+                        showError("Could not connect to user system. Please try again later.");
+                    }
+                }, 1000);
+            }
+        });
+        
+        function loadUserResults(userId) {
+            if (typeof db === 'undefined') {
+                showError("Database connection error. Please refresh the page.");
+                return;
+            }
+            
+            // Get user data from Firestore
+            db.collection('users').doc(userId).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        // Load RAS results if available
+                        if (userData.games && userData.games.rasResults) {
+                            displayRASResults(userData.games.rasResults);
+                        } else {
+                            showEmptyState('ras-cards', 'No RAS scores found', 'Try the RAS calculator to evaluate your athletic profile.');
+                        }
+                        
+                        // Load combine event results if available
+                        if (userData.games && userData.games.combineResults) {
+                            displayEventResults(userData.games.combineResults);
+                        } else {
+                            showEmptyState('events-cards', 'No combine event results found', 'Try the combine events to start building your athletic profile.');
+                        }
+                    } else {
+                        // User document doesn't exist
+                        showEmptyState('ras-cards', 'No results found', 'Start using the combine tools to see your results here.');
+                        showEmptyState('events-cards', 'No results found', 'Start using the combine tools to see your results here.');
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading user data:", error);
+                    showError("Error loading your results. Please try again later.");
+                });
+        }
+        
+        function displayRASResults(rasResults) {
+            const container = document.getElementById('ras-cards');
+            container.innerHTML = '';
+            
+            if (Object.keys(rasResults).length === 0) {
+                showEmptyState('ras-cards', 'No RAS scores found', 'Try the RAS calculator to evaluate your athletic profile.');
+                return;
+            }
+            
+            // Sort by date (newest first)
+            const sortedResults = Object.entries(rasResults).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+            
+            sortedResults.forEach(([timestamp, result]) => {
+                const date = new Date(timestamp);
+                const scoreClass = getScoreClass(parseFloat(result.overallRAS));
+                
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `
+                    <div class="date">${date.toLocaleDateString()} ${date.toLocaleTimeString()}</div>
+                    <h3>${result.playerName || 'Unnamed Player'}</h3>
+                    <p>${result.position || 'N/A'} | ${result.college || 'N/A'}</p>
+                    <div class="score ${scoreClass}">${parseFloat(result.overallRAS).toFixed(2)}</div>
+                    <p>Height: ${result.height || 'N/A'} | Weight: ${result.weight || 'N/A'}</p>
+                    <a href="combine/ras/" class="view-button">View in RAS Calculator</a>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function displayEventResults(eventResults) {
+            const container = document.getElementById('events-cards');
+            container.innerHTML = '';
+            
+            if (Object.keys(eventResults).length === 0) {
+                showEmptyState('events-cards', 'No combine event results found', 'Try the combine events to start building your athletic profile.');
+                return;
+            }
+            
+            // Logic for displaying combine event results would go here
+            // This is a placeholder until we know the structure of combine event data
+            showEmptyState('events-cards', 'Coming Soon', 'Combine event history will be available in a future update.');
+        }
+        
+        function getScoreClass(score) {
+            if (score >= 8) return 'high';
+            if (score >= 5) return 'medium';
+            return 'low';
+        }
+        
+        function showEmptyState(containerId, title, message) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `
+                <div class="empty-state">
+                    <h3>${title}</h3>
+                    <p>${message}</p>
+                    <a href="combine/">Go to Combine</a>
+                </div>
+            `;
+        }
+        
+        function showLoginPrompt() {
+            const rasContainer = document.getElementById('ras-cards');
+            const eventsContainer = document.getElementById('events-cards');
+            
+            const loginPrompt = `
+                <div class="empty-state">
+                    <h3>Please Log In</h3>
+                    <p>You need to be logged in to view your results.</p>
+                    <a href="login.html">Log In / Sign Up</a>
+                </div>
+            `;
+            
+            rasContainer.innerHTML = loginPrompt;
+            eventsContainer.innerHTML = loginPrompt;
+        }
+        
+        function showError(message) {
+            const rasContainer = document.getElementById('ras-cards');
+            const eventsContainer = document.getElementById('events-cards');
+            
+            const errorMessage = `
+                <div class="empty-state">
+                    <h3>Error</h3>
+                    <p>${message}</p>
+                    <a href="index.html">Return to Home</a>
+                </div>
+            `;
+            
+            rasContainer.innerHTML = errorMessage;
+            eventsContainer.innerHTML = errorMessage;
+        }
+    </script>
+</body>
+</html>

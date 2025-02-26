@@ -214,7 +214,7 @@ function calculateRASScores() {
         const verticalHeight = verticalValue === "--" || verticalValue === "" ? null : parseFloat(verticalValue);
         const benchReps = benchValue === "--" || benchValue === "" ? null : parseFloat(benchValue);
         const coneTime = coneValue === "--" || coneValue === "" ? null : parseFloat(coneValue);
-        const shuttleTime = shuttleValue === "--" || shuttleValue === "" ? null : parseFloat(shuttleValue);
+        const shuttleTime = shuttleValue === "--" || shuttleValue === "" ? null : parseFloat(shuttleTime);
         
         // Parse broad jump (special handling for feet/inches format)
         let broadInches = null;
@@ -303,6 +303,40 @@ function calculateRASScores() {
         
         // Update overall RAS display with color coding
         updateOverallRAS(overallRAS);
+        
+        // Store the results in localStorage with a meaningful key name
+        try {
+            // Get existing results or initialize a new object
+            const savedResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+            
+            // Add this result with a timestamp as the key
+            const timestamp = new Date().toISOString();
+            const playerName = document.getElementById('player-name').textContent;
+            savedResults[timestamp] = {
+                playerName: playerName,
+                position: document.getElementById('position').textContent,
+                college: document.getElementById('school').textContent,
+                height: document.getElementById('height').value,
+                weight: document.getElementById('weight').value,
+                bench: document.getElementById('bench-value').textContent,
+                vertical: document.getElementById('vertical-value').textContent,
+                broad: document.getElementById('broad-value').textContent,
+                shuttle: document.getElementById('shuttle-value').textContent,
+                cone: document.getElementById('cone-value').textContent,
+                dash: document.getElementById('forty-value').textContent,
+                overallRAS: parseFloat(overallRAS)
+            };
+            
+            // Save back to localStorage
+            localStorage.setItem('rasResults', JSON.stringify(savedResults));
+            
+            // If Firebase saveUserData function exists, use it to save to the user's account
+            if (typeof saveUserData === 'function') {
+                saveUserData('rasResults', savedResults);
+            }
+        } catch (error) {
+            console.error('Error saving to localStorage:', error);
+        }
     } catch (error) {
         console.error("Error calculating RAS scores:", error);
         // Fallback to default value if calculation fails

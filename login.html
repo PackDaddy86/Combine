@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - NFL Combine Training</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="assets/css/auth.css">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        header {
+            background-color: #013369;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .login-container {
+            max-width: 500px;
+            margin: 3rem auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .login-container h1 {
+            text-align: center;
+            color: #013369;
+            margin-bottom: 2rem;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background: #013369;
+            color: white;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">NFL Combine Training</div>
+        <a href="index.html" style="color: white; text-decoration: none;">Home</a>
+    </header>
+
+    <div class="container">
+        <div class="login-container">
+            <h1>Account Login</h1>
+            
+            <div class="auth-tabs">
+                <button class="tab-button active" data-tab="login">Login</button>
+                <button class="tab-button" data-tab="signup">Sign Up</button>
+            </div>
+            
+            <div class="tab-content" id="login-tab">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <button type="submit" class="auth-button">Login</button>
+                </form>
+            </div>
+            
+            <div class="tab-content" id="signup-tab" style="display:none">
+                <form id="signup-form">
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm">Confirm Password</label>
+                        <input type="password" id="signup-confirm" required>
+                    </div>
+                    <button type="submit" class="auth-button">Sign Up</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 NFL Combine Training</p>
+    </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="assets/js/firebase-config.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    // Toggle active class
+                    document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                    button.classList.add('active');
+                    
+                    // Show corresponding tab
+                    const tabId = button.getAttribute('data-tab');
+                    document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+                    document.getElementById(`${tabId}-tab`).style.display = 'block';
+                });
+            });
+            
+            // Login form submission
+            document.getElementById('login-form').addEventListener('submit', e => {
+                e.preventDefault();
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                auth.signInWithEmailAndPassword(email, password)
+                    .then(userCredential => {
+                        // Redirect to home page after successful login
+                        window.location.href = 'index.html';
+                    })
+                    .catch(error => {
+                        alert(`Login error: ${error.message}`);
+                    });
+            });
+            
+            // Sign up form submission
+            document.getElementById('signup-form').addEventListener('submit', e => {
+                e.preventDefault();
+                const email = document.getElementById('signup-email').value;
+                const password = document.getElementById('signup-password').value;
+                const confirm = document.getElementById('signup-confirm').value;
+                
+                if (password !== confirm) {
+                    alert("Passwords don't match");
+                    return;
+                }
+                
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then(userCredential => {
+                        // Create a user profile in Firestore
+                        return db.collection('users').doc(userCredential.user.uid).set({
+                            email: email,
+                            createdAt: new Date(),
+                            games: {}
+                        });
+                    })
+                    .then(() => {
+                        // Redirect to home page after successful signup
+                        window.location.href = 'index.html';
+                    })
+                    .catch(error => {
+                        alert(`Sign up error: ${error.message}`);
+                    });
+            });
+            
+            // Check if user is already logged in
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    // User is already logged in, redirect to home page
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
