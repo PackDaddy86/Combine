@@ -371,13 +371,14 @@
                     
                     resetButton.addEventListener('click', function() {
                         if (confirm('Are you sure you want to reset all combine event results? This cannot be undone.')) {
+                            // Disable button to prevent multiple clicks
+                            this.disabled = true;
+                            this.textContent = 'RESETTING...';
+                            
                             // Try to use the resetCombineData helper function if available
                             if (typeof resetCombineData === 'function') {
                                 console.log('Using resetCombineData helper function');
-                                resetCombineData().then(() => {
-                                    // Refresh the page to update display
-                                    location.reload();
-                                });
+                                resetCombineData(); // Function handles reloading internally
                             } else {
                                 console.log('resetCombineData not available, using fallback reset');
                                 // Clear all localStorage items
@@ -396,19 +397,15 @@
                                         console.log('Resetting Firebase user data');
                                         const db = firebase.firestore();
                                         
-                                        // Use removeField() instead of null to actually remove the fields
-                                        const deleteFields = {
-                                            fortyYardDash: firebase.firestore.FieldValue.delete(),
-                                            verticalJump: firebase.firestore.FieldValue.delete(),
-                                            benchPress: firebase.firestore.FieldValue.delete(),
-                                            broadJump: firebase.firestore.FieldValue.delete(),
-                                            coneDrill: firebase.firestore.FieldValue.delete(),
-                                            shuttleRun: firebase.firestore.FieldValue.delete(),
-                                            lastUpdate: new Date()
-                                        };
-                                        
-                                        // Update the document by deleting the fields
-                                        db.collection('users').doc(user.uid).update(deleteFields)
+                                        // Delete the document entirely and recreate it with minimal info
+                                        db.collection('users').doc(user.uid).delete()
+                                        .then(() => {
+                                            console.log('Deleted user document');
+                                            return db.collection('users').doc(user.uid).set({
+                                                email: user.email,
+                                                lastUpdate: new Date()
+                                            });
+                                        })
                                         .then(() => {
                                             console.log('Reset all combine data in Firebase');
                                             // Refresh the page to update display

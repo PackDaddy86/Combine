@@ -4,6 +4,7 @@
  * Saves specific combine event data for the current user
  * @param {string} eventType - The type of event ('fortyYardDash', 'verticalJump', etc.)
  * @param {string|number} value - The value to store for this event
+ * @returns {Promise} - A promise that resolves when the save is complete
  */
 function saveCombineEventData(eventType, value) {
     console.log(`SUPER SIMPLE SAVE: Saving ${eventType} = ${value}`);
@@ -20,31 +21,40 @@ function saveCombineEventData(eventType, value) {
             // Get Firestore reference
             const db = firebase.firestore();
             
-            // Save it directly to the games collection without nesting
-            db.collection('users').doc(user.uid).update({
-                [eventType]: value,
-                lastUpdate: new Date()
-            }).then(() => {
-                console.log(`Successfully saved ${eventType} = ${value} to Firestore`);
-            }).catch(error => {
-                // If update fails, try set instead (document might not exist)
-                console.log(`Update failed, trying to create document: ${error.message}`);
-                
-                db.collection('users').doc(user.uid).set({
+            // Return a proper promise for this operation
+            return new Promise((resolve, reject) => {
+                // Save it directly to the users collection
+                db.collection('users').doc(user.uid).update({
                     [eventType]: value,
-                    lastUpdate: new Date(),
-                    email: user.email
+                    lastUpdate: new Date()
                 }).then(() => {
-                    console.log(`Successfully created document with ${eventType} = ${value}`);
+                    console.log(`Successfully saved ${eventType} = ${value} to Firestore via update`);
+                    resolve();
                 }).catch(error => {
-                    console.error(`Error saving data: ${error.message}`);
+                    // If update fails, try set instead (document might not exist)
+                    console.log(`Update failed, trying to create document: ${error.message}`);
+                    
+                    db.collection('users').doc(user.uid).set({
+                        [eventType]: value,
+                        lastUpdate: new Date(),
+                        email: user.email
+                    }, { merge: true }) // Use merge option to preserve other fields
+                    .then(() => {
+                        console.log(`Successfully created/merged document`);
+                        resolve();
+                    }).catch(error => {
+                        console.error(`Error saving data: ${error.message}`);
+                        reject(error);
+                    });
                 });
             });
         } else {
             console.log('No user logged in, saved to localStorage only');
+            return Promise.resolve();
         }
     } else {
         console.log('Firebase not available, saved to localStorage only');
+        return Promise.resolve();
     }
 }
 
@@ -111,20 +121,19 @@ function resetCombineData() {
             
             const db = firebase.firestore();
             
-            // Use FieldValue.delete() to properly remove fields
-            const deleteFields = {
-                fortyYardDash: firebase.firestore.FieldValue.delete(),
-                verticalJump: firebase.firestore.FieldValue.delete(),
-                benchPress: firebase.firestore.FieldValue.delete(),
-                broadJump: firebase.firestore.FieldValue.delete(),
-                coneDrill: firebase.firestore.FieldValue.delete(),
-                shuttleRun: firebase.firestore.FieldValue.delete(),
-                lastUpdate: new Date()
-            };
-            
-            return db.collection('users').doc(user.uid).update(deleteFields)
+            // DELETE the entire document and recreate it with minimal info
+            return db.collection('users').doc(user.uid).delete()
                 .then(() => {
-                    console.log('🔴 Debug [resetCombineData] Successfully reset Firebase data');
+                    console.log('🔴 Debug [resetCombineData] Successfully deleted Firebase document');
+                    
+                    // Create a new empty document with just the user's email
+                    return db.collection('users').doc(user.uid).set({
+                        email: user.email,
+                        lastUpdate: new Date()
+                    });
+                })
+                .then(() => {
+                    console.log('🔴 Debug [resetCombineData] Successfully recreated empty Firebase document');
                     
                     // Force UI refresh by calling updateResultsAndButtons if it exists
                     if (typeof updateResultsAndButtons === 'function') {
@@ -135,10 +144,21 @@ function resetCombineData() {
                         }
                     }
                     
+                    // Force page reload to ensure everything is fresh
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                    
                     return true;
                 })
                 .catch(error => {
                     console.error('🔴 Debug [resetCombineData] Error resetting Firebase data:', error);
+                    
+                    // Force page reload even if there was an error
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                    
                     return false;
                 });
         }
@@ -152,6 +172,11 @@ function resetCombineData() {
             console.error('Error updating UI after reset:', e);
         }
     }
+    
+    // Force page reload to ensure everything is fresh
+    setTimeout(() => {
+        window.location.reload();
+    }, 500);
     
     return Promise.resolve(true); // If no user or Firebase, just return a resolved promise
 }
@@ -175,6 +200,44 @@ function clearLocalStorageData() {
     
     console.log('🔴 Debug [clearLocalStorageData] All combine data cleared from localStorage');
 }
+
+/**
+ * Debug function to check the current structure of a user's Firebase document
+ * This is helpful for troubleshooting 
+ */
+function checkFirebaseUserDocument() {
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log(`🔴 Debug [checkDocument] Checking Firebase document for user ${user.uid}`);
+            
+            const db = firebase.firestore();
+            db.collection('users').doc(user.uid).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        console.log('🔴 Debug [checkDocument] Document exists with data:', doc.data());
+                        // Log each field individually
+                        const data = doc.data();
+                        Object.keys(data).forEach(key => {
+                            console.log(`🔴 Field: ${key} = ${JSON.stringify(data[key])}`);
+                        });
+                    } else {
+                        console.log('🔴 Debug [checkDocument] No document found for this user');
+                    }
+                })
+                .catch(error => {
+                    console.error('🔴 Debug [checkDocument] Error fetching document:', error);
+                });
+        } else {
+            console.log('🔴 Debug [checkDocument] No user is currently logged in');
+        }
+    } else {
+        console.log('🔴 Debug [checkDocument] Firebase is not initialized');
+    }
+}
+
+// Add a global function to expose this for debugging in the console
+window.checkFirebaseUserDocument = checkFirebaseUserDocument;
 
 // Initialize Firebase auth listener if not already listening
 if (typeof firebase !== 'undefined' && firebase.auth) {

@@ -267,7 +267,18 @@ class BroadJumpGame {
         // Try using the helper function from user-data.js if available
         if (typeof saveCombineEventData === 'function') {
             console.log('Using saveCombineEventData helper function');
-            saveCombineEventData('broadJump', distanceValue);
+            // Call it with a callback to log when done
+            saveCombineEventData('broadJump', distanceValue)
+                .then(() => {
+                    console.log('Successfully saved to Firebase via helper');
+                    // Check the document structure to verify
+                    if (typeof checkFirebaseUserDocument === 'function') {
+                        checkFirebaseUserDocument();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error saving to Firebase via helper:', error);
+                });
             return; // Exit early since the helper will handle all the Firebase logic
         }
         
