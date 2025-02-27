@@ -14,3 +14,17 @@ logs
 
 # Temporary files
 *.tmp
+
+# SSL and local development files
+ssl/
+create-cert.ps1
+https-server.js
+server.js
+setup-ssl.ps1
+temp_header.txt
+header-fix-example.html
+
+# Node.js
+node_modules/
+package-lock.json
+package.json
