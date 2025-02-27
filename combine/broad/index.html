@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NFL Combine Broad Jump Challenge</title>
+    <title>NFL Combine Broad Jump</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     
@@ -18,8 +18,14 @@
     <script src="/assets/js/include.js"></script>
 </head>
 <body>
+    <div include-html="/assets/includes/header.html"></div>
+    
     <div class="game-container">
         <h1>NFL COMBINE BROAD JUMP</h1>
+        
+        <div class="instructions">
+            <p>Press SPACE to build power, then press SPACE again to set your jump angle!</p>
+        </div>
         
         <div class="jump-area">
             <div class="jumper-container">
@@ -42,10 +48,11 @@
                     </div>
                     <div class="angle-label">ANGLE</div>
                 </div>
-                
-                <div class="instruction-text">
-                    HOLD SPACE to build power, then TAP SPACE to set jump angle!
-                </div>
+            </div>
+            
+            <div class="distance-display">
+                <span id="distance-label">Distance:</span>
+                <span id="distance">0'0"</span>
             </div>
             
             <div class="jump-track">
@@ -61,19 +68,9 @@
                 <div class="jumper-indicator"></div>
             </div>
             
-            <div class="distance-display">
-                Distance: <span id="distance">0'0"</span>
+            <div class="action-button" id="jump-button">
+                START JUMP
             </div>
-        </div>
-        
-        <div class="jump-button" id="jump-button">
-            READY
-        </div>
-        
-        <div class="attempts-display">
-            <div class="attempt attempt-1">Attempt 1: <span>-</span></div>
-            <div class="attempt attempt-2">Attempt 2: <span>-</span></div>
-            <div class="attempt attempt-3">Attempt 3: <span>-</span></div>
         </div>
     </div>
     
@@ -81,13 +78,22 @@
         <div class="results-card">
             <h2>BROAD JUMP RESULT</h2>
             <div class="final-distance">0'0"</div>
-            <div class="rating-label">RATING</div>
-            <div class="rating"></div>
-            <button class="restart-btn">TRY AGAIN</button>
-            <button class="return-btn">BACK TO COMBINE</button>
+            <div class="rating-container">
+                <div class="rating-label">RATING</div>
+                <div class="rating">AVERAGE</div>
+            </div>
+            <div class="button-container">
+                <button class="retry-button">TRY AGAIN</button>
+                <button class="return-button">BACK TO COMBINE</button>
+            </div>
         </div>
     </div>
     
     <script src="game.js"></script>
+    
+    <script>
+        // Initialize include.js
+        includeHTML();
+    </script>
 </body>
 </html>

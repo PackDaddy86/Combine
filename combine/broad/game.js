@@ -1,369 +1,295 @@
+/**
+ * NFL Combine Broad Jump Game
+ * A simplified version with one attempt
+ */
+
 class BroadJumpGame {
     constructor() {
+        this.initializeSounds();
+        this.initializeElements();
+        this.initializeState();
+        this.setupEventListeners();
+    }
+
+    initializeSounds() {
         this.sounds = {
-            charge: new Howl({ src: ['/sounds/charge.wav'], volume: 0.3 }),
-            jump: new Howl({ src: ['/sounds/jump.wav'], volume: 0.5 }),
-            landing: new Howl({ src: ['/sounds/landing.wav'], volume: 0.4 })
+            charge: new Howl({ src: ['/assets/sounds/charge.mp3'], volume: 0.7 }),
+            jump: new Howl({ src: ['/assets/sounds/jump.mp3'], volume: 0.7 }),
+            success: new Howl({ src: ['/assets/sounds/success.mp3'], volume: 0.7 }),
+            fail: new Howl({ src: ['/assets/sounds/fail.mp3'], volume: 0.5 })
         };
-        
-        this.gameState = {
-            isCharging: false,
-            isAngleSelect: false,
-            isJumping: false,
-            power: 0,
-            angle: 0,
-            maxPower: 100,
-            powerDirection: 1,
-            distance: 0,
-            currentAttempt: 0,
-            maxAttempts: 3,
-            attemptResults: ['-', '-', '-'],
-            bestDistance: 0
-        };
-        
+    }
+
+    initializeElements() {
         this.elements = {
             jumper: document.getElementById('jumper'),
             powerBar: document.querySelector('.power-bar'),
             angleIndicator: document.querySelector('.angle-indicator'),
-            jumperIndicator: document.querySelector('.jumper-indicator'),
-            distanceDisplay: document.getElementById('distance'),
             jumpButton: document.getElementById('jump-button'),
-            attemptDisplays: document.querySelectorAll('.attempt span'),
-            gameScreen: document.querySelector('.game-container'),
+            distanceDisplay: document.getElementById('distance'),
+            jumperIndicator: document.querySelector('.jumper-indicator'),
             resultsScreen: document.querySelector('.results-screen'),
             finalDistance: document.querySelector('.final-distance'),
             rating: document.querySelector('.rating'),
-            restartButton: document.querySelector('.restart-btn'),
-            returnButton: document.querySelector('.return-btn')
+            retryButton: document.querySelector('.retry-button'),
+            returnButton: document.querySelector('.return-button')
         };
-        
-        this.baseSpeed = 1.5;
-        this.initialize();
     }
-    
-    initialize() {
-        // Set up button click events
-        this.elements.jumpButton.addEventListener('click', () => {
-            this.handleJumpButtonPress();
-        });
+
+    initializeState() {
+        this.state = {
+            gamePhase: 'ready', // ready, charging, angleSelection, jumping, results
+            power: 0,
+            angle: 0,
+            distance: 0,
+            isOptimalAngle: false,
+            chargeInterval: null,
+            angleInterval: null
+        };
+    }
+
+    setupEventListeners() {
+        // Button event
+        this.elements.jumpButton.addEventListener('click', () => this.handleButtonPress());
         
-        this.elements.restartButton.addEventListener('click', () => {
-            this.restartGame();
-        });
-        
-        this.elements.returnButton.addEventListener('click', () => {
-            window.location.href = "/";
-        });
-        
-        // Keyboard controls
+        // Keyboard event
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
-                this.handleJumpButtonPress();
+                this.handleButtonPress();
             }
         });
+        
+        // Results screen buttons
+        this.elements.retryButton.addEventListener('click', () => this.resetGame());
+        this.elements.returnButton.addEventListener('click', () => window.location.href = '/');
     }
-    
-    handleJumpButtonPress() {
-        if (!this.gameState.isCharging && !this.gameState.isAngleSelect && !this.gameState.isJumping) {
-            // Start charging
-            this.startCharging();
-        } else if (this.gameState.isCharging && !this.gameState.isAngleSelect) {
-            // Lock in power and start angle selection
-            this.startAngleSelection();
-        } else if (this.gameState.isAngleSelect) {
-            // Lock in angle and jump
-            this.setJumpAngle();
+
+    handleButtonPress() {
+        switch (this.state.gamePhase) {
+            case 'ready':
+                this.startCharging();
+                break;
+            case 'charging':
+                this.stopCharging();
+                this.startAngleSelection();
+                break;
+            case 'angleSelection':
+                this.stopAngleSelection();
+                this.executeJump();
+                break;
         }
     }
-    
+
     startCharging() {
-        console.log("Starting charging");
-        this.gameState.isCharging = true;
-        this.gameState.power = 0;
-        this.gameState.powerDirection = 1;
-        
-        this.elements.powerBar.style.width = '0%';
+        console.log('Starting to charge power');
+        this.state.gamePhase = 'charging';
         this.elements.jumpButton.textContent = 'CHARGING...';
         this.elements.jumpButton.classList.add('charging');
         
         this.sounds.charge.play();
         
-        if (this.powerAnimationId) {
-            cancelAnimationFrame(this.powerAnimationId);
-        }
-        
-        this.updatePower();
-    }
-    
-    updatePower() {
-        if (!this.gameState.isCharging) return;
-        
-        // Update power level
-        this.gameState.power += this.gameState.powerDirection * this.baseSpeed;
-        
-        // Check bounds and reverse direction if needed
-        if (this.gameState.power >= this.gameState.maxPower) {
-            this.gameState.power = this.gameState.maxPower;
-            this.gameState.powerDirection = -1;
-        } else if (this.gameState.power <= 0) {
-            this.gameState.power = 0;
-            this.gameState.powerDirection = 1;
-        }
-        
-        // Update UI
-        this.elements.powerBar.style.width = `${this.gameState.power}%`;
-        
-        // Continue animation
-        this.powerAnimationId = requestAnimationFrame(() => this.updatePower());
-    }
-    
-    startAngleSelection() {
-        console.log("Starting angle selection");
-        // Cancel power animation
-        if (this.powerAnimationId) {
-            cancelAnimationFrame(this.powerAnimationId);
-            this.powerAnimationId = null;
-        }
-        
-        this.gameState.isCharging = false;
-        this.gameState.isAngleSelect = true;
-        this.gameState.angle = 0;
-        
-        this.elements.jumpButton.textContent = 'SET ANGLE!';
-        
-        // Start angle oscillation
-        let direction = 1;
-        this.angleInterval = setInterval(() => {
-            this.gameState.angle += direction * 1.5;
+        let powerDirection = 1;
+        this.state.chargeInterval = setInterval(() => {
+            // Update power value (oscillate between 0 and 100)
+            this.state.power += powerDirection * 2;
             
-            if (this.gameState.angle >= 100) {
-                this.gameState.angle = 100;
-                direction = -1;
-            } else if (this.gameState.angle <= 0) {
-                this.gameState.angle = 0;
-                direction = 1;
+            if (this.state.power >= 100) {
+                this.state.power = 100;
+                powerDirection = -1;
+            } else if (this.state.power <= 0) {
+                this.state.power = 0;
+                powerDirection = 1;
             }
             
-            this.elements.angleIndicator.style.left = `${this.gameState.angle}%`;
-        }, 20);
+            // Update power bar
+            this.elements.powerBar.style.width = `${this.state.power}%`;
+        }, 30);
     }
-    
-    setJumpAngle() {
-        console.log("Setting jump angle");
-        if (this.angleInterval) {
-            clearInterval(this.angleInterval);
-            this.angleInterval = null;
-        }
-        
-        this.gameState.isAngleSelect = false;
-        this.executeJump();
-    }
-    
-    executeJump() {
-        console.log("Executing jump");
-        this.gameState.isJumping = true;
-        this.gameState.currentAttempt++;
-        
+
+    stopCharging() {
+        console.log('Stopping power charge at:', this.state.power);
+        clearInterval(this.state.chargeInterval);
         this.elements.jumpButton.classList.remove('charging');
+    }
+
+    startAngleSelection() {
+        console.log('Starting angle selection');
+        this.state.gamePhase = 'angleSelection';
+        this.elements.jumpButton.textContent = 'SET ANGLE';
+        
+        let angleDirection = 1;
+        this.state.angleInterval = setInterval(() => {
+            // Update angle value (oscillate between 0 and 100)
+            this.state.angle += angleDirection * 3;
+            
+            if (this.state.angle >= 100) {
+                this.state.angle = 100;
+                angleDirection = -1;
+            } else if (this.state.angle <= 0) {
+                this.state.angle = 0;
+                angleDirection = 1;
+            }
+            
+            // Check if in optimal zone (40%-60%)
+            this.state.isOptimalAngle = (this.state.angle >= 40 && this.state.angle <= 60);
+            
+            // Update angle indicator
+            this.elements.angleIndicator.style.left = `${this.state.angle}%`;
+        }, 30);
+    }
+
+    stopAngleSelection() {
+        console.log('Stopping angle selection at:', this.state.angle);
+        clearInterval(this.state.angleInterval);
+    }
+
+    executeJump() {
+        console.log('Executing jump');
+        this.state.gamePhase = 'jumping';
         this.elements.jumpButton.textContent = 'JUMPING...';
+        this.elements.jumpButton.disabled = true;
         
         this.sounds.jump.play();
         
-        // Animate jumper
+        // Add jumping animation to jumper
         this.elements.jumper.classList.add('jumping');
         
-        // Calculate jump distance
-        const powerFactor = this.gameState.power / this.gameState.maxPower;
-        
-        // Optimal angle is around 50% of the bar
-        const normalizedAngle = this.gameState.angle / 100;
-        const optimalAngle = 0.5;
-        const angleDiff = Math.abs(normalizedAngle - optimalAngle);
-        const angleEfficiency = 1 - (angleDiff * 2);
-        
-        // Calculate final distance (0-12 feet)
-        const maxDistance = 12;
-        const baseDistance = powerFactor * maxDistance * 0.7;
-        const angleBonus = angleEfficiency * maxDistance * 0.3;
-        
-        let finalDistance = baseDistance + angleBonus;
-        
-        // Add a bit of randomness
-        finalDistance += (Math.random() * 0.3) - 0.15;
-        
-        // Ensure it's between 0 and 12
-        finalDistance = Math.max(0, Math.min(finalDistance, 12));
-        
-        // Store distance
-        this.gameState.distance = finalDistance;
-        
-        // Convert to feet and inches for display
-        const feet = Math.floor(finalDistance);
-        const inches = Math.round((finalDistance - feet) * 12);
-        const formattedDistance = `${feet}'${inches}"`;
-        
-        // Move jumper indicator
-        const percentDistance = (finalDistance / 12) * 100;
-        this.elements.jumperIndicator.style.left = `${percentDistance}%`;
-        
-        // Update display after jump animation
+        // Calculate jump distance based on power and angle
         setTimeout(() => {
-            this.sounds.landing.play();
+            this.calculateDistance();
+            this.animateJump();
             
-            // Update distance display
-            this.elements.distanceDisplay.textContent = formattedDistance;
-            
-            // Update attempt display
-            const attemptIndex = this.gameState.currentAttempt - 1;
-            this.gameState.attemptResults[attemptIndex] = formattedDistance;
-            this.elements.attemptDisplays[attemptIndex].textContent = formattedDistance;
-            
-            // Track best distance
-            if (finalDistance > this.gameState.bestDistance) {
-                this.gameState.bestDistance = finalDistance;
-            }
-            
-            // Reset for next jump or show results
+            // Show results after animation completes
             setTimeout(() => {
-                this.finishJump();
-            }, 1000);
-        }, 800);
+                this.showResults();
+                this.saveResult();
+            }, 1500);
+        }, 300);
     }
-    
-    finishJump() {
-        this.gameState.isJumping = false;
-        this.elements.jumper.classList.remove('jumping');
+
+    calculateDistance() {
+        // Base distance based on power (0-10 feet)
+        let baseDistance = (this.state.power / 100) * 10;
         
-        // Check if we've completed all attempts
-        if (this.gameState.currentAttempt >= this.gameState.maxAttempts) {
-            this.showResults();
+        // Angle multiplier (optimal angle gives bonus)
+        let angleMultiplier = 1.0;
+        
+        if (this.state.isOptimalAngle) {
+            angleMultiplier = 1.2; // 20% bonus for optimal angle
         } else {
-            this.elements.jumpButton.textContent = 'READY';
+            // Penalty for angles far from optimal
+            const optimalCenter = 50;
+            const deviation = Math.abs(this.state.angle - optimalCenter);
+            // Reduces multiplier the further from optimal (down to 0.7 at extremes)
+            angleMultiplier = 1.0 - (deviation / 100) * 0.3;
         }
-    }
-    
-    showResults() {
-        console.log("Showing results");
-        // Format best distance for display
-        const bestDistance = this.gameState.bestDistance;
-        const feet = Math.floor(bestDistance);
-        const inches = Math.round((bestDistance - feet) * 12);
-        const formattedDistance = `${feet}'${inches}"`;
         
-        // Update results screen
-        this.elements.finalDistance.textContent = formattedDistance;
+        // Calculate final distance (in feet and inches)
+        this.state.distance = baseDistance * angleMultiplier;
+        console.log('Jump distance:', this.state.distance);
+        
+        // Format the distance (e.g. 8'6")
+        const feet = Math.floor(this.state.distance);
+        const inches = Math.round((this.state.distance - feet) * 12);
+        
+        // Handle case where inches equals 12 (should roll over to next foot)
+        let formattedFeet = feet;
+        let formattedInches = inches;
+        
+        if (inches === 12) {
+            formattedFeet++;
+            formattedInches = 0;
+        }
+        
+        this.formattedDistance = `${formattedFeet}'${formattedInches}"`;
+        
+        // Update distance display
+        this.elements.distanceDisplay.textContent = this.formattedDistance;
+    }
+
+    animateJump() {
+        // Calculate position on track (0 to 100%)
+        const jumpPercent = Math.min((this.state.distance / 12) * 100, 100);
+        this.elements.jumperIndicator.style.left = `${jumpPercent}%`;
+    }
+
+    showResults() {
+        console.log('Showing results');
+        this.state.gamePhase = 'results';
+        
+        // Update final distance in results screen
+        this.elements.finalDistance.textContent = this.formattedDistance;
         
         // Set rating based on distance
-        let ratingText, ratingColor;
-        if (bestDistance >= 11) {
-            ratingText = "ELITE";
-            ratingColor = "#ffd700";
-        } else if (bestDistance >= 9.5) {
-            ratingText = "OUTSTANDING";
-            ratingColor = "#00c6ff";
-        } else if (bestDistance >= 8.5) {
-            ratingText = "EXCELLENT";
-            ratingColor = "#4CAF50";
-        } else if (bestDistance >= 7.5) {
-            ratingText = "AVERAGE";
-            ratingColor = "#FF9800";
+        let rating;
+        if (this.state.distance >= 10) {
+            rating = "EXCELLENT";
+            this.elements.rating.style.color = "#4CAF50"; // Green
+            this.sounds.success.play();
+        } else if (this.state.distance >= 8) {
+            rating = "GOOD";
+            this.elements.rating.style.color = "#2196F3"; // Blue
+            this.sounds.success.play();
+        } else if (this.state.distance >= 6) {
+            rating = "AVERAGE";
+            this.elements.rating.style.color = "#FF9800"; // Orange
         } else {
-            ratingText = "BELOW AVERAGE";
-            ratingColor = "#F44336";
+            rating = "POOR";
+            this.elements.rating.style.color = "#F44336"; // Red
+            this.sounds.fail.play();
         }
         
-        this.elements.rating.textContent = ratingText;
-        this.elements.rating.style.color = ratingColor;
-        
-        // Save result to Firebase
-        this.saveResult(this.gameState.bestDistance.toFixed(2));
+        this.elements.rating.textContent = rating;
         
         // Show results screen
-        this.elements.gameScreen.classList.add('hidden');
         this.elements.resultsScreen.classList.remove('hidden');
     }
-    
-    saveResult(distance) {
-        console.log(`Broad jump save result called with: ${distance}`);
+
+    saveResult() {
+        console.log('Saving result to Firebase');
         
-        // Save directly to Firebase
-        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-            const user = firebase.auth().currentUser;
-            
-            if (user) {
-                console.log(`Broad jump: User logged in (${user.uid}), saving to Firestore`);
-                
-                const db = firebase.firestore();
-                
-                // Save directly to Firestore as a root property
-                db.collection('users').doc(user.uid).update({
-                    broadJump: distance,
-                    lastUpdate: new Date()
-                }).then(() => {
-                    console.log(`Broad jump: Successfully saved ${distance} feet to Firestore`);
-                }).catch(error => {
-                    console.error(`Broad jump: Error during update:`, error);
-                    
-                    // If document doesn't exist, create it
-                    if (error.code === 'not-found') {
-                        console.log("Broad jump: Document not found, creating new one");
-                        
-                        db.collection('users').doc(user.uid).set({
-                            email: user.email,
-                            broadJump: distance,
-                            lastUpdate: new Date()
-                        }).then(() => {
-                            console.log(`Broad jump: Created new document with ${distance} feet`);
-                        }).catch(err => {
-                            console.error("Broad jump: Error creating document:", err);
-                        });
-                    }
-                });
-            } else {
-                console.log("Broad jump: No user logged in, data not saved");
-            }
+        // Get current user
+        const user = firebase.auth().currentUser;
+        
+        if (user) {
+            // Save to Firestore
+            firebase.firestore().collection('users').doc(user.uid).set({
+                broadJump: this.state.distance.toFixed(2),
+                lastUpdate: new Date()
+            }, { merge: true })
+            .then(() => {
+                console.log('Result saved successfully');
+            })
+            .catch((error) => {
+                console.error('Error saving result:', error);
+            });
         } else {
-            console.log("Broad jump: Firebase not initialized, data not saved");
+            console.warn('No user logged in, result not saved');
         }
     }
-    
-    restartGame() {
-        // Reset game state
-        this.gameState = {
-            isCharging: false,
-            isAngleSelect: false,
-            isJumping: false,
-            power: 0,
-            angle: 0,
-            maxPower: 100,
-            powerDirection: 1,
-            distance: 0,
-            currentAttempt: 0,
-            maxAttempts: 3,
-            attemptResults: ['-', '-', '-'],
-            bestDistance: 0
-        };
-        
+
+    resetGame() {
+        console.log('Resetting game');
         // Reset UI
+        this.elements.jumper.classList.remove('jumping');
         this.elements.powerBar.style.width = '0%';
         this.elements.angleIndicator.style.left = '0%';
         this.elements.jumperIndicator.style.left = '0%';
         this.elements.distanceDisplay.textContent = "0'0\"";
-        this.elements.jumpButton.textContent = 'READY';
-        this.elements.jumpButton.classList.remove('charging');
-        
-        for (let i = 0; i < this.gameState.maxAttempts; i++) {
-            this.elements.attemptDisplays[i].textContent = '-';
-        }
-        
-        // Show game screen, hide results
-        this.elements.gameScreen.classList.remove('hidden');
+        this.elements.jumpButton.textContent = 'START JUMP';
+        this.elements.jumpButton.disabled = false;
         this.elements.resultsScreen.classList.add('hidden');
+        
+        // Reset state
+        this.initializeState();
     }
 }
 
-// Initialize game when page loads
+// Initialize game when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    const game = new BroadJumpGame();
+    // Wait a moment for the include.js to load header
+    setTimeout(() => {
+        new BroadJumpGame();
+    }, 100);
 });
