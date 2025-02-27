@@ -16,13 +16,8 @@ class ShuttleGameEngine {
             startTime: 0,
             currentTime: 0,
             currentStep: 0,
-            playerPos: { x: 300, y: 200 }, // Center of the field
-            checkpoints: [
-                { x: 300, y: 200, reached: false }, // Start position (Center)
-                { x: 500, y: 200, reached: false }, // Right marker (5 yards)
-                { x: 100, y: 200, reached: false }, // Left marker (10 yards from right)
-                { x: 300, y: 200, reached: false } // Back to center
-            ],
+            playerPos: { x: 0, y: 0 }, // Will be set dynamically based on field size
+            checkpoints: [], // Will be populated based on field dimensions
             currentTarget: 1, // Index of current checkpoint to reach
             speedBoosts: [], // Array to hold speed boost objects
             activeBoost: false, // Indicates if a boost is currently active
@@ -155,18 +150,25 @@ class ShuttleGameEngine {
     }
 
     startGame() {
-        // Reset game state
+        // Get field dimensions for positioning
+        const fieldRect = this.elements.field.getBoundingClientRect();
+        const centerX = fieldRect.width / 2;
+        const centerY = fieldRect.height / 2;
+        const rightX = fieldRect.width - 100; // 5 yards from right edge
+        const leftX = 100; // 5 yards from left edge
+        
+        // Reset game state with dynamic positions
         this.gameState = {
             isPlaying: true,
             startTime: Date.now(),
             currentTime: 0,
             currentStep: 0,
-            playerPos: { x: 300, y: 200 }, // Center of the field
+            playerPos: { x: centerX, y: centerY },
             checkpoints: [
-                { x: 300, y: 200, reached: true }, // Start position (Center)
-                { x: 500, y: 200, reached: false }, // Right marker (5 yards)
-                { x: 100, y: 200, reached: false }, // Left marker (10 yards from right)
-                { x: 300, y: 200, reached: false } // Back to center
+                { x: centerX, y: centerY, reached: true }, // Start position (Center)
+                { x: rightX, y: centerY, reached: false }, // Right marker (5 yards)
+                { x: leftX, y: centerY, reached: false }, // Left marker (10 yards from right)
+                { x: centerX, y: centerY, reached: false } // Back to center
             ],
             currentTarget: 1, // Start with the right marker (5 yards)
             speedBoosts: [], // Reset speed boosts
@@ -209,7 +211,7 @@ class ShuttleGameEngine {
     }
 
     resetPlayerPosition() {
-        // Position player at center
+        // Position player at center based on actual field dimensions
         const fieldRect = this.elements.field.getBoundingClientRect();
         const centerX = fieldRect.width / 2;
         const centerY = fieldRect.height / 2;
@@ -331,16 +333,16 @@ class ShuttleGameEngine {
         if (this.gameState.playerPos.x < 25) {
             this.gameState.playerPos.x = 25;
             this.velocity.x = -this.velocity.x * 0.3; // Bounce with reduced energy
-        } else if (this.gameState.playerPos.x > 575) {
-            this.gameState.playerPos.x = 575;
+        } else if (this.gameState.playerPos.x > fieldRect.width - 25) {
+            this.gameState.playerPos.x = fieldRect.width - 25;
             this.velocity.x = -this.velocity.x * 0.3; // Bounce with reduced energy
         }
         
         if (this.gameState.playerPos.y < 25) {
             this.gameState.playerPos.y = 25;
             this.velocity.y = -this.velocity.y * 0.3; // Bounce with reduced energy
-        } else if (this.gameState.playerPos.y > 375) {
-            this.gameState.playerPos.y = 375;
+        } else if (this.gameState.playerPos.y > fieldRect.height - 25) {
+            this.gameState.playerPos.y = fieldRect.height - 25;
             this.velocity.y = -this.velocity.y * 0.3; // Bounce with reduced energy
         }
         
@@ -615,14 +617,19 @@ class ShuttleGameEngine {
         // Reset speed boosts array
         this.gameState.speedBoosts = [];
         
-        // Create strategically placed boosts
+        // Get field dimensions for dynamic positioning
+        const fieldRect = this.elements.field.getBoundingClientRect();
+        const centerX = fieldRect.width / 2;
+        const centerY = fieldRect.height / 2;
+        
+        // Create strategically placed boosts based on field size
         const boosts = [
             // Boost near the starting area, slightly to the right
-            { x: 370, y: 180, collected: false },
+            { x: centerX + fieldRect.width * 0.1, y: centerY - 20, collected: false },
             // Boost near the right marker
-            { x: 450, y: 250, collected: false },
+            { x: fieldRect.width - 150, y: centerY + 50, collected: false },
             // Boost near the left marker
-            { x: 150, y: 160, collected: false }
+            { x: 150, y: centerY - 40, collected: false }
         ];
         
         // Add boosts to game state and create visual elements
@@ -713,18 +720,25 @@ class ShuttleGameEngine {
         // Clear existing path
         this.elements.pathLine.innerHTML = '';
         
+        // Get field dimensions for dynamic positioning
+        const fieldRect = this.elements.field.getBoundingClientRect();
+        const centerX = fieldRect.width / 2;
+        const centerY = fieldRect.height / 2;
+        const rightX = fieldRect.width - 100;
+        const leftX = 100;
+        
         // Create arrows based on current game state
         let arrows = [];
         
         if (this.gameState.currentTarget === 1) {
             // Arrow pointing to the right marker (straight right)
-            arrows.push({ x: 300, y: 200, angle: 0 });
+            arrows.push({ x: centerX, y: centerY, angle: 0 });
         } else if (this.gameState.currentTarget === 2) {
             // Arrow pointing to the left marker (straight left)
-            arrows.push({ x: 500, y: 200, angle: 180 });
+            arrows.push({ x: rightX, y: centerY, angle: 180 });
         } else if (this.gameState.currentTarget === 3) {
             // Arrow pointing back to center (straight right)
-            arrows.push({ x: 100, y: 200, angle: 0 });
+            arrows.push({ x: leftX, y: centerY, angle: 0 });
         }
         
         // Create the arrows
