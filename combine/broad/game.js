@@ -43,26 +43,37 @@ class BroadJumpGame {
             distance: 0,
             isOptimalAngle: false,
             chargeInterval: null,
-            angleInterval: null
+            angleInterval: null,
+            hasAttempted: this.checkIfAttempted() // Check if user has already attempted
         };
+    }
+
+    checkIfAttempted() {
+        // Check localStorage first for quicker access
+        const storedJump = localStorage.getItem('broadJump');
+        
+        if (storedJump) {
+            console.log('User has already attempted broad jump, score:', storedJump);
+            return true;
+        }
+        
+        // Could also check Firebase here but localStorage is faster
+        return false;
     }
 
     setupEventListeners() {
         // Button event
         this.elements.jumpButton.addEventListener('click', () => this.handleButtonPress());
         
-        // Keyboard event
-        document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
+        // Keyboard event for spacebar
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && this.state.gamePhase !== 'results') {
+                event.preventDefault(); // Prevent scrolling
                 this.handleButtonPress();
             }
         });
         
-        // Results screen buttons
-        this.elements.retryButton.addEventListener('click', () => this.resetGame());
-        
-        // Direct DOM attachment for the return button (matches other games)
+        // Results screen buttons - only attach return button event as retry is disabled
         const returnButton = document.querySelector('.return-button');
         returnButton.onclick = () => {
             window.location.href = '/combine/';
@@ -354,6 +365,44 @@ class BroadJumpGame {
 document.addEventListener('DOMContentLoaded', () => {
     // Wait a moment for the include.js to load header
     setTimeout(() => {
-        new BroadJumpGame();
+        window.game = new BroadJumpGame();
+        
+        // Check if user has already attempted and skip to results if so
+        if (window.game.state.hasAttempted) {
+            console.log('User already attempted broad jump, showing last result');
+            
+            // Get the saved value
+            const storedDistance = parseFloat(localStorage.getItem('broadJump'));
+            
+            // Set the distance in the game state
+            window.game.state.distance = storedDistance;
+            
+            // Format the distance for display
+            const feet = Math.floor(window.game.state.distance);
+            const inches = Math.round((window.game.state.distance - feet) * 12);
+            
+            // Handle case where inches equals 12 (should roll over to next foot)
+            let formattedFeet = feet;
+            let formattedInches = inches;
+            
+            if (inches === 12) {
+                formattedFeet++;
+                formattedInches = 0;
+            }
+            
+            window.game.formattedDistance = `${formattedFeet}'${formattedInches}"`;
+            
+            // Update distance display
+            window.game.elements.distanceDisplay.textContent = window.game.formattedDistance;
+            
+            // Show the results screen with previous score
+            window.game.showResults();
+            
+            // Disable the jump button completely
+            window.game.elements.jumpButton.disabled = true;
+            window.game.elements.jumpButton.textContent = 'ALREADY COMPLETED';
+            window.game.elements.jumpButton.style.backgroundColor = '#cccccc';
+            window.game.elements.jumpButton.style.cursor = 'not-allowed';
+        }
     }, 100);
 });
