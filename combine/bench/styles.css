@@ -245,6 +245,12 @@ h1 {
     background-image: url('/sprites/bench-up.png') !important;
 }
 
+.failed-press {
+    background-image: url('/sprites/bench-up.png') !important;
+    opacity: 0.6 !important;
+    filter: grayscale(50%) !important;
+}
+
 .success-hit {
     background: #4CAF50 !important;
     box-shadow: 0 0 15px #4CAF50 !important;

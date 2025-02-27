@@ -111,7 +111,10 @@ class GameEngine {
     attemptRep() {
         if (!this.gameState.isPlaying) return;
         
-        // Check if ball position is within target zone
+        // Play press sound for any attempt
+        this.sounds.press.play();
+        
+        // Check if ball position is within target zone (green center)
         const targetZoneStart = 50 - (this.gameState.targetZoneWidth / 2);
         const targetZoneEnd = 50 + (this.gameState.targetZoneWidth / 2);
         const isInTargetZone = (
@@ -127,14 +130,14 @@ class GameEngine {
         const pixelDistance = Math.abs(ballCenterPos - trackCenter) * trackWidth / 100;
         const pixelThreshold = centerRadius;
         
-        // Combined check - is the ball in the target zone AND is the center aligned?
-        const isSuccessful = isInTargetZone && (pixelDistance <= pixelThreshold);
+        // Is the ball in the green center?
+        const isInGreenCenter = pixelDistance <= pixelThreshold;
         
-        if (isSuccessful) {
-            // Successful rep
+        if (isInGreenCenter) {
+            // Successful rep - only count if in the green center
             this.successfulRep();
         } else {
-            // Failed rep
+            // Failed rep - end game only when missing the green center
             this.failedRep();
         }
     }
@@ -175,8 +178,12 @@ class GameEngine {
         targetBall.classList.add('miss-hit');
         setTimeout(() => targetBall.classList.remove('miss-hit'), 300);
         
+        // Show a slight press animation for attempt
+        this.elements.bencher.classList.add('failed-press');
+        setTimeout(() => this.elements.bencher.classList.remove('failed-press'), 300);
+        
         // End the game with failure
-        this.endGame();
+        setTimeout(() => this.endGame(), 500);
     }
 
     increaseDifficulty() {
