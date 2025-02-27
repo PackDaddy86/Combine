@@ -309,3 +309,73 @@ function saveUserData(gameType, data) {
     console.error("Error accessing user document:", error);
   });
 }
+
+// Save combine event data directly (bypass the saveUserData function)
+function saveEventDirectly(eventType, value) {
+  console.log(`🔵 Direct Save: Attempting to save ${eventType} with value ${value}`);
+  
+  const user = auth.currentUser;
+  if (!user) {
+    console.log("🔵 Direct Save: No user logged in, data NOT saved to Firestore");
+    return;
+  }
+  
+  console.log(`🔵 Direct Save: Saving ${eventType} for user ${user.uid}`);
+  
+  const userRef = db.collection('users').doc(user.uid);
+  
+  // Get the document first
+  userRef.get().then(doc => {
+    if (doc.exists) {
+      console.log("🔵 Direct Save: User document exists, updating");
+      
+      // Get current data
+      const userData = doc.data();
+      // Create games object if it doesn't exist
+      const games = userData.games || {};
+      // Create combine object if it doesn't exist
+      const combine = games.combine || {};
+      
+      // Update specific event
+      combine[eventType] = value;
+      games.combine = combine;
+      
+      console.log("🔵 Direct Save: Updated data structure:", { games });
+      
+      // Update document
+      userRef.update({ games: games })
+        .then(() => {
+          console.log(`🔵 Direct Save: ${eventType} saved successfully!`);
+        })
+        .catch(error => {
+          console.error("🔵 Direct Save: Error updating:", error);
+        });
+    } else {
+      console.log("🔵 Direct Save: User document doesn't exist, creating new one");
+      
+      // Create new document with proper structure
+      const newData = {
+        email: user.email,
+        createdAt: new Date(),
+        games: {
+          combine: {
+            [eventType]: value
+          }
+        }
+      };
+      
+      console.log("🔵 Direct Save: New data structure:", newData);
+      
+      // Save document
+      userRef.set(newData)
+        .then(() => {
+          console.log(`🔵 Direct Save: ${eventType} saved successfully in new document!`);
+        })
+        .catch(error => {
+          console.error("🔵 Direct Save: Error creating document:", error);
+        });
+    }
+  }).catch(error => {
+    console.error("🔵 Direct Save: Error accessing document:", error);
+  });
+}

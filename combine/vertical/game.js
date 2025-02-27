@@ -230,5 +230,18 @@ class GameEngine {
     }
 }
 
-// Initialize game when loaded
-window.addEventListener('load', () => new GameEngine());
+// Initialize the game when loaded
+window.addEventListener('load', () => {
+    const game = new GameEngine();
+    
+    // Check if Firebase is available and user is logged in
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                console.log('Vertical jump: User logged in, using user-specific data');
+            } else {
+                console.log('Vertical jump: No user logged in, using local data only');
+            }
+        });
+    }
+});

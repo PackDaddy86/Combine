@@ -245,7 +245,15 @@ class GameEngine {
                 const user = firebase.auth().currentUser;
                 if (user) {
                     console.log(`Saving bench press reps to Firestore for user ${user.uid}: ${formattedReps}`);
-                    saveCombineEventData('benchPress', formattedReps);
+                    
+                    // Try the direct save function first
+                    if (typeof saveEventDirectly === 'function') {
+                        console.log('Using direct save function for bench press');
+                        saveEventDirectly('benchPress', formattedReps);
+                    } else {
+                        console.log('Using helper function for bench press');
+                        saveCombineEventData('benchPress', formattedReps);
+                    }
                 } else {
                     console.log('No user logged in, saving to localStorage only');
                     localStorage.setItem('benchPress', formattedReps);
@@ -274,5 +282,18 @@ class GameEngine {
     }
 }
 
-// Initialize game when loaded
-window.addEventListener('load', () => new GameEngine());
+// Initialize the game when loaded
+window.addEventListener('load', () => {
+    const game = new GameEngine();
+    
+    // Check if Firebase is available and user is logged in
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                console.log('Bench press: User logged in, using user-specific data');
+            } else {
+                console.log('Bench press: No user logged in, using local data only');
+            }
+        });
+    }
+});
