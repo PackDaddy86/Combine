@@ -6,111 +6,50 @@
  * @param {string|number} value - The value to store for this event
  */
 function saveCombineEventData(eventType, value) {
-    console.log(`🔴 Debug [${eventType}] saveCombineEventData called with value: ${value}`);
+    console.log(`SUPER SIMPLE SAVE: Saving ${eventType} = ${value}`);
     
-    // Save to localStorage first (always works)
+    // Always save to localStorage first
     localStorage.setItem(eventType, value);
-    console.log(`🔴 Debug [${eventType}] Saved to localStorage: ${eventType} = ${value}`);
     
-    // For debugging backward compatibility
-    let results = JSON.parse(localStorage.getItem('combineResults') || '{}');
-    if (!results[eventType]) {
-        results[eventType] = {};
-    }
-    results[eventType] = {
-        value: value,
-        date: new Date().toISOString()
-    };
-    localStorage.setItem('combineResults', JSON.stringify(results));
-    console.log(`🔴 Debug [${eventType}] Updated combined results in localStorage`);
-    
-    // Then attempt to save to Firebase if available
-    if (typeof firebase === 'undefined') {
-        console.error(`🔴 Debug [${eventType}] Firebase is not defined, cannot save to Firestore`);
-        return;
-    }
-    
-    console.log(`🔴 Debug [${eventType}] Firebase is defined, continuing...`);
-    
-    if (!firebase.auth) {
-        console.error(`🔴 Debug [${eventType}] Firebase auth is not available, cannot save to Firestore`);
-        return;
-    }
-    
-    console.log(`🔴 Debug [${eventType}] Firebase auth is available, continuing...`);
-    
-    // This is almost identical to how the 40-yard dash saves data
-    const user = firebase.auth().currentUser;
-    console.log(`🔴 Debug [${eventType}] Current user:`, user);
-    
-    if (!user) {
-        console.log(`🔴 Debug [${eventType}] No user currently logged in, saving to localStorage only`);
-        return;
-    }
-    
-    console.log(`🔴 Debug [${eventType}] User logged in: ${user.uid}, will save ${eventType} to Firestore`);
-    
-    // Get Firestore reference
-    const db = firebase.firestore();
-    const userRef = db.collection('users').doc(user.uid);
-    
-    // Create a combine object with this event
-    const combineData = {
-        [eventType]: value
-    };
-    
-    console.log(`🔴 Debug [${eventType}] Preparing data to save:`, combineData);
-    
-    // Get the user document
-    userRef.get().then(doc => {
-        console.log(`🔴 Debug [${eventType}] Retrieved user document, exists: ${doc.exists}`);
-        
-        if (doc.exists) {
-            // Get existing games data
-            const userData = doc.data();
-            const games = userData.games || {};
-            const combine = games.combine || {};
+    // Get the firebase user
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log(`User logged in as ${user.uid}, saving directly to Firestore`);
             
-            // Update with new data
-            combine[eventType] = value;
-            games.combine = combine;
+            // Get Firestore reference
+            const db = firebase.firestore();
             
-            console.log(`🔴 Debug [${eventType}] Updating existing document with games data:`, games);
-            
-            // Update the document
-            userRef.update({
-                games: games
+            // Save it directly to the games collection without nesting
+            db.collection('users').doc(user.uid).update({
+                [eventType]: value,
+                lastUpdate: new Date()
             }).then(() => {
-                console.log(`✅ 🔴 Debug [${eventType}] Successfully updated ${eventType} in Firestore`);
+                console.log(`Successfully saved ${eventType} = ${value} to Firestore`);
             }).catch(error => {
-                console.error(`❌ 🔴 Debug [${eventType}] Error updating document:`, error);
+                // If update fails, try set instead (document might not exist)
+                console.log(`Update failed, trying to create document: ${error.message}`);
+                
+                db.collection('users').doc(user.uid).set({
+                    [eventType]: value,
+                    lastUpdate: new Date(),
+                    email: user.email
+                }).then(() => {
+                    console.log(`Successfully created document with ${eventType} = ${value}`);
+                }).catch(error => {
+                    console.error(`Error saving data: ${error.message}`);
+                });
             });
         } else {
-            // Create new document with games structure
-            const newData = {
-                email: user.email,
-                createdAt: new Date(),
-                games: {
-                    combine: combineData
-                }
-            };
-            
-            console.log(`🔴 Debug [${eventType}] Creating new document:`, newData);
-            
-            // Set the document
-            userRef.set(newData).then(() => {
-                console.log(`✅ 🔴 Debug [${eventType}] Successfully created new document with ${eventType}`);
-            }).catch(error => {
-                console.error(`❌ 🔴 Debug [${eventType}] Error creating document:`, error);
-            });
+            console.log('No user logged in, saved to localStorage only');
         }
-    }).catch(error => {
-        console.error(`❌ 🔴 Debug [${eventType}] Error getting document:`, error);
-    });
+    } else {
+        console.log('Firebase not available, saved to localStorage only');
+    }
 }
 
 /**
- * Load user-specific combine data
+ * Loads data for a specific combine event
  * @param {string} eventType - The type of event to load
  * @returns {string|null} - The value or null if not found
  */
@@ -156,20 +95,17 @@ function loadCombineResults() {
 }
 
 // Initialize Firebase auth listener if not already listening
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('user-data.js loaded, initializing Firebase auth listener');
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-        firebase.auth().onAuthStateChanged(user => {
-            if (user) {
-                console.log('User logged in with user-data.js listener, syncing data');
-                syncUserData(user.uid);
-            } else {
-                console.log('User logged out, clearing localStorage');
-                clearLocalStorageData();
-            }
-        });
-    }
-});
+if (typeof firebase !== 'undefined' && firebase.auth) {
+    firebase.auth().onAuthStateChanged(user => {
+        if (user) {
+            console.log(`Auth state changed: User logged in as ${user.uid}`);
+            syncUserData(user.uid);
+        } else {
+            console.log('Auth state changed: User logged out');
+            clearLocalStorageData();
+        }
+    });
+}
 
 // Clear localStorage data
 function clearLocalStorageData() {
@@ -209,38 +145,33 @@ function syncUserData(userId) {
                 console.log('🔴 Debug [syncUserData] Syncing user data from Firestore to localStorage');
                 const userData = doc.data();
                 
-                if (userData.games && userData.games.combine) {
-                    console.log('🔴 Debug [syncUserData] Syncing combine data from Firestore');
-                    const combineData = userData.games.combine;
-                    localStorage.setItem('combineResults', JSON.stringify(combineData));
-                    
-                    // Set individual values
-                    if (combineData.fortyYardDash) localStorage.setItem('fortyYardDash', combineData.fortyYardDash);
-                    if (combineData.verticalJump) localStorage.setItem('verticalJump', combineData.verticalJump);
-                    if (combineData.benchPress) localStorage.setItem('benchPress', combineData.benchPress);
-                    if (combineData.broadJump) localStorage.setItem('broadJump', combineData.broadJump);
-                    if (combineData.coneDrill) localStorage.setItem('coneDrill', combineData.coneDrill);
-                    if (combineData.shuttleRun) localStorage.setItem('shuttleRun', combineData.shuttleRun);
-                    
-                    // Update UI if we're on the combine page
-                    if (typeof updateResultsAndButtons === 'function') {
-                        try {
-                            console.log('🔴 Debug [syncUserData] Updating combine UI');
-                            updateResultsAndButtons();
-                        } catch (e) {
-                            console.log('🔴 Debug [syncUserData] Error updating combine UI:', e);
-                        }
+                // Update individual event data in localStorage
+                if (userData.fortyYardDash) localStorage.setItem('fortyYardDash', userData.fortyYardDash);
+                if (userData.verticalJump) localStorage.setItem('verticalJump', userData.verticalJump);
+                if (userData.benchPress) localStorage.setItem('benchPress', userData.benchPress);
+                if (userData.broadJump) localStorage.setItem('broadJump', userData.broadJump);
+                if (userData.coneDrill) localStorage.setItem('coneDrill', userData.coneDrill);
+                if (userData.shuttleRun) localStorage.setItem('shuttleRun', userData.shuttleRun);
+                
+                console.log('🔴 Debug [syncUserData] Synchronized combine data from Firestore');
+                
+                // Update the UI where appropriate
+                if (typeof updateResultsAndButtons === 'function') {
+                    try {
+                        console.log('🔴 Debug [syncUserData] Updating combine UI');
+                        updateResultsAndButtons();
+                    } catch (e) {
+                        console.log('🔴 Debug [syncUserData] Error updating combine UI:', e);
                     }
-                } else {
-                    console.log('🔴 Debug [syncUserData] No combine data found in Firestore');
                 }
                 
+                // Handle RAS data if needed
                 if (userData.games && userData.games.rasResults) {
                     console.log('🔴 Debug [syncUserData] Syncing RAS data from Firestore');
                     localStorage.setItem('rasResults', JSON.stringify(userData.games.rasResults));
                     
                     // Update RAS UI if we're on the RAS page
-                    if (window.location.href.includes('/ras/')) {
+                    if (window.location.href.includes('/combine/ras/')) {
                         if (typeof updateSavedResultsList === 'function') {
                             try {
                                 console.log('🔴 Debug [syncUserData] Updating RAS UI');
