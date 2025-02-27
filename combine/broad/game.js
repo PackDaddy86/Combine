@@ -62,7 +62,7 @@ class BroadJumpGame {
         
         // Results screen buttons
         this.elements.retryButton.addEventListener('click', () => this.resetGame());
-        this.elements.returnButton.addEventListener('click', () => window.location.href = '/');
+        this.elements.returnButton.addEventListener('click', () => window.location.href = '/combine.html');
     }
 
     handleButtonPress() {
@@ -253,17 +253,41 @@ class BroadJumpGame {
         const user = firebase.auth().currentUser;
         
         if (user) {
-            // Save to Firestore
-            firebase.firestore().collection('users').doc(user.uid).set({
-                broadJump: this.state.distance.toFixed(2),
-                lastUpdate: new Date()
-            }, { merge: true })
-            .then(() => {
-                console.log('Result saved successfully');
-            })
-            .catch((error) => {
-                console.error('Error saving result:', error);
-            });
+            console.log(`Saving broad jump result for user: ${user.uid}`);
+            
+            // Format distance for display
+            const feet = Math.floor(this.state.distance);
+            const inches = Math.round((this.state.distance - feet) * 12);
+            const formattedDistance = `${feet}'${inches}"`;
+            
+            // Save to Firestore - match the expected data structure
+            firebase.firestore().collection('userResults').doc(user.uid)
+                .set({
+                    broadJump: {
+                        distance: this.state.distance.toFixed(2),
+                        formatted: formattedDistance,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    }
+                }, { merge: true })
+                .then(() => {
+                    console.log('Broad jump result saved successfully to userResults collection');
+                })
+                .catch((error) => {
+                    console.error('Error saving result:', error);
+                    
+                    // Fall back to users collection if the above fails
+                    firebase.firestore().collection('users').doc(user.uid)
+                        .set({
+                            broadJump: this.state.distance.toFixed(2),
+                            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true })
+                        .then(() => {
+                            console.log('Result saved successfully to users collection as fallback');
+                        })
+                        .catch((err) => {
+                            console.error('Error saving result to fallback location:', err);
+                        });
+                });
         } else {
             console.warn('No user logged in, result not saved');
         }
