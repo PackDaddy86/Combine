@@ -1,10 +1,11 @@
 class ShuttleGameEngine {
     constructor() {
         this.sounds = {
-            start: new Howl({ src: ['/sounds/whistle.wav'], volume: 0.5 }),
-            turn: new Howl({ src: ['/sounds/step.wav'], volume: 0.3 }),
-            checkpoint: new Howl({ src: ['/sounds/checkpoint.wav'], volume: 0.4 }),
-            finish: new Howl({ src: ['/sounds/finish.wav'], volume: 0.5 })
+            start: new Howl({ src: ['/sounds/sfx/step.wav'], volume: 0.5 }),
+            turn: new Howl({ src: ['/sounds/sfx/step.wav'], volume: 0.3 }),
+            checkpoint: new Howl({ src: ['/sounds/sfx/step.wav'], volume: 0.4 }),
+            finish: new Howl({ src: ['/sounds/sfx/finish.wav'], volume: 0.5 }),
+            boost: new Howl({ src: ['/sounds/sfx/step.wav'], volume: 0.6 }) // Using step.wav for boost sound too
         };
         
         // Create field elements
@@ -22,7 +23,12 @@ class ShuttleGameEngine {
                 { x: 100, y: 200, reached: false }, // Left marker (10 yards from right)
                 { x: 300, y: 200, reached: false } // Back to center
             ],
-            currentTarget: 1 // Index of current checkpoint to reach
+            currentTarget: 1, // Index of current checkpoint to reach
+            speedBoosts: [], // Array to hold speed boost objects
+            activeBoost: false, // Indicates if a boost is currently active
+            boostTimeRemaining: 0, // Time remaining for active boost
+            boostsCollected: 0, // Number of boosts collected
+            totalBoosts: 3 // Total number of boosts in the game
         };
 
         this.elements = {
@@ -38,10 +44,18 @@ class ShuttleGameEngine {
             resultRating: document.getElementById('result-rating'),
             resultFeedback: document.getElementById('result-feedback'),
             resultsScreen: document.getElementById('results-screen'),
-            tryAgainButton: document.getElementById('try-again-button')
+            tryAgainButton: document.getElementById('try-again-button'),
+            boostsCounter: document.createElement('div') // New element for boost counter
         };
         
-        this.playerSpeed = 5.5; // Reduced speed for more challenge
+        // Add boost counter to the field
+        this.elements.boostsCounter.className = 'boosts-counter';
+        this.elements.boostsCounter.innerHTML = 'Boosts: 0/3';
+        this.elements.field.appendChild(this.elements.boostsCounter);
+        
+        this.playerSpeed = 5.5; // Base speed
+        this.boostSpeedMultiplier = 1.6; // Speed multiplier when boost is active
+        this.boostDuration = 0.8; // Duration of boost in seconds
         this.targetPadding = 15; // Smaller target area for more precision
         this.keysPressed = { up: false, down: false, left: false, right: false };
         this.animationFrameId = null;
@@ -154,7 +168,12 @@ class ShuttleGameEngine {
                 { x: 100, y: 200, reached: false }, // Left marker (10 yards from right)
                 { x: 300, y: 200, reached: false } // Back to center
             ],
-            currentTarget: 1 // Start with the right marker (5 yards)
+            currentTarget: 1, // Start with the right marker (5 yards)
+            speedBoosts: [], // Reset speed boosts
+            activeBoost: false,
+            boostTimeRemaining: 0,
+            boostsCollected: 0,
+            totalBoosts: 3
         };
         
         // Reset physics values
@@ -175,6 +194,12 @@ class ShuttleGameEngine {
         
         // Create debug checkpoint markers (for development)
         this.showCheckpointMarkers();
+        
+        // Create speed boosts
+        this.createSpeedBoosts();
+        
+        // Update boost counter
+        this.updateBoostCounter();
         
         // Play start sound
         this.sounds.start.play();
@@ -214,11 +239,30 @@ class ShuttleGameEngine {
         this.gameState.currentTime = (Date.now() - this.gameState.startTime) / 1000;
         this.elements.timerDisplay.textContent = this.gameState.currentTime.toFixed(2);
         
+        // Update boost timer if active
+        if (this.gameState.activeBoost) {
+            this.gameState.boostTimeRemaining -= 1/60; // Assuming 60fps
+            
+            // Add visual effect to player when boost is active
+            this.elements.player.classList.add('boosted');
+            
+            // If boost expired
+            if (this.gameState.boostTimeRemaining <= 0) {
+                this.gameState.activeBoost = false;
+                this.elements.player.classList.remove('boosted');
+            }
+        } else {
+            this.elements.player.classList.remove('boosted');
+        }
+        
         // Move player
         this.updatePlayerPosition();
         
         // Check checkpoints
         this.checkCheckpoints();
+        
+        // Check speed boosts
+        this.checkSpeedBoosts();
         
         // Continue the game loop
         this.animationFrameId = requestAnimationFrame(() => this.gameLoop());
@@ -264,11 +308,16 @@ class ShuttleGameEngine {
         this.velocity.x *= this.friction;
         this.velocity.y *= this.friction;
         
+        // Apply current speed - use boost multiplier if active
+        const currentSpeed = this.gameState.activeBoost ? 
+            this.maxSpeed * this.boostSpeedMultiplier : 
+            this.maxSpeed;
+        
         // Limit maximum speed
         const speed = Math.sqrt(this.velocity.x * this.velocity.x + this.velocity.y * this.velocity.y);
-        if (speed > this.maxSpeed) {
-            this.velocity.x = (this.velocity.x / speed) * this.maxSpeed;
-            this.velocity.y = (this.velocity.y / speed) * this.maxSpeed;
+        if (speed > currentSpeed) {
+            this.velocity.x = (this.velocity.x / speed) * currentSpeed;
+            this.velocity.y = (this.velocity.y / speed) * currentSpeed;
         }
         
         // Update position based on velocity
@@ -458,7 +507,9 @@ class ShuttleGameEngine {
 
     calculateRating(time) {
         // Rating thresholds based on NFL Combine performances
-        if (time <= 3.81) return "WORLD CLASS"; // NFL record
+        // Updated to include the new possible best time of 3.73 with all speed boosts
+        if (time <= 3.73) return "WORLD CLASS"; // New record with all boosts
+        if (time <= 3.81) return "ELITE PLUS"; // Old NFL record
         if (time <= 3.9) return "ELITE";
         if (time <= 4.1) return "EXCELLENT";
         if (time <= 4.3) return "VERY GOOD";
@@ -470,16 +521,19 @@ class ShuttleGameEngine {
 
     generateFeedback(time) {
         // Generate feedback based on performance
-        if (time <= 3.81) {
-            return "Incredible! You've just broken the NFL Combine record!";
+        // Updated to include feedback about speed boosts
+        if (time <= 3.73 && this.gameState.boostsCollected === this.gameState.totalBoosts) {
+            return "INCREDIBLE! You achieved a perfect run with all speed boosts!";
+        } else if (time <= 3.81) {
+            return "Amazing! You've just broken the NFL Combine record!";
         } else if (time <= 3.9) {
             return "Amazing! You'd be a top performer at the NFL Combine with this time!";
         } else if (time <= 4.1) {
             return "Excellent! This is within the range of NFL-caliber athletes.";
         } else if (time <= 4.6) {
-            return "Good job! With more practice, you could reach elite levels.";
+            return "Good job! Try collecting more speed boosts for a faster time.";
         } else {
-            return "Keep practicing! Focus on quick turns and explosive movements.";
+            return "Keep practicing! Look for speed boosts and use them to improve your time.";
         }
     }
 
@@ -547,6 +601,81 @@ class ShuttleGameEngine {
         // Remove checkpoint markers
         const checkpointMarkers = document.querySelectorAll('.checkpoint-marker');
         checkpointMarkers.forEach(marker => marker.remove());
+        
+        // Remove speed boosts
+        const speedBoosts = document.querySelectorAll('.speed-boost');
+        speedBoosts.forEach(boost => boost.remove());
+    }
+
+    createSpeedBoosts() {
+        // Remove any existing boosts
+        const existingBoosts = document.querySelectorAll('.speed-boost');
+        existingBoosts.forEach(boost => boost.remove());
+        
+        // Reset speed boosts array
+        this.gameState.speedBoosts = [];
+        
+        // Create strategically placed boosts
+        const boosts = [
+            // Boost near the starting area, slightly to the right
+            { x: 370, y: 180, collected: false },
+            // Boost near the right marker
+            { x: 450, y: 250, collected: false },
+            // Boost near the left marker
+            { x: 150, y: 160, collected: false }
+        ];
+        
+        // Add boosts to game state and create visual elements
+        this.gameState.speedBoosts = boosts;
+        
+        boosts.forEach((boost, index) => {
+            const boostElement = document.createElement('div');
+            boostElement.className = 'speed-boost';
+            boostElement.setAttribute('data-index', index);
+            boostElement.style.left = `${boost.x}px`;
+            boostElement.style.top = `${boost.y}px`;
+            this.elements.field.appendChild(boostElement);
+        });
+    }
+    
+    checkSpeedBoosts() {
+        this.gameState.speedBoosts.forEach((boost, index) => {
+            if (!boost.collected) {
+                const distance = Math.sqrt(
+                    Math.pow(this.gameState.playerPos.x - boost.x, 2) +
+                    Math.pow(this.gameState.playerPos.y - boost.y, 2)
+                );
+                
+                if (distance <= 25) { // Collection radius
+                    boost.collected = true;
+                    this.gameState.boostsCollected++;
+                    
+                    // Play collection sound
+                    this.sounds.boost.play();
+                    
+                    // Remove the boost element
+                    const boostElement = document.querySelector(`.speed-boost[data-index="${index}"]`);
+                    if (boostElement) {
+                        // Add collection animation
+                        boostElement.classList.add('collected');
+                        setTimeout(() => {
+                            boostElement.remove();
+                        }, 300); // Remove after animation
+                    }
+                    
+                    // Activate speed boost
+                    this.gameState.activeBoost = true;
+                    this.gameState.boostTimeRemaining = this.boostDuration;
+                    
+                    // Update boost counter
+                    this.updateBoostCounter();
+                }
+            }
+        });
+    }
+    
+    updateBoostCounter() {
+        this.elements.boostsCounter.innerHTML = `Boosts: ${this.gameState.boostsCollected}/${this.gameState.totalBoosts}`;
     }
 
     showCheckpointMarkers() {
@@ -620,19 +749,19 @@ class ShuttleGameEngine {
         
         switch (currentStep) {
             case 0:
-                instructionText = "RUN TO THE RIGHT MARKER (5 yards) ➡️";
+                instructionText = "RUN TO THE RIGHT MARKER (5 yards) ➡️ Collect speed boosts!";
                 break;
             case 1:
-                instructionText = "RUN TO THE LEFT MARKER (10 yards) ⬅️";
+                instructionText = "RUN TO THE LEFT MARKER (10 yards) ⬅️ Collect speed boosts!";
                 break;
             case 2:
-                instructionText = "FINISH BY RUNNING TO THE CENTER! ↔️";
+                instructionText = "FINISH BY RUNNING TO THE CENTER! ↔️ Collect speed boosts!";
                 break;
             case 3:
                 instructionText = "CONGRATULATIONS! DRILL COMPLETE! 🎉";
                 break;
             default:
-                instructionText = "Follow the green arrows!";
+                instructionText = "Follow the green arrows! Collect speed boosts!";
         }
         
         this.elements.currentTarget.textContent = instructionText;
