@@ -207,6 +207,10 @@ class BroadJumpGame {
         console.log('Jump distance:', this.state.distance);
         
         // Format the distance (e.g. 8'6")
+        this.formatDistance();
+    }
+
+    formatDistance() {
         const feet = Math.floor(this.state.distance);
         const inches = Math.round((this.state.distance - feet) * 12);
         
@@ -377,23 +381,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Set the distance in the game state
             window.game.state.distance = storedDistance;
             
-            // Format the distance for display
-            const feet = Math.floor(window.game.state.distance);
-            const inches = Math.round((window.game.state.distance - feet) * 12);
-            
-            // Handle case where inches equals 12 (should roll over to next foot)
-            let formattedFeet = feet;
-            let formattedInches = inches;
-            
-            if (inches === 12) {
-                formattedFeet++;
-                formattedInches = 0;
-            }
-            
-            window.game.formattedDistance = `${formattedFeet}'${formattedInches}"`;
-            
-            // Update distance display
-            window.game.elements.distanceDisplay.textContent = window.game.formattedDistance;
+            // Use the game's own formatDistance method
+            window.game.formatDistance();
             
             // Show the results screen with previous score
             window.game.showResults();
