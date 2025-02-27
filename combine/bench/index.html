@@ -45,6 +45,74 @@
             }
         });
     </script>
+    
+    <!-- Simple direct save for testing -->
+    <script>
+        function directSaveTest() {
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+                const user = firebase.auth().currentUser;
+                
+                if (user) {
+                    console.log("DIRECT TEST: User is logged in:", user.uid);
+                    
+                    // Get Firestore reference and save data directly
+                    const db = firebase.firestore();
+                    
+                    // Save test data
+                    db.collection('users').doc(user.uid).update({
+                        benchPressTest: "22 reps - Test @ " + new Date().toISOString(),
+                        lastUpdate: new Date()
+                    }).then(() => {
+                        console.log("DIRECT TEST: Successfully saved test data");
+                        
+                        // Check what was saved
+                        return db.collection('users').doc(user.uid).get();
+                    }).then(doc => {
+                        if (doc.exists) {
+                            console.log("DIRECT TEST: User document after update:", doc.data());
+                        } else {
+                            console.log("DIRECT TEST: Document does not exist!");
+                        }
+                    }).catch(error => {
+                        console.error("DIRECT TEST: Error:", error);
+                        
+                        // Try creating document if it doesn't exist
+                        if (error.code === 'not-found') {
+                            console.log("DIRECT TEST: Document not found, creating new one");
+                            
+                            db.collection('users').doc(user.uid).set({
+                                email: user.email,
+                                benchPressTest: "22 reps - New Doc @ " + new Date().toISOString(),
+                                lastUpdate: new Date()
+                            }).then(() => {
+                                console.log("DIRECT TEST: Created new document");
+                            }).catch(err => {
+                                console.error("DIRECT TEST: Error creating document:", err);
+                            });
+                        }
+                    });
+                } else {
+                    console.log("DIRECT TEST: No user logged in");
+                }
+            } else {
+                console.log("DIRECT TEST: Firebase not available", {
+                    firebase: typeof firebase,
+                    auth: firebase && typeof firebase.auth,
+                    firestore: firebase && typeof firebase.firestore
+                });
+            }
+        }
+        
+        // Wait for auth to initialize, then run test
+        window.addEventListener('load', () => {
+            console.log("DIRECT TEST: Page loaded, waiting 2 seconds for auth...");
+            
+            setTimeout(() => {
+                console.log("DIRECT TEST: Running direct save test...");
+                directSaveTest();
+            }, 2000);
+        });
+    </script>
 </head>
 <body>
     <div class="game-container">

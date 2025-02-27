@@ -112,29 +112,13 @@ class GameEngine {
         const finalTime = Math.max(rawTime, 4.2);
         this.gameState.isRunning = false;
         
-        // Store the time using our helper function for user-specific data
+        // Store the time directly in Firestore
         const formattedTime = finalTime.toFixed(2);
-        if (typeof saveCombineEventData === 'function') {
-            // First, check if user is logged in
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    console.log(`Saving 40-yard dash time to Firestore for user ${user.uid}: ${formattedTime}`);
-                    saveCombineEventData('fortyYardDash', formattedTime);
-                } else {
-                    console.log('No user logged in, saving to localStorage only');
-                    localStorage.setItem('fortyYardDash', formattedTime);
-                }
-            } else {
-                console.log('Firebase not available, using helper function');
-                saveCombineEventData('fortyYardDash', formattedTime);
-            }
-        } else {
-            // Fallback to localStorage only
-            console.log('Helper function not available, saving to localStorage only');
-            localStorage.setItem('fortyYardDash', formattedTime);
-        }
         
+        // Save directly to Firestore
+        this.saveResult(formattedTime);
+        
+        // Update the UI
         document.querySelector('.results-screen').classList.remove('hidden');
         document.querySelector('.final-time').textContent = formattedTime + 's';
         
@@ -154,6 +138,50 @@ class GameEngine {
             returnButton.onclick = () => {
                 window.location.href = '/combine/';
             };
+        }
+    }
+
+    saveResult(formattedTime) {
+        console.log(`40-yard dash save result called with: ${formattedTime}`);
+        
+        // Skip localStorage entirely and go straight to Firebase
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            const user = firebase.auth().currentUser;
+            
+            if (user) {
+                console.log(`40-yard dash: User logged in (${user.uid}), saving to Firestore`);
+                
+                const db = firebase.firestore();
+                
+                // Save directly to Firestore as a root property
+                db.collection('users').doc(user.uid).update({
+                    fortyYardDash: formattedTime,
+                    lastUpdate: new Date()
+                }).then(() => {
+                    console.log(`40-yard dash: Successfully saved ${formattedTime}s to Firestore`);
+                }).catch(error => {
+                    console.error(`40-yard dash: Error during update:`, error);
+                    
+                    // If document doesn't exist, create it
+                    if (error.code === 'not-found') {
+                        console.log("40-yard dash: Document not found, creating new one");
+                        
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email,
+                            fortyYardDash: formattedTime,
+                            lastUpdate: new Date()
+                        }).then(() => {
+                            console.log(`40-yard dash: Created new document with ${formattedTime}s`);
+                        }).catch(err => {
+                            console.error("40-yard dash: Error creating document:", err);
+                        });
+                    }
+                });
+            } else {
+                console.log("40-yard dash: No user logged in, data not saved");
+            }
+        } else {
+            console.log("40-yard dash: Firebase not initialized, data not saved");
         }
     }
 
