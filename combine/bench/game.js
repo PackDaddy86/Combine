@@ -114,30 +114,40 @@ class GameEngine {
         // Play press sound for any attempt
         this.sounds.press.play();
         
-        // Check if ball position is within target zone (green center)
-        const targetZoneStart = 50 - (this.gameState.targetZoneWidth / 2);
-        const targetZoneEnd = 50 + (this.gameState.targetZoneWidth / 2);
-        const isInTargetZone = (
-            this.gameState.ballPosition >= targetZoneStart && 
-            this.gameState.ballPosition <= targetZoneEnd
-        );
+        // Get the target center element dimensions
+        const centerElement = this.elements.targetCenter;
+        const centerRect = centerElement.getBoundingClientRect();
+        const centerWidth = centerRect.width;
         
-        // Check if center of ball is aligned with center of green
+        // Get the ball position
+        const ballPosition = this.gameState.ballPosition;
+        
+        // Calculate if the ball is in the green center
+        // The track is 100% wide, and the center is at 50%
         const ballCenterPos = this.gameState.ballPosition;
         const trackCenter = 50;
-        const centerRadius = this.gameState.centerSize / 2;
-        const trackWidth = 100;
-        const pixelDistance = Math.abs(ballCenterPos - trackCenter) * trackWidth / 100;
-        const pixelThreshold = centerRadius;
         
-        // Is the ball in the green center?
-        const isInGreenCenter = pixelDistance <= pixelThreshold;
+        // Convert percentage distances to pixels for accurate comparison
+        const ballTrackWidth = document.querySelector('.bar-track').offsetWidth;
+        const pixelDistanceFromCenter = Math.abs(ballCenterPos - trackCenter) * ballTrackWidth / 100;
+        const greenCenterRadius = centerWidth / 2;
+        
+        // Ball is in green center if its distance from center is less than the green center radius
+        const isInGreenCenter = pixelDistanceFromCenter <= greenCenterRadius;
+        
+        console.log("Ball position: ", ballCenterPos);
+        console.log("Track center: ", trackCenter);
+        console.log("Distance from center (px): ", pixelDistanceFromCenter);
+        console.log("Green center radius (px): ", greenCenterRadius);
+        console.log("Is in green center: ", isInGreenCenter);
         
         if (isInGreenCenter) {
             // Successful rep - only count if in the green center
+            console.log("SUCCESS - Ball is in green center");
             this.successfulRep();
         } else {
             // Failed rep - end game only when missing the green center
+            console.log("FAILED - Ball missed green center");
             this.failedRep();
         }
     }
@@ -182,8 +192,9 @@ class GameEngine {
         this.elements.bencher.classList.add('failed-press');
         setTimeout(() => this.elements.bencher.classList.remove('failed-press'), 300);
         
-        // End the game with failure
-        setTimeout(() => this.endGame(), 500);
+        // End the game with failure - directly call endGame (don't wait)
+        console.log("Ending game due to missed green");
+        this.endGame();
     }
 
     increaseDifficulty() {
@@ -213,10 +224,19 @@ class GameEngine {
     }
 
     endGame() {
+        console.log("End game called");
+        
         // Stop the animation
         this.stopGame();
         
         this.gameState.isPlaying = false;
+        
+        // Cancel any pending animation frames
+        if (this.ballAnimationId) {
+            cancelAnimationFrame(this.ballAnimationId);
+            this.ballAnimationId = null;
+        }
+        
         this.elements.bencher.style.animationPlayState = 'paused';
         
         // Show the results screen
@@ -265,6 +285,23 @@ class GameEngine {
         returnBtn.onclick = () => {
             window.location.href = '/combine/';
         };
+    }
+
+    stopGame() {
+        console.log("Stop game called");
+        
+        // Ensure game is no longer playing
+        this.gameState.isPlaying = false;
+        
+        // Cancel animation frame
+        if (this.ballAnimationId) {
+            cancelAnimationFrame(this.ballAnimationId);
+            this.ballAnimationId = null;
+        }
+        
+        // For debugging: explicitly set the position of the ball to show it's stopped
+        this.elements.ball.style.transition = 'none';
+        this.elements.ball.style.left = `${this.gameState.ballPosition}%`;
     }
 
     saveResult() {
