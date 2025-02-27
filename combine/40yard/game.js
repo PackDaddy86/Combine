@@ -51,6 +51,8 @@ class GameEngine {
             lastPressTime: 0,
             hasAttempted: false
         };
+        // Reset runner position
+        this.elements.runner.style.left = '0px';
         this.startSpriteAnimation();
         requestAnimationFrame(this.update.bind(this));
     }
@@ -84,12 +86,23 @@ class GameEngine {
 
         this.sounds.step.play();
         this.applySpeedEffect(pressRate);
+        
+        // Update runner position to match progress bar
+        this.updateRunnerPosition();
     }
 
     applySpeedEffect(pressRate) {
         const intensity = (pressRate - 6) / 3;
         this.elements.runner.style.transform = `scale(${1 + intensity * 0.15})`;
         this.elements.progressFill.style.width = `${this.gameState.progress}%`;
+    }
+    
+    // New method to update the runner's position
+    updateRunnerPosition() {
+        // Move the runner to match the progress (leave some space at the end)
+        const trackWidth = document.querySelector('.game-track').offsetWidth - this.elements.runner.offsetWidth;
+        const position = (this.gameState.progress / 100) * trackWidth;
+        this.elements.runner.style.left = `${position}px`;
     }
 
     update() {
@@ -102,6 +115,9 @@ class GameEngine {
 
         // Update progress bar
         this.elements.progressFill.style.width = `${this.gameState.progress}%`;
+        
+        // Update runner position
+        this.updateRunnerPosition();
 
         // Check finish condition
         if (this.gameState.progress >= 100) {
@@ -196,11 +212,12 @@ class GameEngine {
     }
 
     startSpriteAnimation() {
-        this.elements.runner.style.animationPlayState = 'running';
+        // No need for animation now, just make sure runner is visible
+        this.elements.runner.style.opacity = '1';
     }
 
     stopSpriteAnimation() {
-        this.elements.runner.style.animationPlayState = 'paused';
+        // No animations to stop, but we can keep this method for API compatibility
     }
 
     // Check if user has already attempted this event

@@ -32,19 +32,9 @@ body {
     width: 96px;
     height: 96px;
     background: url('sprites/runner.png') 0 0;
-    background-size: cover;
-    animation: run-animation 0.8s steps(6) infinite;
-    transition: left 0.1s linear;
-}
-
-@keyframes run-animation {
-    0% { background-position: 0 0; }
-    16.6% { background-position: -96px 0; }
-    33.3% { background-position: -192px 0; }
-    50% { background-position: -288px 0; }
-    66.6% { background-position: -384px 0; }
-    83.3% { background-position: -480px 0; }
-    100% { background-position: -576px 0; }
+    background-size: contain;
+    background-repeat: no-repeat;
+    transition: left 0.3s ease-out;
 }
 
 .progress-bar {
