@@ -1,0 +1,43 @@
+/* RAS Card Styles */
+
+/* Grade label styling */
+.grade-label {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 0.8em;
+}
+
+/* Grade color classes */
+.grade-poor {
+    background-color: #ff6b6b;
+    color: white;
+}
+
+.grade-below-average {
+    background-color: #ffa06b;
+    color: white;
+}
+
+.grade-average {
+    background-color: #ffc56b;
+    color: black;
+}
+
+.grade-good {
+    background-color: #6bd46b;
+    color: white;
+}
+
+.grade-excellent {
+    background-color: #53c2f0;
+    color: white;
+}
+
+/* Input field adjustments to accommodate grade labels */
+.ras-input {
+    width: calc(100% - 90px);
+    display: inline-block;
+}

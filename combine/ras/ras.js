@@ -33,6 +33,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Calculate and display RAS scores
     //calculateRASScores();
+    
+    // Add event listeners to update grades when input values change
+    setupGradeListeners();
 });
 
 // Set default values to avoid NaN issues
@@ -383,16 +386,46 @@ function calculateSpeedScore(time, type) {
     
     switch(type) {
         case 'forty':
-            // Scale: 4.2s = 10, 5.2s = 0
-            score = 10 - ((time - 4.2) * 10);
+            // NFL standards: Elite (4.3s or less), Excellent (4.31-4.4s), Good (4.41-4.6s), Average (4.61-4.8s), Below Average (4.81-5.0s), Poor (5.01+)
+            if (time <= 4.3) score = 10;
+            else if (time <= 4.4) score = 9;
+            else if (time <= 4.5) score = 8;
+            else if (time <= 4.6) score = 7;
+            else if (time <= 4.7) score = 6;
+            else if (time <= 4.8) score = 5;
+            else if (time <= 4.9) score = 4;
+            else if (time <= 5.0) score = 3;
+            else if (time <= 5.1) score = 2;
+            else if (time <= 5.2) score = 1;
+            else score = 0;
             break;
         case 'twenty':
-            // Scale: 2.5s = 10, 3.5s = 0
-            score = 10 - ((time - 2.5) * 10);
+            // Scaled 20-yard dash standards based on 40 time
+            if (time <= 2.55) score = 10;
+            else if (time <= 2.6) score = 9;
+            else if (time <= 2.65) score = 8;
+            else if (time <= 2.7) score = 7;
+            else if (time <= 2.8) score = 6;
+            else if (time <= 2.9) score = 5;
+            else if (time <= 3.0) score = 4;
+            else if (time <= 3.1) score = 3;
+            else if (time <= 3.2) score = 2;
+            else if (time <= 3.3) score = 1;
+            else score = 0;
             break;
         case 'ten':
-            // Scale: 1.4s = 10, 2.0s = 0
-            score = 10 - ((time - 1.4) * (10 / 0.6));
+            // Scaled 10-yard dash standards based on 40 time
+            if (time <= 1.45) score = 10;
+            else if (time <= 1.5) score = 9;
+            else if (time <= 1.55) score = 8;
+            else if (time <= 1.6) score = 7;
+            else if (time <= 1.65) score = 6;
+            else if (time <= 1.7) score = 5;
+            else if (time <= 1.75) score = 4;
+            else if (time <= 1.8) score = 3;
+            else if (time <= 1.85) score = 2;
+            else if (time <= 1.9) score = 1;
+            else score = 0;
             break;
         default:
             score = 5;
@@ -409,12 +442,32 @@ function calculateJumpScore(measurement, type) {
     
     switch(type) {
         case 'vertical':
-            // Scale: 44" = 10, 24" = 0
-            score = ((measurement - 24) * (10 / 20));
+            // NFL standards: Elite (40+ inches), Excellent (37-39), Good (34-36), Average (30-33), Below Average (26-29), Poor (25 or less)
+            if (measurement >= 40) score = 10;
+            else if (measurement >= 38) score = 9;
+            else if (measurement >= 36) score = 8;
+            else if (measurement >= 34) score = 7;
+            else if (measurement >= 32) score = 6;
+            else if (measurement >= 30) score = 5;
+            else if (measurement >= 28) score = 4;
+            else if (measurement >= 26) score = 3;
+            else if (measurement >= 24) score = 2;
+            else if (measurement >= 22) score = 1;
+            else score = 0;
             break;
         case 'broad':
-            // Scale: 140" = 10, 90" = 0
-            score = ((measurement - 90) * (10 / 50));
+            // NFL standards (in inches): Elite (128+), Excellent (124-127), Good (120-123), Average (116-119), Below Average (110-115), Poor (< 110)
+            if (measurement >= 128) score = 10;
+            else if (measurement >= 124) score = 9;
+            else if (measurement >= 120) score = 8;
+            else if (measurement >= 116) score = 7;
+            else if (measurement >= 112) score = 6;
+            else if (measurement >= 108) score = 5;
+            else if (measurement >= 104) score = 4;
+            else if (measurement >= 100) score = 3;
+            else if (measurement >= 96) score = 2;
+            else if (measurement >= 92) score = 1;
+            else score = 0;
             break;
         default:
             score = 5;
@@ -426,9 +479,18 @@ function calculateJumpScore(measurement, type) {
 function calculateStrengthScore(reps) {
     if (isNaN(reps)) return NaN;
     
-    // Scale: 36 reps = 10, 0 reps = 0
-    const score = (reps * (10 / 36));
-    return Math.max(0, Math.min(10, score)).toFixed(2);
+    // NFL bench press standards (225 lbs): Elite (36+ reps), Excellent (30-35), Good (25-29), Average (20-24), Below Average (15-19), Poor (< 15)
+    if (reps >= 36) return 10;
+    else if (reps >= 32) return 9;
+    else if (reps >= 28) return 8;
+    else if (reps >= 25) return 7;
+    else if (reps >= 22) return 6;
+    else if (reps >= 20) return 5;
+    else if (reps >= 17) return 4;
+    else if (reps >= 15) return 3;
+    else if (reps >= 10) return 2;
+    else if (reps >= 5) return 1;
+    else return 0;
 }
 
 function calculateAgilityScore(time, type) {
@@ -439,12 +501,32 @@ function calculateAgilityScore(time, type) {
     
     switch(type) {
         case 'cone':
-            // Scale: 6.4s = 10, 8.4s = 0
-            score = 10 - ((time - 6.4) * 5);
+            // NFL 3-cone standards: Elite (< 6.5s), Excellent (6.5-6.7s), Good (6.8-6.95s), Average (7.0-7.15s), Below Average (7.2-7.4s), Poor (> 7.4s)
+            if (time <= 6.45) score = 10;
+            else if (time <= 6.55) score = 9;
+            else if (time <= 6.65) score = 8;
+            else if (time <= 6.8) score = 7;
+            else if (time <= 6.95) score = 6;
+            else if (time <= 7.1) score = 5;
+            else if (time <= 7.25) score = 4;
+            else if (time <= 7.4) score = 3;
+            else if (time <= 7.55) score = 2;
+            else if (time <= 7.7) score = 1;
+            else score = 0;
             break;
         case 'shuttle':
-            // Scale: 3.8s = 10, 5.0s = 0
-            score = 10 - ((time - 3.8) * (10 / 1.2));
+            // NFL shuttle standards: Elite (< 4.0s), Excellent (4.0-4.1s), Good (4.11-4.2s), Average (4.21-4.3s), Below Average (4.31-4.5s), Poor (> 4.5s)
+            if (time <= 3.9) score = 10;
+            else if (time <= 4.0) score = 9;
+            else if (time <= 4.1) score = 8;
+            else if (time <= 4.2) score = 7;
+            else if (time <= 4.3) score = 6;
+            else if (time <= 4.4) score = 5;
+            else if (time <= 4.5) score = 4;
+            else if (time <= 4.6) score = 3;
+            else if (time <= 4.7) score = 2;
+            else if (time <= 4.8) score = 1;
+            else score = 0;
             break;
         default:
             score = 5;
@@ -483,6 +565,29 @@ function updateScoreDisplay(elementId, score) {
     }
 }
 
+function updateAllDisplayedValues() {
+    const fortyScore = document.getElementById('forty-score').value;
+    const verticalScore = document.getElementById('vertical-score').value;
+    const benchScore = document.getElementById('bench-score').value;
+    const broadScore = document.getElementById('broad-score').value;
+    const coneScore = document.getElementById('cone-score').value;
+    const shuttleScore = document.getElementById('shuttle-score').value;
+    
+    // Update displayed values
+    if (fortyScore) {
+        document.getElementById('forty-value').textContent = fortyScore;
+        document.getElementById('twenty-value').textContent = estimateSplitTime(fortyScore, 20);
+        document.getElementById('ten-value').textContent = estimateSplitTime(fortyScore, 10);
+    }
+    
+    if (verticalScore) document.getElementById('vertical-value').textContent = verticalScore;
+    if (benchScore) document.getElementById('bench-value').textContent = benchScore;
+    if (broadScore) document.getElementById('broad-value').textContent = formatBroadJump(broadScore);
+    if (coneScore) document.getElementById('cone-value').textContent = coneScore;
+    if (shuttleScore) document.getElementById('shuttle-value').textContent = shuttleScore;
+}
+
+// Calculate a composite grade from the given scores
 function calculateCompositeGrade(scores) {
     // Filter out null values
     const validScores = scores.filter(score => score !== null);
@@ -493,6 +598,7 @@ function calculateCompositeGrade(scores) {
     return sum / validScores.length;
 }
 
+// Update the display for a grade element
 function updateGradeDisplay(elementId, score, prefix) {
     const element = document.getElementById(elementId);
     if (!element) return;
@@ -525,12 +631,23 @@ function updateGradeDisplay(elementId, score, prefix) {
     }
 }
 
+// Get a text grade based on a numeric score
 function getGradeText(score) {
-    if (score < 4) return "POOR";
+    if (score === null) return "N/A";
+    score = parseFloat(score);
+    if (isNaN(score)) return "N/A";
+    
+    if (score < 2) return "POOR";
+    if (score < 3) return "BELOW POOR";
+    if (score < 4) return "POOR+";
     if (score < 5) return "BELOW AVERAGE";
-    if (score < 7) return "OKAY";
-    if (score < 9) return "GOOD";
-    return "EXCELLENT";
+    if (score < 6) return "AVERAGE-";
+    if (score < 7) return "AVERAGE+";
+    if (score < 8) return "ABOVE AVERAGE";
+    if (score < 8.5) return "GOOD";
+    if (score < 9) return "VERY GOOD";
+    if (score < 9.5) return "EXCELLENT";
+    return "ELITE";
 }
 
 function calculateSizeScore(measurement, type) {
@@ -540,14 +657,32 @@ function calculateSizeScore(measurement, type) {
     
     switch(type) {
         case 'height':
-            // Scale for QB: 75" (6'3") = 8, 69" (5'9") = 2
-            // Adjust as needed for position
-            score = ((measurement - 69) * (6 / 6)) + 2;
+            // NFL height standards (in inches)
+            if (measurement >= 78) score = 10;      // 6'6" or taller
+            else if (measurement >= 76) score = 9;  // 6'4"
+            else if (measurement >= 74) score = 8;  // 6'2"
+            else if (measurement >= 72) score = 7;  // 6'0"
+            else if (measurement >= 70) score = 6;  // 5'10"
+            else if (measurement >= 69) score = 5;  // 5'9"
+            else if (measurement >= 68) score = 4;  // 5'8"
+            else if (measurement >= 67) score = 3;  // 5'7"
+            else if (measurement >= 66) score = 2;  // 5'6"
+            else if (measurement >= 65) score = 1;  // 5'5"
+            else score = 0;                        // Less than 5'5"
             break;
         case 'weight':
-            // Scale for QB: 230 = 8, 190 = 2
-            // Adjust as needed for position
-            score = ((measurement - 190) * (6 / 40)) + 2;
+            // NFL weight standards (in lbs)
+            if (measurement >= 300) score = 10;     // 300+ lbs
+            else if (measurement >= 280) score = 9;
+            else if (measurement >= 260) score = 8;
+            else if (measurement >= 240) score = 7;
+            else if (measurement >= 225) score = 6;
+            else if (measurement >= 210) score = 5;
+            else if (measurement >= 195) score = 4;
+            else if (measurement >= 180) score = 3;
+            else if (measurement >= 170) score = 2;
+            else if (measurement >= 160) score = 1;
+            else score = 0;                        // Less than 160 lbs
             break;
         default:
             score = 5;
@@ -791,3 +926,106 @@ updatePlayerInfo = function() {
     originalUpdatePlayerInfo();
     saveScoresToFirebase();
 };
+
+// Function to update all the grades when data changes
+function updateAllGrades() {
+    // Get all input values
+    const fortyValue = parseFloat(document.getElementById('forty-score').value);
+    const verticalValue = parseFloat(document.getElementById('vertical-score').value);
+    const benchValue = parseFloat(document.getElementById('bench-score').value);
+    const broadValue = parseFloat(document.getElementById('broad-score').value);
+    const coneValue = parseFloat(document.getElementById('cone-score').value);
+    const shuttleValue = parseFloat(document.getElementById('shuttle-score').value);
+    
+    // Calculate individual scores
+    const fortyScore = calculateSpeedScore(fortyValue, 'forty');
+    const verticalScore = calculateJumpScore(verticalValue, 'vertical');
+    const benchScore = calculateStrengthScore(benchValue);
+    const broadScore = calculateJumpScore(broadValue, 'broad');
+    const coneScore = calculateAgilityScore(coneValue, 'cone');
+    const shuttleScore = calculateAgilityScore(shuttleValue, 'shuttle');
+    
+    // Add grade next to each input
+    addGradeLabel('forty-score', fortyScore);
+    addGradeLabel('vertical-score', verticalScore);
+    addGradeLabel('bench-score', benchScore);
+    addGradeLabel('broad-score', broadScore);
+    addGradeLabel('cone-score', coneScore);
+    addGradeLabel('shuttle-score', shuttleScore);
+
+    // Update composite scores based on the calculations
+    calculateAndUpdateCompositeScores();
+}
+
+// Add a grade label next to an input field
+function addGradeLabel(inputId, score) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    // Check if a grade label already exists
+    let label = input.nextElementSibling;
+    if (!label || !label.classList.contains('grade-label')) {
+        // Create a new label if it doesn't exist
+        label = document.createElement('span');
+        label.classList.add('grade-label');
+        input.parentNode.insertBefore(label, input.nextSibling);
+    }
+    
+    // Set the grade text and class
+    if (isNaN(score)) {
+        label.textContent = 'N/A';
+        label.className = 'grade-label';
+    } else {
+        const gradeText = getGradeText(score);
+        label.textContent = gradeText;
+        label.className = 'grade-label';
+        
+        // Add appropriate color class
+        if (score < 4) {
+            label.classList.add('grade-poor');
+        } else if (score < 5) {
+            label.classList.add('grade-below-average');
+        } else if (score < 7) {
+            label.classList.add('grade-average');
+        } else if (score < 9) {
+            label.classList.add('grade-good');
+        } else {
+            label.classList.add('grade-excellent');
+        }
+    }
+}
+
+// Add event listeners to update grades when input values change
+function setupGradeListeners() {
+    const inputs = [
+        'forty-score', 
+        'vertical-score', 
+        'bench-score', 
+        'broad-score', 
+        'cone-score', 
+        'shuttle-score'
+    ];
+    
+    inputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', updateAllGrades);
+            input.addEventListener('change', updateAllGrades);
+        }
+    });
+}
+
+// Calculate and update composite scores
+function calculateAndUpdateCompositeScores() {
+    // Calculate composite scores
+    const sizeGrade = calculateCompositeGrade([calculateSizeScore(parseFloat(document.getElementById('height-value').textContent), 'height'), calculateSizeScore(parseFloat(document.getElementById('weight-value').textContent), 'weight')]);
+    const speedGrade = calculateCompositeGrade([calculateSpeedScore(parseFloat(document.getElementById('forty-value').textContent), 'forty'), calculateSpeedScore(parseFloat(document.getElementById('twenty-value').textContent), 'twenty'), calculateSpeedScore(parseFloat(document.getElementById('ten-value').textContent), 'ten')]);
+    const explosionGrade = calculateCompositeGrade([calculateJumpScore(parseFloat(document.getElementById('vertical-value').textContent), 'vertical'), calculateJumpScore(parseFloat(document.getElementById('broad-value').textContent), 'broad'), calculateStrengthScore(parseFloat(document.getElementById('bench-value').textContent))]);
+    const agilityGrade = calculateCompositeGrade([calculateAgilityScore(parseFloat(document.getElementById('cone-value').textContent), 'cone'), calculateAgilityScore(parseFloat(document.getElementById('shuttle-value').textContent), 'shuttle')]);
+    
+    // Update composite grades with color coding
+    updateGradeDisplay('size-grade', sizeGrade, 'COMPOSITE SIZE GRADE');
+    updateGradeDisplay('speed-grade', speedGrade, 'COMPOSITE SPEED GRADE');
+    updateGradeDisplay('explosion-grade', explosionGrade, 'COMPOSITE EXPLOSION GRADE');
+    updateGradeDisplay('agility-grade', agilityGrade, 'COMPOSITE AGILITY GRADE');
+}
