@@ -1,4 +1,16 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Check if user is logged in
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            // User is signed in
+            getUserData(user.uid);
+        } else {
+            // No user is signed in, display message or redirect
+            setDefaultValues();
+            document.getElementById('player-name').innerText = "LOGIN TO VIEW YOUR RAS CARD";
+        }
+    });
+    
     // RAS calculation constants
     const scoreRanges = {
         poor: { min: 0, max: 3.99 },
@@ -9,10 +21,10 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Set initial default values (to avoid NaN on first load)
-    setDefaultValues();
+    //setDefaultValues();
     
     // Load player data from localStorage
-    loadPlayerData();
+    //loadPlayerData();
     
     // Event listeners for buttons
     document.getElementById('update-info').addEventListener('click', updatePlayerInfo);
@@ -20,7 +32,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('share-card').addEventListener('click', shareResults);
     
     // Calculate and display RAS scores
-    calculateRASScores();
+    //calculateRASScores();
 });
 
 // Set default values to avoid NaN issues
@@ -609,3 +621,132 @@ function updateOverallRAS(score) {
         container.classList.add('ras-excellent');
     }
 }
+
+// Get user data from Firebase
+function getUserData(userId) {
+    const db = firebase.firestore();
+    
+    db.collection('users').doc(userId).get()
+        .then((doc) => {
+            if (doc.exists && doc.data().scores) {
+                const userData = doc.data();
+                
+                // Set player name
+                const displayName = userData.displayName || 'Athlete';
+                
+                // Set player info
+                const playerInfo = {
+                    name: displayName,
+                    position: 'NFL PROSPECT',
+                    school: userData.school || 'NFL',
+                    year: new Date().getFullYear()
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('playerInfo', JSON.stringify(playerInfo));
+                
+                // Update the display
+                updatePlayerInfoDisplay();
+                
+                // Load scores from Firebase
+                const scores = userData.scores;
+                
+                // Update form values if they exist
+                if (scores.forty) document.getElementById('forty-score').value = scores.forty;
+                if (scores.vertical) document.getElementById('vertical-score').value = scores.vertical;
+                if (scores.bench) document.getElementById('bench-score').value = scores.bench;
+                if (scores.broad) document.getElementById('broad-score').value = scores.broad;
+                if (scores.cone) document.getElementById('cone-score').value = scores.cone;
+                if (scores.shuttle) document.getElementById('shuttle-score').value = scores.shuttle;
+                
+                // Update displayed values
+                updateAllDisplayedValues();
+                
+                // Calculate RAS based on loaded scores
+                calculateRASScores();
+            } else {
+                // User exists but has no scores yet
+                setDefaultValues();
+                document.getElementById('player-name').innerText = "COMPLETE COMBINE EVENTS TO SEE YOUR RAS";
+            }
+        })
+        .catch((error) => {
+            console.error("Error getting user data:", error);
+            setDefaultValues();
+        });
+}
+
+// Update all displayed values from form inputs
+function updateAllDisplayedValues() {
+    const fortyScore = document.getElementById('forty-score').value;
+    const verticalScore = document.getElementById('vertical-score').value;
+    const benchScore = document.getElementById('bench-score').value;
+    const broadScore = document.getElementById('broad-score').value;
+    const coneScore = document.getElementById('cone-score').value;
+    const shuttleScore = document.getElementById('shuttle-score').value;
+    
+    // Update displayed values
+    if (fortyScore) {
+        document.getElementById('forty-value').textContent = fortyScore;
+        document.getElementById('twenty-value').textContent = estimateSplitTime(fortyScore, 20);
+        document.getElementById('ten-value').textContent = estimateSplitTime(fortyScore, 10);
+    }
+    
+    if (verticalScore) document.getElementById('vertical-value').textContent = verticalScore;
+    if (benchScore) document.getElementById('bench-value').textContent = benchScore;
+    if (broadScore) document.getElementById('broad-value').textContent = formatBroadJump(broadScore);
+    if (coneScore) document.getElementById('cone-value').textContent = coneScore;
+    if (shuttleScore) document.getElementById('shuttle-value').textContent = shuttleScore;
+}
+
+// Save scores to Firebase
+function saveScoresToFirebase() {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        alert('You must be logged in to save your RAS card');
+        return;
+    }
+    
+    const db = firebase.firestore();
+    
+    // Get values from display
+    const fortyValue = document.getElementById('forty-value').textContent;
+    const verticalValue = document.getElementById('vertical-value').textContent;
+    const benchValue = document.getElementById('bench-value').textContent;
+    const broadValue = document.getElementById('broad-value').textContent;
+    const coneValue = document.getElementById('cone-value').textContent;
+    const shuttleValue = document.getElementById('shuttle-value').textContent;
+    
+    // Prepare scores object
+    const scores = {
+        forty: fortyValue !== "--" ? fortyValue : null,
+        vertical: verticalValue !== "--" ? verticalValue : null,
+        bench: benchValue !== "--" ? benchValue : null,
+        broad: broadValue !== "--" ? broadValue : null,
+        cone: coneValue !== "--" ? coneValue : null,
+        shuttle: shuttleValue !== "--" ? shuttleValue : null
+    };
+    
+    // Get the overall RAS score
+    const overallRAS = document.getElementById('overall-ras').textContent;
+    scores.overallRAS = overallRAS;
+    
+    // Update the user document
+    db.collection('users').doc(user.uid).update({
+        scores: scores
+    })
+    .then(() => {
+        alert('Your RAS card has been saved to your account!');
+    })
+    .catch((error) => {
+        console.error("Error saving scores:", error);
+        alert('Error saving your RAS card. Please try again.');
+    });
+}
+
+// Override the original updatePlayerInfo function to also save to Firebase
+const originalUpdatePlayerInfo = updatePlayerInfo;
+updatePlayerInfo = function() {
+    originalUpdatePlayerInfo();
+    saveScoresToFirebase();
+};
