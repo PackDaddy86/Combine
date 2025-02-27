@@ -62,7 +62,7 @@ class BroadJumpGame {
         
         // Results screen buttons
         this.elements.retryButton.addEventListener('click', () => this.resetGame());
-        this.elements.returnButton.addEventListener('click', () => window.location.href = '/combine.html');
+        this.elements.returnButton.addEventListener('click', () => window.location.href = '/combine/');
     }
 
     handleButtonPress() {
@@ -255,41 +255,45 @@ class BroadJumpGame {
         if (user) {
             console.log(`Saving broad jump result for user: ${user.uid}`);
             
-            // Format distance for display
-            const feet = Math.floor(this.state.distance);
-            const inches = Math.round((this.state.distance - feet) * 12);
-            const formattedDistance = `${feet}'${inches}"`;
+            // Convert distance to string with 2 decimal places
+            const distanceValue = this.state.distance.toFixed(2);
             
-            // Save to Firestore - match the expected data structure
-            firebase.firestore().collection('userResults').doc(user.uid)
-                .set({
-                    broadJump: {
-                        distance: this.state.distance.toFixed(2),
-                        formatted: formattedDistance,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    }
-                }, { merge: true })
-                .then(() => {
-                    console.log('Broad jump result saved successfully to userResults collection');
-                })
-                .catch((error) => {
-                    console.error('Error saving result:', error);
+            // Use the saveCombineEventData function if available
+            if (typeof saveCombineEventData === 'function') {
+                console.log('Using saveCombineEventData function to save broadJump');
+                saveCombineEventData('broadJump', distanceValue);
+            } else {
+                console.log('saveCombineEventData not found, saving directly');
+                // Direct save to Firestore following the same pattern as user-data.js
+                const db = firebase.firestore();
+                
+                db.collection('users').doc(user.uid).update({
+                    broadJump: distanceValue,
+                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => {
+                    console.log(`Successfully saved broadJump = ${distanceValue} to Firestore`);
+                }).catch(error => {
+                    // If update fails, try set instead (document might not exist)
+                    console.log(`Update failed, trying to create document: ${error.message}`);
                     
-                    // Fall back to users collection if the above fails
-                    firebase.firestore().collection('users').doc(user.uid)
-                        .set({
-                            broadJump: this.state.distance.toFixed(2),
-                            lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true })
-                        .then(() => {
-                            console.log('Result saved successfully to users collection as fallback');
-                        })
-                        .catch((err) => {
-                            console.error('Error saving result to fallback location:', err);
-                        });
+                    db.collection('users').doc(user.uid).set({
+                        broadJump: distanceValue,
+                        lastUpdate: firebase.firestore.FieldValue.serverTimestamp(),
+                        email: user.email
+                    }).then(() => {
+                        console.log(`Successfully created document with broadJump = ${distanceValue}`);
+                    }).catch(error => {
+                        console.error(`Error saving data: ${error.message}`);
+                    });
                 });
+            }
+            
+            // Always save to localStorage as a backup
+            localStorage.setItem('broadJump', distanceValue);
         } else {
             console.warn('No user logged in, result not saved');
+            // Save to localStorage anyway
+            localStorage.setItem('broadJump', this.state.distance.toFixed(2));
         }
     }
 
