@@ -8,14 +8,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
     
     <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
-    <script src="/assets/js/firebase-config.js"></script>
-    <script src="/assets/js/user-data.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="../../assets/js/firebase-config.js"></script>
+    <script src="../../assets/js/user-data.js"></script>
     
     <!-- Include.js for header -->
-    <script src="/assets/js/include.js"></script>
+    <script src="../../assets/js/include.js"></script>
     
     <!-- Debug script -->
     <script>
@@ -29,13 +29,22 @@
                 if (firebase.auth) {
                     console.log('Firebase auth available');
                     
-                    // Check current user
-                    const user = firebase.auth().currentUser;
-                    console.log('Current user:', user);
-                    
-                    // Add auth state listener
                     firebase.auth().onAuthStateChanged(function(user) {
-                        console.log('Auth state changed - current user:', user);
+                        if (user) {
+                            console.log('User is logged in:', user.email);
+                            
+                            // Log availability of key functions
+                            console.log('saveCombineEventData available:', typeof saveCombineEventData === 'function');
+                            console.log('saveUserData available:', typeof saveUserData === 'function');
+                            
+                            // Make sure saveCombineEventData is globally available
+                            if (typeof saveCombineEventData === 'function') {
+                                window.saveCombineEventData = saveCombineEventData;
+                                console.log('saveCombineEventData exposed globally');
+                            }
+                        } else {
+                            console.log('No user logged in');
+                        }
                     });
                 } else {
                     console.log('Firebase auth NOT available');

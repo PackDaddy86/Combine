@@ -1,3 +1,6 @@
+// Make the saveCombineEventData function globally accessible for reliability
+window.saveCombineEventData = saveCombineEventData;
+
 class GameEngine {
     constructor() {
         this.sounds = {
@@ -232,7 +235,7 @@ class GameEngine {
     }
 
     endGame() {
-        console.log("ENDING GAME");
+        console.log("ENDING GAME - DETAILED DEBUGGING");
         
         // Ensure we only call this once
         if (!this.gameState.isPlaying) {
@@ -279,8 +282,9 @@ class GameEngine {
         }
         
         // Save the bench press result
-        console.log(`Saving result: ${this.gameState.reps} reps`);
+        console.log(`About to save result: ${this.gameState.reps} reps - calling saveResult() now...`);
         this.saveResult();
+        console.log("Save result call complete!");
         
         // Mark as attempted
         this.gameState.hasAttempted = true;
@@ -298,6 +302,7 @@ class GameEngine {
         
         // Show the results screen
         resultsScreen.classList.remove('hidden');
+        console.log("endGame() complete - results screen should be visible");
     }
 
     stopGame() {
@@ -321,49 +326,84 @@ class GameEngine {
         // Store the bench press result
         const formattedReps = this.gameState.reps.toString();
         
-        console.log("Bench press save result called with:", formattedReps);
+        console.log("===== BENCH PRESS SAVE RESULT CALLED =====");
+        console.log(`Saving ${formattedReps} reps to localStorage and Firebase`);
         
         // First, save to localStorage for immediate access on the combine page
-        localStorage.setItem('benchPress', formattedReps);
+        try {
+            localStorage.setItem('benchPress', formattedReps);
+            console.log(`Successfully saved ${formattedReps} to localStorage`);
+        } catch (err) {
+            console.error(`Error saving to localStorage:`, err);
+        }
         
-        // Skip localStorage entirely and go straight to Firebase
-        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-            const user = firebase.auth().currentUser;
-            
-            if (user) {
-                console.log(`Bench press: User logged in (${user.uid}), saving to Firestore`);
-                
-                const db = firebase.firestore();
-                
-                // Save directly to Firestore as a root property
-                db.collection('users').doc(user.uid).update({
-                    benchPress: formattedReps,
-                    lastUpdate: new Date()
-                }).then(() => {
-                    console.log(`Bench press: Successfully saved ${formattedReps} reps to Firestore`);
-                }).catch(error => {
-                    console.error(`Bench press: Error during update:`, error);
-                    
-                    // If document doesn't exist, create it
-                    if (error.code === 'not-found') {
-                        console.log("Bench press: Document not found, creating new one");
-                        
-                        db.collection('users').doc(user.uid).set({
-                            email: user.email,
-                            benchPress: formattedReps,
-                            lastUpdate: new Date()
-                        }).then(() => {
-                            console.log(`Bench press: Created new document with ${formattedReps} reps`);
-                        }).catch(err => {
-                            console.error("Bench press: Error creating document:", err);
-                        });
-                    }
-                });
-            } else {
-                console.log("Bench press: No user logged in, data not saved");
+        // Debug localStorage values
+        console.log("Current localStorage values:");
+        console.log("- benchPress:", localStorage.getItem('benchPress'));
+        console.log("- fortyYardDash:", localStorage.getItem('fortyYardDash'));
+        console.log("- verticalJump:", localStorage.getItem('verticalJump'));
+        
+        // Try to use the saveCombineEventData function from user-data.js if available
+        if (typeof saveCombineEventData === 'function') {
+            try {
+                console.log("Using saveCombineEventData function directly");
+                saveCombineEventData('benchPress', formattedReps)
+                    .then(() => {
+                        console.log("✅ Successfully saved via saveCombineEventData function");
+                    })
+                    .catch(error => {
+                        console.error("❌ Error saving via saveCombineEventData:", error);
+                    });
+            } catch (err) {
+                console.error("❌ Error calling saveCombineEventData:", err);
             }
         } else {
-            console.log("Bench press: Firebase not initialized, data not saved");
+            console.log("⚠️ saveCombineEventData function not found, using fallback method");
+            
+            // Skip localStorage entirely and go straight to Firebase
+            if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+                console.log("Firebase is available, checking user state...");
+                const user = firebase.auth().currentUser;
+                
+                if (user) {
+                    console.log(`User logged in as ${user.email} (${user.uid}), saving to Firestore`);
+                    
+                    const db = firebase.firestore();
+                    
+                    // Save directly to Firestore as a root property
+                    console.log(`Calling Firestore update for user ${user.uid}`);
+                    db.collection('users').doc(user.uid).update({
+                        benchPress: formattedReps,
+                        lastUpdate: new Date()
+                    }).then(() => {
+                        console.log(`✅ Successfully saved ${formattedReps} reps to Firestore via update`);
+                    }).catch(error => {
+                        console.error(`❌ Error during update:`, error);
+                        
+                        // If document doesn't exist, create it
+                        if (error.code === 'not-found') {
+                            console.log("Document not found, trying to create new one");
+                            
+                            db.collection('users').doc(user.uid).set({
+                                email: user.email,
+                                benchPress: formattedReps,
+                                lastUpdate: new Date()
+                            }, { merge: true }).then(() => {
+                                console.log(`✅ Created/merged document with ${formattedReps} reps`);
+                            }).catch(err => {
+                                console.error("❌ Error creating document:", err);
+                            });
+                        }
+                    });
+                } else {
+                    console.log("❌ No user logged in, data not saved to Firebase");
+                }
+            } else {
+                console.log("❌ Firebase not initialized, data not saved to Firebase");
+                console.log("Firebase object:", typeof firebase);
+                console.log("Auth available:", firebase && typeof firebase.auth);
+                console.log("Firestore available:", firebase && typeof firebase.firestore);
+            }
         }
     }
 
