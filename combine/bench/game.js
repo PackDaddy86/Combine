@@ -41,17 +41,23 @@ class GameEngine {
     }
 
     initControls() {
-        document.addEventListener('keydown', (e) => {
+        // Store the bound handler to be able to remove it later
+        this.keydownHandler = (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (!this.gameState.isPlaying) {
-                    this.startGame();
+                    // Only start a new game if this isn't the game-over screen
+                    if (document.querySelector('.results-screen').classList.contains('hidden')) {
+                        this.startGame();
+                    }
                 } else {
                     this.attemptRep();
                 }
             }
-        });
-
+        };
+        
+        document.addEventListener('keydown', this.keydownHandler);
+        
         // Auto-start game when loaded
         setTimeout(() => this.startGame(), 1000);
     }
@@ -275,10 +281,13 @@ class GameEngine {
         // Save the bench press result
         if (typeof saveGameResult === 'function') {
             try {
+                console.log(`Saving result: ${this.gameState.reps} reps`);
                 saveGameResult('benchpress', this.gameState.reps);
             } catch (err) {
                 console.error('Error saving result:', err);
             }
+        } else {
+            console.warn('saveGameResult function not available');
         }
         
         // Mark as attempted
