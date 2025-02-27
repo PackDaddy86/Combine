@@ -18,7 +18,8 @@ class GameEngine {
             attempts: 0,
             maxAttempts: 3,
             attemptResults: ['-', '-', '-'],
-            jumpDistance: 0
+            jumpDistance: 0,
+            bestDistance: 0
         };
 
         this.elements = {
@@ -269,11 +270,8 @@ class GameEngine {
             }
         }
         
-        // Calculating feet and inches for display
-        const feet = Math.floor(bestDistance);
-        const inches = Math.round((bestDistance - feet) * 12);
-        const bestFormattedDistance = `${feet}'${inches}"`;
-        const bestDecimalDistance = (bestDistance).toFixed(1);
+        // Store the best distance for saving to Firebase
+        this.gameState.bestDistance = bestDistance;
         
         // Set text for the result display
         const resultsScreen = document.querySelector('.results-screen');
@@ -304,10 +302,8 @@ class GameEngine {
             rating.style.color = "#F44336";
         }
         
-        // Store the final jump distance
-        const formattedDistance = this.gameState.jumpDistance.toFixed(2);
-        
-        this.saveResult(formattedDistance);
+        // Save the best jump distance
+        this.saveResult(this.gameState.bestDistance.toFixed(2));
         
         // Show results screen
         resultsScreen.classList.remove('hidden');
@@ -383,7 +379,8 @@ class GameEngine {
             attempts: 0,
             maxAttempts: 3,
             attemptResults: ['-', '-', '-'],
-            jumpDistance: 0
+            jumpDistance: 0,
+            bestDistance: 0
         };
         
         // Reset UI

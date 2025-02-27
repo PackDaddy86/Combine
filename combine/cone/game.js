@@ -336,6 +336,7 @@ class GameEngine {
         const formattedTime = finalTime.toFixed(2);
         
         this.saveResult(formattedTime);
+        this.showResults(formattedTime);
     }
 
     saveResult(finalTime) {
