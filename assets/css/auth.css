@@ -105,40 +105,10 @@
   background-color: #001a3f;
 }
 
-/* User Navigation */
-.user-nav {
-  display: flex;
-  align-items: center;
-  margin-left: auto;
-  color: white;
-}
-
-.user-nav span {
-  margin-right: 1rem;
-}
-
-#logout-button {
-  background-color: #d43535;
-  color: white;
-  border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-#logout-button:hover {
-  background-color: #b72e2e;
-}
-
-#user-status {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
+/* Responsive design for auth components */
 @media (max-width: 768px) {
-  #user-status {
-    position: static;
-    margin-bottom: 1rem;
+  .auth-container {
+    width: 95%;
+    padding: 1.5rem;
   }
 }

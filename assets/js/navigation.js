@@ -34,30 +34,30 @@ function initNavigation() {
     // Update account link based on authentication state
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().onAuthStateChanged(user => {
-            const accountLink = document.getElementById('account-link');
+            const authLink = document.getElementById('auth-link');
             
-            if (accountLink) {
+            if (authLink) {
                 if (user) {
                     // User is signed in
-                    accountLink.textContent = 'My Account';
-                    accountLink.href = '/history.html';
-                    
-                    // Update the login button in user-status if it exists
-                    const loginButton = document.querySelector('.login-button');
-                    if (loginButton) {
-                        loginButton.textContent = 'Logout';
-                        loginButton.href = '#';
-                        loginButton.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            firebase.auth().signOut().then(() => {
-                                window.location.reload();
-                            });
+                    authLink.textContent = 'Logout';
+                    authLink.href = '#';
+                    authLink.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        firebase.auth().signOut().then(() => {
+                            console.log('User signed out');
+                            window.location.href = '/index.html';
+                        }).catch((error) => {
+                            console.error('Sign out error:', error);
                         });
-                    }
+                    });
                 } else {
                     // User is signed out
-                    accountLink.textContent = 'Log In';
-                    accountLink.href = '/login.html';
+                    authLink.textContent = 'Login / Sign Up';
+                    authLink.href = '/login.html';
+                    
+                    // Remove any click listeners
+                    const newAuthLink = authLink.cloneNode(true);
+                    authLink.parentNode.replaceChild(newAuthLink, authLink);
                 }
             }
         });

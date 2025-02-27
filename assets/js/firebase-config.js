@@ -16,18 +16,31 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Remove any existing user-nav elements that might be showing 
+function removeExistingUserNav() {
+  const userNavs = document.querySelectorAll('.user-nav');
+  if (userNavs.length > 0) {
+    console.log('Found existing user-nav elements, removing them');
+    userNavs.forEach(nav => nav.remove());
+  }
+}
+
 // Check authentication state
 auth.onAuthStateChanged(user => {
+  // Always remove any existing user-nav elements first
+  removeExistingUserNav();
+  
   if (user) {
     console.log('User logged in:', user.email);
-    // User is signed in, show user-specific content
-    showUserContent(user);
     
     // Clear localStorage when logging in to prevent data leakage between accounts
     clearLocalStorageData();
     
     // Load this user's specific data
     loadUserData(user.uid);
+    
+    // Update auth link in the header instead of adding a redundant welcome message
+    updateAuthLink(user);
   } else {
     console.log('User logged out');
     // User is signed out, show login form
@@ -35,6 +48,9 @@ auth.onAuthStateChanged(user => {
     
     // Clear localStorage when logging out
     clearLocalStorageData();
+    
+    // Update auth link in the header
+    updateAuthLink(null);
   }
 });
 
@@ -99,97 +115,103 @@ function showLoginForm() {
             <label for="signup-password">Password</label>
             <input type="password" id="signup-password" required>
           </div>
-          <div class="form-group">
-            <label for="signup-confirm">Confirm Password</label>
-            <input type="password" id="signup-confirm" required>
-          </div>
           <button type="submit" class="auth-button">Sign Up</button>
         </form>
       </div>
     </div>
   `;
+  
+  // Add overlay to document
   document.body.appendChild(overlay);
   
-  // Add event listeners
-  document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', () => {
-      // Toggle active class
-      document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-      button.classList.add('active');
+  // Set up tab switching
+  const tabButtons = overlay.querySelectorAll('.tab-button');
+  tabButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const tabName = this.getAttribute('data-tab');
       
-      // Show corresponding tab
-      const tabId = button.getAttribute('data-tab');
-      document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-      document.getElementById(`${tabId}-tab`).style.display = 'block';
+      // Toggle active class on tab buttons
+      tabButtons.forEach(btn => btn.classList.remove('active'));
+      this.classList.add('active');
+      
+      // Show/hide tab content
+      overlay.querySelectorAll('.tab-content').forEach(tab => {
+        tab.style.display = 'none';
+      });
+      overlay.querySelector(`#${tabName}-tab`).style.display = 'block';
     });
   });
   
-  // Login form submission
-  document.getElementById('login-form').addEventListener('submit', e => {
+  // Handle login form submission
+  const loginForm = overlay.querySelector('#login-form');
+  loginForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
     
     auth.signInWithEmailAndPassword(email, password)
-      .then(userCredential => {
-        // Hide the overlay after successful login
-        overlay.remove();
+      .then(() => {
+        // Remove the overlay on successful login
+        document.getElementById('user-auth-overlay').remove();
       })
       .catch(error => {
-        alert(`Login error: ${error.message}`);
+        alert('Login error: ' + error.message);
       });
   });
   
-  // Sign up form submission
-  document.getElementById('signup-form').addEventListener('submit', e => {
+  // Handle signup form submission
+  const signupForm = overlay.querySelector('#signup-form');
+  signupForm.addEventListener('submit', function(e) {
     e.preventDefault();
+    
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
-    const confirm = document.getElementById('signup-confirm').value;
-    
-    if (password !== confirm) {
-      alert("Passwords don't match");
-      return;
-    }
     
     auth.createUserWithEmailAndPassword(email, password)
-      .then(userCredential => {
-        // Create a user profile in Firestore
-        return db.collection('users').doc(userCredential.user.uid).set({
-          email: email,
-          createdAt: new Date(),
-          games: {}
-        });
-      })
       .then(() => {
-        // Hide the overlay after successful signup
-        overlay.remove();
+        // Remove the overlay on successful sign up
+        document.getElementById('user-auth-overlay').remove();
       })
       .catch(error => {
-        alert(`Sign up error: ${error.message}`);
+        alert('Sign up error: ' + error.message);
       });
+  });
+  
+  // Close overlay when clicking outside the auth container
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.remove();
+    }
   });
 }
 
-// Show user-specific content
-function showUserContent(user) {
-  // Add user info and logout button to page
-  const userNav = document.createElement('div');
-  userNav.className = 'user-nav';
-  userNav.innerHTML = `
-    <span>Welcome, ${user.email}</span>
-    <button id="logout-button">Logout</button>
-  `;
+// Update the auth link in the header based on authentication state
+function updateAuthLink(user) {
+  const authLink = document.getElementById('auth-link');
+  if (!authLink) return;
   
-  // Check if element already exists
-  if (!document.querySelector('.user-nav')) {
-    document.querySelector('header').appendChild(userNav);
+  if (user) {
+    // User is signed in
+    authLink.textContent = 'Logout';
+    authLink.href = '#';
+    authLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      auth.signOut().then(() => {
+        console.log('User signed out');
+        window.location.href = '/index.html';
+      }).catch((error) => {
+        console.error('Sign out error:', error);
+      });
+    });
+  } else {
+    // User is signed out
+    authLink.textContent = 'Login / Sign Up';
+    
+    // Remove any existing click listeners
+    const newAuthLink = authLink.cloneNode(true);
+    authLink.parentNode.replaceChild(newAuthLink, authLink);
   }
-  
-  // Add logout functionality
-  document.getElementById('logout-button').addEventListener('click', () => {
-    auth.signOut();
-  });
 }
 
 // Load user data from Firestore
@@ -309,3 +331,19 @@ function saveUserData(gameType, data) {
     console.error("Error accessing user document:", error);
   });
 }
+
+// Make sure we clean up any existing user-nav elements when the DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+  removeExistingUserNav();
+  
+  // Also set up a periodic check for the first few seconds to catch any delayed insertions
+  let checkCount = 0;
+  const maxChecks = 5;
+  const checkInterval = setInterval(function() {
+    removeExistingUserNav();
+    checkCount++;
+    if (checkCount >= maxChecks) {
+      clearInterval(checkInterval);
+    }
+  }, 1000);
+});
