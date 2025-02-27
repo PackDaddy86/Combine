@@ -56,17 +56,6 @@ class GameEngine {
                 this.handleJumpButtonPress();
             }
         });
-        
-        document.addEventListener('keyup', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (this.gameState.isCharging && !this.gameState.isAngleSelect) {
-                    this.startAngleSelection();
-                } else if (this.gameState.isAngleSelect) {
-                    this.setJumpAngle();
-                }
-            }
-        });
     }
 
     handleJumpButtonPress() {
@@ -79,6 +68,12 @@ class GameEngine {
         if (!this.gameState.isCharging && !this.gameState.isAngleSelect && !this.gameState.isJumping) {
             // Start charging
             this.startCharging();
+        } else if (this.gameState.isCharging && !this.gameState.isAngleSelect) {
+            // If charging, lock in power and start angle selection
+            this.startAngleSelection();
+        } else if (this.gameState.isAngleSelect) {
+            // If selecting angle, lock in angle and jump
+            this.setJumpAngle();
         }
     }
 
@@ -176,6 +171,8 @@ class GameEngine {
 
     executeJump() {
         this.gameState.isJumping = true;
+        this.gameState.attempts += 1;
+        
         this.elements.jumpButton.classList.remove('charging');
         this.elements.jumpButton.textContent = 'JUMPING...';
         
@@ -211,44 +208,42 @@ class GameEngine {
         this.gameState.distance = finalDistance;
         this.gameState.jumpDistance = finalDistance;
         
-        // Move jumper indicator
-        const percentDistance = (finalDistance / 12) * 100;
-        this.elements.jumperIndicator.style.left = `${percentDistance}%`;
-        
-        // Format distance for display (feet and inches)
-        const feet = Math.floor(finalDistance);
-        const inches = Math.round((finalDistance - feet) * 12);
-        const formattedDistance = `${feet}'${inches}"`;
-        
-        // Update distance display
+        // Update display after a delay
         setTimeout(() => {
-            this.elements.distanceDisplay.textContent = formattedDistance;
-            
-            // Record this attempt
-            this.gameState.attemptResults[this.gameState.attempts] = formattedDistance;
-            this.elements.attemptDisplays[this.gameState.attempts].textContent = formattedDistance;
-            
-            this.gameState.attempts++;
-            
-            // Play landing sound
             this.sounds.landing.play();
             
-            // Reset for next jump
+            // Update distance display
+            this.elements.distanceDisplay.textContent = finalDistance.toFixed(2) + " feet";
+            
+            // Reset for next attempt
             setTimeout(() => {
-                this.resetForNextJump();
-            }, 1000);
-        }, 800);
+                this.resetForNextAttempt();
+            }, 1500);
+        }, 1000);
     }
 
-    resetForNextJump() {
+    resetForNextAttempt() {
         this.gameState.isJumping = false;
         this.elements.jumper.classList.remove('jumping');
         
+        // Show jump results
+        this.showJumpResults();
+        
+        // Check if we've completed all attempts
         if (this.gameState.attempts >= this.gameState.maxAttempts) {
-            this.elements.jumpButton.textContent = 'SEE RESULTS';
+            // Show the final results
+            this.showFinalResults();
         } else {
-            this.elements.jumpButton.textContent = 'READY';
+            // Reset for next attempt
+            this.elements.jumpButton.textContent = 'JUMP!';
         }
+    }
+
+    showJumpResults() {
+        // Update attempt display
+        const attemptIndex = this.gameState.attempts - 1;
+        const attemptDisplay = this.elements.attemptDisplays[attemptIndex];
+        attemptDisplay.textContent = this.gameState.jumpDistance.toFixed(2) + " feet";
     }
 
     showFinalResults() {
