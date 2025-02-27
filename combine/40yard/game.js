@@ -99,10 +99,13 @@ class GameEngine {
     
     // New method to update the runner's position
     updateRunnerPosition() {
-        // Move the runner to match the progress (leave some space at the end)
-        const trackWidth = document.querySelector('.game-track').offsetWidth - this.elements.runner.offsetWidth;
+        // Move the runner to match the progress
+        const trackWidth = document.querySelector('.athlete-track').offsetWidth - this.elements.runner.offsetWidth;
         const position = (this.gameState.progress / 100) * trackWidth;
         this.elements.runner.style.left = `${position}px`;
+        
+        // Debug output to see what's happening
+        console.log(`Runner position: ${position}px, Progress: ${this.gameState.progress}%, Track width: ${trackWidth}px`);
     }
 
     update() {
