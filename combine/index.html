@@ -214,9 +214,30 @@
         </div>
         
         <script>
+            // Listen for auth state changes to sync data
             document.addEventListener('DOMContentLoaded', function() {
-                // Check for results and display them
-                updateResultsAndButtons();
+                if (typeof firebase !== 'undefined' && firebase.auth) {
+                    firebase.auth().onAuthStateChanged(user => {
+                        if (user) {
+                            console.log('User logged in, syncing data from Firebase');
+                            
+                            // Call the syncUserData function from user-data.js if it exists
+                            if (typeof syncUserData === 'function') {
+                                syncUserData(user.uid);
+                            } else {
+                                console.error('syncUserData function not found');
+                            }
+                        } else {
+                            console.log('No user logged in, using localStorage only');
+                            // Still update UI to show localStorage values
+                            updateResultsAndButtons();
+                        }
+                    });
+                } else {
+                    console.log('Firebase not available, using localStorage only');
+                    // Still update UI to show localStorage values
+                    updateResultsAndButtons();
+                }
             });
             
             function updateResultsAndButtons() {
@@ -244,7 +265,7 @@
                 // Broad jump
                 const broadJump = localStorage.getItem('broadJump');
                 if (broadJump) {
-                    document.getElementById('broad-result').textContent = `${broadJump}`;
+                    document.getElementById('broad-result').textContent = `${broadJump} feet`;
                     updatePlayButton('broad-play-btn', true);
                 }
                 
@@ -359,8 +380,39 @@
                             localStorage.removeItem('shuttleRun');
                             localStorage.removeItem('combineResults');
                             
-                            // Refresh the page to update display
-                            location.reload();
+                            // Also clear Firebase if user is logged in
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                const user = firebase.auth().currentUser;
+                                if (user) {
+                                    console.log('Resetting Firebase user data');
+                                    const db = firebase.firestore();
+                                    
+                                    // Create an update object that sets all fields to null or empty
+                                    db.collection('users').doc(user.uid).update({
+                                        fortyYardDash: null,
+                                        verticalJump: null,
+                                        benchPress: null,
+                                        broadJump: null,
+                                        coneDrill: null,
+                                        shuttleRun: null,
+                                        lastUpdate: new Date()
+                                    }).then(() => {
+                                        console.log('Reset all combine data in Firebase');
+                                        // Refresh the page to update display
+                                        location.reload();
+                                    }).catch(error => {
+                                        console.error('Error resetting Firebase data:', error);
+                                        // Still refresh even if there's an error
+                                        location.reload();
+                                    });
+                                } else {
+                                    // Refresh the page to update display
+                                    location.reload();
+                                }
+                            } else {
+                                // Refresh the page to update display
+                                location.reload();
+                            }
                         }
                     });
                     

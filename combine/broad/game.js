@@ -167,6 +167,9 @@ class BroadJumpGame {
             // Show results after animation completes
             setTimeout(() => {
                 this.showResults();
+                
+                // Also save to localStorage for immediate display on the combine page
+                localStorage.setItem('broadJump', this.state.distance.toFixed(2));
             }, 1500);
         }, 300);
     }
@@ -256,7 +259,19 @@ class BroadJumpGame {
         console.log('Saving broad jump result to Firebase');
         console.log('Game state at save:', this.state);
         
-        // Skip localStorage entirely and go straight to Firebase
+        // Always save to localStorage first
+        const distanceValue = this.state.distance.toFixed(2);
+        localStorage.setItem('broadJump', distanceValue);
+        console.log(`Saved broadJump = ${distanceValue} to localStorage`);
+        
+        // Try using the helper function from user-data.js if available
+        if (typeof saveCombineEventData === 'function') {
+            console.log('Using saveCombineEventData helper function');
+            saveCombineEventData('broadJump', distanceValue);
+            return; // Exit early since the helper will handle all the Firebase logic
+        }
+        
+        // Fallback: Skip localStorage entirely and go straight to Firebase
         if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
             console.log('Firebase initialized correctly');
             const user = firebase.auth().currentUser;
@@ -265,7 +280,6 @@ class BroadJumpGame {
                 console.log(`Broad jump: User logged in (${user.uid}), saving distance: ${this.state.distance}`);
                 
                 const db = firebase.firestore();
-                const distanceValue = this.state.distance.toFixed(2);
                 
                 console.log(`About to save broadJump = ${distanceValue} to users/${user.uid}`);
                 
@@ -296,10 +310,10 @@ class BroadJumpGame {
                     }
                 });
             } else {
-                console.log("Broad jump: No user logged in, data not saved");
+                console.log("Broad jump: No user logged in, data saved to localStorage only");
             }
         } else {
-            console.log("Broad jump: Firebase not initialized, data not saved");
+            console.log("Broad jump: Firebase not initialized, data saved to localStorage only");
             console.log("Firebase availability:", {
                 firebaseExists: typeof firebase !== 'undefined',
                 authExists: typeof firebase !== 'undefined' && !!firebase.auth,
