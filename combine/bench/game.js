@@ -279,16 +279,8 @@ class GameEngine {
         }
         
         // Save the bench press result
-        if (typeof saveGameResult === 'function') {
-            try {
-                console.log(`Saving result: ${this.gameState.reps} reps`);
-                saveGameResult('benchpress', this.gameState.reps);
-            } catch (err) {
-                console.error('Error saving result:', err);
-            }
-        } else {
-            console.warn('saveGameResult function not available');
-        }
+        console.log(`Saving result: ${this.gameState.reps} reps`);
+        this.saveResult();
         
         // Mark as attempted
         this.gameState.hasAttempted = true;
