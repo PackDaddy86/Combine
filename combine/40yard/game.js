@@ -10,7 +10,8 @@ class GameEngine {
             startTime: 0,
             spaceCount: 0,
             progress: 0,
-            lastPressTime: 0
+            lastPressTime: 0,
+            hasAttempted: this.checkIfAttempted()
         };
 
         this.elements = {
@@ -22,6 +23,11 @@ class GameEngine {
         this.animationPaused = false;
 
         this.initControls();
+        
+        // If user has already attempted, show their previous result
+        if (this.gameState.hasAttempted) {
+            this.showPreviousResult();
+        }
     }
 
     initControls() {
@@ -42,7 +48,8 @@ class GameEngine {
             startTime: Date.now(),
             spaceCount: 0,
             progress: 0,
-            lastPressTime: 0
+            lastPressTime: 0,
+            hasAttempted: false
         };
         this.startSpriteAnimation();
         requestAnimationFrame(this.update.bind(this));
@@ -126,12 +133,15 @@ class GameEngine {
         this.elements.progressFill.style.width = '0%';
         this.elements.runner.style.left = '0%';
         
-        // Update the restart button functionality
-        document.querySelector('.restart-btn').onclick = () => {
-            document.querySelector('.results-screen').classList.add('hidden');
-            this.startGame();
-        };
-
+        // Update the game state to indicate an attempt has been made
+        this.gameState.hasAttempted = true;
+        
+        // Update the restart button to be disabled (one attempt only)
+        const restartButton = document.querySelector('.restart-btn');
+        restartButton.classList.add('disabled');
+        restartButton.textContent = 'ONE ATTEMPT ONLY';
+        restartButton.onclick = null; // Remove the click handler
+        
         // Add a button to return to the combine page
         const returnButton = document.querySelector('.return-btn');
         if (returnButton) {
@@ -191,6 +201,44 @@ class GameEngine {
 
     stopSpriteAnimation() {
         this.elements.runner.style.animationPlayState = 'paused';
+    }
+
+    // Check if user has already attempted this event
+    checkIfAttempted() {
+        const storedTime = localStorage.getItem('fortyYardDash');
+        
+        if (storedTime) {
+            console.log('User has already attempted 40-yard dash, time:', storedTime);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Show the previous result
+    showPreviousResult() {
+        console.log('Showing previous 40-yard dash result');
+        
+        // Get the saved time from localStorage
+        const fortyTime = localStorage.getItem('fortyYardDash');
+        
+        // Display the results screen with the saved time
+        document.querySelector('.results-screen').classList.remove('hidden');
+        document.querySelector('.final-time').textContent = fortyTime + 's';
+        
+        // Update the restart button to be disabled (one attempt only)
+        const restartButton = document.querySelector('.restart-btn');
+        restartButton.classList.add('disabled');
+        restartButton.textContent = 'ONE ATTEMPT ONLY';
+        restartButton.onclick = null; // Remove the click handler
+        
+        // Still allow returning to the combine page
+        const returnButton = document.querySelector('.return-btn');
+        if (returnButton) {
+            returnButton.onclick = () => {
+                window.location.href = '/combine/';
+            };
+        }
     }
 }
 
