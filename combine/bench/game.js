@@ -57,6 +57,8 @@ class GameEngine {
     }
 
     startGame() {
+        console.log("Starting game");
+        
         // Reset game state
         this.gameState = {
             isPlaying: true,
@@ -78,6 +80,15 @@ class GameEngine {
         this.elements.repCounter.textContent = '0';
         this.elements.targetCenter.style.width = `${this.gameState.centerSize}px`;
         this.elements.targetCenter.style.height = `${this.gameState.centerSize}px`;
+        
+        // Reset any existing animations
+        if (this.ballAnimationId) {
+            cancelAnimationFrame(this.ballAnimationId);
+            this.ballAnimationId = null;
+        }
+        
+        // Hide results screen if visible
+        document.querySelector('.results-screen').classList.add('hidden');
         
         // Start the ball animation
         this.moveBall();
@@ -114,35 +125,48 @@ class GameEngine {
         // Play press sound for any attempt
         this.sounds.press.play();
         
-        // Simpler approach: check if the ball is in the center zone
-        // The center is at 50% of the track
+        // VERY SIMPLE APPROACH: Make a large zone in the middle (40% of the bar) count as green
+        // This is just for testing to ensure the basic success/failure logic is working
         const ballPos = this.gameState.ballPosition; // 0-100
-        const centerPos = 50; // center of track
         
-        // Calculate distance as percentage (0-100)
-        const distanceFromCenter = Math.abs(ballPos - centerPos);
-        
-        // Convert the center size from pixels to percentage of track
-        const trackWidth = document.querySelector('.bar-track').offsetWidth;
-        const centerSizeAsPercentage = (this.gameState.centerSize / trackWidth) * 100;
-        
-        // Half the center size as percentage
-        const centerRadiusAsPercentage = centerSizeAsPercentage / 2;
-        
-        // Ball is in green if distance is less than center radius
-        const isInGreenCenter = distanceFromCenter <= centerRadiusAsPercentage;
+        // For testing: Consider a wide zone around the center (40% of the bar) as green
+        // This means if the ball is between 30% and 70% of the bar, it's a successful hit
+        const isInGreenCenter = (ballPos >= 30 && ballPos <= 70);
         
         console.log("Ball position:", ballPos);
-        console.log("Center position:", centerPos);
-        console.log("Distance from center (%):", distanceFromCenter);
-        console.log("Center size (px):", this.gameState.centerSize);
-        console.log("Center size (%):", centerSizeAsPercentage);
-        console.log("Center radius (%):", centerRadiusAsPercentage);
-        console.log("Is in green center:", isInGreenCenter);
+        console.log("Is in green center (wide test zone):", isInGreenCenter);
+        
+        // Debug the element that's supposed to be the green center
+        const centerElement = this.elements.targetCenter;
+        console.log("Center element:", centerElement);
+        console.log("Center element width:", centerElement.offsetWidth);
         
         if (isInGreenCenter) {
-            console.log("SUCCESS - Ball is in green center");
-            this.successfulRep();
+            console.log("SUCCESS - Ball is in test green center");
+            
+            // Increment rep counter
+            this.gameState.reps++;
+            this.elements.repCounter.textContent = this.gameState.reps;
+            
+            // Flash success feedback
+            const targetBall = document.querySelector('.target-ball');
+            targetBall.classList.add('success-hit');
+            setTimeout(() => targetBall.classList.remove('success-hit'), 300);
+            
+            // Show press animation
+            this.elements.bencher.classList.add('press-up');
+            setTimeout(() => this.elements.bencher.classList.remove('press-up'), 300);
+            
+            // Play success sound
+            this.sounds.success.play();
+            
+            // Increase difficulty
+            this.increaseDifficulty();
+            
+            // Check for max reps
+            if (this.gameState.reps >= this.gameState.maxReps) {
+                setTimeout(() => this.endGame(), 500);
+            }
         } else {
             console.log("FAILED - Ball missed green center");
             this.failedRep();
@@ -221,67 +245,41 @@ class GameEngine {
     }
 
     endGame() {
-        console.log("End game called");
+        console.log("ENDING GAME");
         
-        // Stop the animation
-        this.stopGame();
+        // Ensure we only call this once
+        if (!this.gameState.isPlaying) {
+            console.log("Game already ended, ignoring endGame call");
+            return;
+        }
         
+        // Stop the game
         this.gameState.isPlaying = false;
         
-        // Cancel any pending animation frames
+        // Stop animations
         if (this.ballAnimationId) {
             cancelAnimationFrame(this.ballAnimationId);
             this.ballAnimationId = null;
         }
         
-        this.elements.bencher.style.animationPlayState = 'paused';
+        // Show results
+        const resultsDiv = document.querySelector('.results-screen');
+        const resultRepCountElement = document.querySelector('.result-rep-count');
+        
+        // Update the rep count in the results screen
+        resultRepCountElement.textContent = this.gameState.reps;
         
         // Show the results screen
-        const resultsScreen = document.querySelector('.results-screen');
-        resultsScreen.classList.remove('hidden');
+        resultsDiv.classList.remove('hidden');
         
-        // Update the final score
-        const finalReps = document.querySelector('.final-reps');
-        finalReps.textContent = `${this.gameState.reps} REPS`;
-        
-        // Set rating based on reps
-        const rating = document.querySelector('.rating');
-        if (this.gameState.reps >= 40) {
-            rating.textContent = "ELITE";
-            rating.style.color = "#00c6ff";
-        } else if (this.gameState.reps >= 30) {
-            rating.textContent = "EXCELLENT";
-            rating.style.color = "#4CAF50";
-        } else if (this.gameState.reps >= 25) {
-            rating.textContent = "VERY GOOD";
-            rating.style.color = "#8BC34A";
-        } else if (this.gameState.reps >= 20) {
-            rating.textContent = "GOOD";
-            rating.style.color = "#FFC107";
-        } else if (this.gameState.reps >= 15) {
-            rating.textContent = "AVERAGE";
-            rating.style.color = "#FF9800";
-        } else {
-            rating.textContent = "BELOW AVERAGE";
-            rating.style.color = "#F44336";
+        // Store the result in the user's profile
+        if (typeof saveGameResult === 'function') {
+            try {
+                saveGameResult('benchpress', this.gameState.reps);
+            } catch (err) {
+                console.error('Error saving result:', err);
+            }
         }
-        
-        // Save the bench press result
-        this.saveResult();
-        
-        // Mark as attempted
-        this.gameState.hasAttempted = true;
-        
-        // Setup button events
-        const restartBtn = document.querySelector('.restart-btn');
-        restartBtn.classList.add('disabled');
-        restartBtn.textContent = 'COMPLETED';
-        restartBtn.onclick = null; // Remove click handler
-        
-        const returnBtn = document.querySelector('.return-btn');
-        returnBtn.onclick = () => {
-            window.location.href = '/combine/';
-        };
     }
 
     stopGame() {
