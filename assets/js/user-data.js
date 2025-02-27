@@ -242,12 +242,14 @@ window.checkFirebaseUserDocument = checkFirebaseUserDocument;
 // Initialize Firebase auth listener if not already listening
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged(user => {
+        console.log('🔴 Debug [authStateChanged] Auth state changed:', user ? 'Logged In' : 'Logged Out');
+        
         if (user) {
-            console.log(`Auth state changed: User logged in as ${user.uid}`);
+            // Attempt to sync the user's data
+            console.log('🔴 Debug [authStateChanged] User logged in, syncing data');
+            
+            // Call syncUserData to fetch the latest data
             syncUserData(user.uid);
-        } else {
-            console.log('Auth state changed: User logged out');
-            clearLocalStorageData();
         }
     });
 }
