@@ -93,7 +93,7 @@ h1 {
     width: 128px;
     height: 128px;
     background-size: 100% 100%;
-    background-image: url('/sprites/jumper-ready.png');
+    background-image: url('sprites/jumper-ready.png');
     z-index: 10;
     transition: bottom 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
 }

@@ -126,17 +126,17 @@ class GameEngine {
         const jumpPixels = (this.gameState.jumpHeight / 46) * 300;
         
         // Set jumper image to jump pose
-        this.elements.jumper.style.backgroundImage = "url('/sprites/jumper-jump.png')";
+        this.elements.jumper.style.backgroundImage = "url('sprites/jumper-jump.png')";
         
         // Apply jump animation
-        this.elements.jumper.style.setProperty('--jump-height', `${jumpPixels}px`);
-        this.elements.jumper.classList.add('jumping');
+        this.elements.jumper.style.bottom = `${jumpPixels + 40}px`; // Add 40px offset to account for initial position
         
         // Wait for animation to finish
         setTimeout(() => {
             this.sounds.landing.play();
-            this.elements.jumper.classList.remove('jumping');
-            this.elements.jumper.style.backgroundImage = "url('/sprites/jumper-ready.png')";
+            // Return to starting position
+            this.elements.jumper.style.bottom = '40px';
+            this.elements.jumper.style.backgroundImage = "url('sprites/jumper-ready.png')";
             
             setTimeout(() => {
                 this.showResults();
