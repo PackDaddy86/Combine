@@ -628,11 +628,11 @@ function getUserData(userId) {
     
     db.collection('users').doc(userId).get()
         .then((doc) => {
-            if (doc.exists && doc.data().scores) {
+            if (doc.exists) {
                 const userData = doc.data();
                 
                 // Set player name
-                const displayName = userData.displayName || 'Athlete';
+                const displayName = userData.displayName || firebase.auth().currentUser.email || 'Athlete';
                 
                 // Set player info
                 const playerInfo = {
@@ -648,24 +648,50 @@ function getUserData(userId) {
                 // Update the display
                 updatePlayerInfoDisplay();
                 
-                // Load scores from Firebase
-                const scores = userData.scores;
-                
-                // Update form values if they exist
-                if (scores.forty) document.getElementById('forty-score').value = scores.forty;
-                if (scores.vertical) document.getElementById('vertical-score').value = scores.vertical;
-                if (scores.bench) document.getElementById('bench-score').value = scores.bench;
-                if (scores.broad) document.getElementById('broad-score').value = scores.broad;
-                if (scores.cone) document.getElementById('cone-score').value = scores.cone;
-                if (scores.shuttle) document.getElementById('shuttle-score').value = scores.shuttle;
-                
-                // Update displayed values
-                updateAllDisplayedValues();
-                
-                // Calculate RAS based on loaded scores
-                calculateRASScores();
+                // Check for combine data in the games object
+                if (userData.games && userData.games.combine) {
+                    console.log('Found combine data in the user\'s profile:', userData.games.combine);
+                    const combineData = userData.games.combine;
+                    
+                    // Map combine data to RAS inputs
+                    if (combineData.fortyYardDash) document.getElementById('forty-score').value = combineData.fortyYardDash;
+                    if (combineData.verticalJump) document.getElementById('vertical-score').value = combineData.verticalJump;
+                    if (combineData.benchPress) document.getElementById('bench-score').value = combineData.benchPress;
+                    if (combineData.broadJump) document.getElementById('broad-score').value = combineData.broadJump;
+                    if (combineData.coneDrill) document.getElementById('cone-score').value = combineData.coneDrill;
+                    if (combineData.shuttleRun) document.getElementById('shuttle-score').value = combineData.shuttleRun;
+                    
+                    // Update displayed values
+                    updateAllDisplayedValues();
+                    
+                    // Calculate RAS based on loaded scores
+                    calculateRASScores();
+                } 
+                // If we don't have combine data but have existing RAS scores, use those
+                else if (userData.scores) {
+                    console.log('Found RAS scores in user data:', userData.scores);
+                    const scores = userData.scores;
+                    
+                    // Update form values if they exist
+                    if (scores.forty) document.getElementById('forty-score').value = scores.forty;
+                    if (scores.vertical) document.getElementById('vertical-score').value = scores.vertical;
+                    if (scores.bench) document.getElementById('bench-score').value = scores.bench;
+                    if (scores.broad) document.getElementById('broad-score').value = scores.broad;
+                    if (scores.cone) document.getElementById('cone-score').value = scores.cone;
+                    if (scores.shuttle) document.getElementById('shuttle-score').value = scores.shuttle;
+                    
+                    // Update displayed values
+                    updateAllDisplayedValues();
+                    
+                    // Calculate RAS based on loaded scores
+                    calculateRASScores();
+                } else {
+                    // No combine data or RAS scores yet
+                    setDefaultValues();
+                    document.getElementById('player-name').innerText = "COMPLETE COMBINE EVENTS TO SEE YOUR RAS";
+                }
             } else {
-                // User exists but has no scores yet
+                // User exists but has no data yet
                 setDefaultValues();
                 document.getElementById('player-name').innerText = "COMPLETE COMBINE EVENTS TO SEE YOUR RAS";
             }
@@ -731,7 +757,22 @@ function saveScoresToFirebase() {
     const overallRAS = document.getElementById('overall-ras').textContent;
     scores.overallRAS = overallRAS;
     
-    // Update the user document
+    // Also save data in the standard combine format
+    if (typeof saveUserData === 'function') {
+        const combineData = {
+            fortyYardDash: fortyValue !== "--" ? fortyValue : null,
+            verticalJump: verticalValue !== "--" ? verticalValue : null,
+            benchPress: benchValue !== "--" ? benchValue : null,
+            broadJump: broadValue !== "--" ? broadValue : null,
+            coneDrill: coneValue !== "--" ? coneValue : null,
+            shuttleRun: shuttleValue !== "--" ? shuttleValue : null
+        };
+        
+        saveUserData('combine', combineData);
+        console.log('Saved combine data using the global saveUserData function');
+    }
+    
+    // Update the user document with scores
     db.collection('users').doc(user.uid).update({
         scores: scores
     })
