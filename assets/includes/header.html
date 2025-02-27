@@ -14,7 +14,7 @@
             <li><a href="/combine/ras/">RAS Calculator</a></li>
             <li><a href="/combine/leaderboard/">Leaderboard</a></li>
             <li><a href="/history.html">Your Results</a></li>
-            <li><a href="/login.html" id="account-link">Account</a></li>
+            <li><a href="/login.html" id="auth-link" class="auth-button">Login / Sign Up</a></li>
         </ul>
     </div>
 </nav>
@@ -23,12 +23,13 @@
 <style>
     /* Main Navigation Bar */
     .main-nav {
-        background-color: #013369;
+        background: linear-gradient(to right, #013369, #002244);
         color: white;
         padding: 0;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        position: relative;
-        z-index: 100;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
     }
 
     .nav-container {
@@ -37,7 +38,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.5rem 1rem;
+        padding: 0.8rem 1.5rem;
     }
 
     .site-logo {
@@ -45,16 +46,25 @@
         align-items: center;
         text-decoration: none;
         color: white;
+        transition: opacity 0.3s ease;
+    }
+    
+    .site-logo:hover {
+        opacity: 0.9;
     }
 
     .site-logo img {
         height: 40px;
         margin-right: 10px;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
     }
 
     .site-logo h1 {
         font-size: 1.5rem;
         margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
     }
 
     .nav-links {
@@ -72,14 +82,37 @@
     .nav-links a {
         color: white;
         text-decoration: none;
-        padding: 1rem;
+        padding: 1rem 1.2rem;
         display: block;
-        transition: background-color 0.3s;
+        transition: all 0.3s ease;
+        border-radius: 4px;
+        font-weight: 500;
     }
 
     .nav-links a:hover,
     .nav-links a.active {
-        background-color: #00295c;
+        background-color: rgba(255, 255, 255, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .nav-links a.active {
+        border-bottom: 2px solid #ff9900;
+    }
+
+    .auth-button {
+        background-color: #ff9900;
+        padding: 0.6rem 1.2rem;
+        border-radius: 30px;
+        font-weight: bold;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .auth-button:hover {
+        background-color: #e68a00;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(0, 0, 0, 0.3);
     }
 
     .mobile-menu-btn {
@@ -89,6 +122,11 @@
         color: white;
         font-size: 1.5rem;
         cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+    
+    .mobile-menu-btn:hover {
+        transform: scale(1.1);
     }
 
     /* Responsive design */
@@ -103,9 +141,11 @@
             top: 100%;
             left: 0;
             right: 0;
-            background-color: #013369;
+            background: linear-gradient(to bottom, #013369, #002244);
             flex-direction: column;
             width: 100%;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .nav-links.show {
@@ -118,8 +158,16 @@
         }
 
         .nav-links a {
-            padding: 1rem;
-            border-top: 1px solid #00295c;
+            padding: 1.2rem 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .nav-links a:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+        
+        .site-logo h1 {
+            font-size: 1.2rem;
         }
     }
 </style>
