@@ -487,10 +487,24 @@ class ShuttleGameEngine {
         // Format time to string
         const formattedTime = time.toFixed(2);
         
-        // Store the shuttle run result
         if (typeof saveCombineEventData === 'function') {
-            saveCombineEventData('shuttleRun', formattedTime);
+            // First, check if user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    console.log(`Saving shuttle run time to Firestore for user ${user.uid}: ${formattedTime}`);
+                    saveCombineEventData('shuttleRun', formattedTime);
+                } else {
+                    console.log('No user logged in, saving to localStorage only');
+                    localStorage.setItem('shuttleRun', formattedTime);
+                }
+            } else {
+                console.log('Firebase not available, using helper function');
+                saveCombineEventData('shuttleRun', formattedTime);
+            }
         } else {
+            // Fallback to localStorage only
+            console.log('Helper function not available, saving to localStorage only');
             localStorage.setItem('shuttleRun', formattedTime);
         }
         

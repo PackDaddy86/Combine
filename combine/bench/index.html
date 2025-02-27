@@ -16,6 +16,35 @@
     
     <!-- Include.js for header -->
     <script src="/assets/js/include.js"></script>
+    
+    <!-- Debug script -->
+    <script>
+        // Add debugging on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('BENCH PRESS PAGE LOADED - DEBUGGING INFO:');
+            
+            if (typeof firebase !== 'undefined') {
+                console.log('Firebase loaded:', firebase);
+                
+                if (firebase.auth) {
+                    console.log('Firebase auth available');
+                    
+                    // Check current user
+                    const user = firebase.auth().currentUser;
+                    console.log('Current user:', user);
+                    
+                    // Add auth state listener
+                    firebase.auth().onAuthStateChanged(function(user) {
+                        console.log('Auth state changed - current user:', user);
+                    });
+                } else {
+                    console.log('Firebase auth NOT available');
+                }
+            } else {
+                console.log('Firebase NOT loaded');
+            }
+        });
+    </script>
 </head>
 <body>
     <div class="game-container">
