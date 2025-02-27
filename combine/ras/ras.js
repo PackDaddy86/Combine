@@ -1,42 +1,127 @@
+// Initialize RAS calculator
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if user is logged in
-    firebase.auth().onAuthStateChanged(function(user) {
-        if (user) {
-            // User is signed in
-            getUserData(user.uid);
-        } else {
-            // No user is signed in, display message or redirect
-            setDefaultValues();
-            document.getElementById('player-name').innerText = "LOGIN TO VIEW YOUR RAS CARD";
-        }
-    });
+    console.log('RAS calculator loaded');
     
-    // RAS calculation constants
-    const scoreRanges = {
-        poor: { min: 0, max: 3.99 },
-        belowAverage: { min: 4, max: 4.99 },
-        average: { min: 5, max: 6.99 },
-        good: { min: 7, max: 8.99 },
-        excellent: { min: 9, max: 10 }
-    };
-
-    // Set initial default values (to avoid NaN on first load)
-    //setDefaultValues();
+    // Set up event listeners
+    setupEventListeners();
     
-    // Load player data from localStorage
-    //loadPlayerData();
+    // Update the player info display from localStorage
+    updatePlayerInfoDisplay();
     
-    // Event listeners for buttons
-    document.getElementById('update-info').addEventListener('click', updatePlayerInfo);
-    document.getElementById('save-card').addEventListener('click', saveAsImage);
-    document.getElementById('share-card').addEventListener('click', shareResults);
+    // Check if user is logged in and load their data
+    checkUserStatusAndLoadData();
     
-    // Calculate and display RAS scores
-    //calculateRASScores();
+    // Initialize grades
+    calculateRASScores();
     
-    // Add event listeners to update grades when input values change
-    setupGradeListeners();
+    // Update saved results list
+    updateSavedResultsList();
 });
+
+// Check user status and load data
+function checkUserStatusAndLoadData() {
+    console.log('Checking user status and loading data...');
+    
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                console.log('User logged in:', user.uid);
+                // Load user-specific RAS data
+                getUserData(user.uid);
+            } else {
+                console.log('No user logged in, using local storage only');
+                loadFromLocalStorage();
+            }
+        });
+    } else {
+        console.log('Firebase not available, using local storage only');
+        loadFromLocalStorage();
+    }
+}
+
+// Load data from localStorage
+function loadFromLocalStorage() {
+    // Get player info from localStorage
+    const playerInfoStr = localStorage.getItem('playerInfo');
+    
+    if (playerInfoStr) {
+        const playerInfo = JSON.parse(playerInfoStr);
+        updatePlayerName(playerInfo.name, playerInfo.position, playerInfo.school, playerInfo.year);
+    }
+    
+    // Load combine data if available
+    const combineResults = loadCombineResults();
+    
+    if (combineResults) {
+        console.log('Loading combine results from localStorage:', combineResults);
+        
+        // Update form fields with combine results
+        if (combineResults.fortyYardDash) {
+            document.getElementById('forty-value').textContent = combineResults.fortyYardDash;
+        }
+        
+        if (combineResults.verticalJump) {
+            document.getElementById('vertical-value').textContent = combineResults.verticalJump;
+        }
+        
+        if (combineResults.benchPress) {
+            document.getElementById('bench-value').textContent = combineResults.benchPress;
+        }
+        
+        if (combineResults.broadJump) {
+            document.getElementById('broad-value').textContent = combineResults.broadJump;
+        }
+        
+        if (combineResults.coneDrill) {
+            document.getElementById('cone-value').textContent = combineResults.coneDrill;
+        }
+        
+        if (combineResults.shuttleRun) {
+            document.getElementById('shuttle-value').textContent = combineResults.shuttleRun;
+        }
+        
+        // Calculate RAS scores based on the loaded data
+        calculateRASScores();
+    }
+}
+
+// Check if user is logged in
+firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+        // User is signed in
+        getUserData(user.uid);
+    } else {
+        // No user is signed in, display message or redirect
+        setDefaultValues();
+        document.getElementById('player-name').innerText = "LOGIN TO VIEW YOUR RAS CARD";
+    }
+});
+
+// RAS calculation constants
+const scoreRanges = {
+    poor: { min: 0, max: 3.99 },
+    belowAverage: { min: 4, max: 4.99 },
+    average: { min: 5, max: 6.99 },
+    good: { min: 7, max: 8.99 },
+    excellent: { min: 9, max: 10 }
+};
+
+// Set initial default values (to avoid NaN on first load)
+//setDefaultValues();
+    
+// Load player data from localStorage
+//loadPlayerData();
+    
+// Event listeners for buttons
+document.getElementById('update-info').addEventListener('click', updatePlayerInfo);
+document.getElementById('save-card').addEventListener('click', saveAsImage);
+document.getElementById('share-card').addEventListener('click', shareResults);
+    
+// Calculate and display RAS scores
+//calculateRASScores();
+    
+// Add event listeners to update grades when input values change
+setupGradeListeners();
 
 // Set default values to avoid NaN issues
 function setDefaultValues() {
@@ -757,12 +842,14 @@ function updateOverallRAS(score) {
 
 // Get user data from Firebase
 function getUserData(userId) {
+    console.log('Getting user data for userId:', userId);
     const db = firebase.firestore();
     
     db.collection('users').doc(userId).get()
         .then((doc) => {
             if (doc.exists) {
                 const userData = doc.data();
+                console.log('User data retrieved:', userData);
                 
                 // Set player name
                 const displayName = userData.displayName || firebase.auth().currentUser.email || 'Athlete';
@@ -781,50 +868,44 @@ function getUserData(userId) {
                 // Update the display
                 updatePlayerInfoDisplay();
                 
-                // Check for combine data in the games object
+                // First check if we have games.combine data
                 if (userData.games && userData.games.combine) {
-                    console.log('Found combine data in the user\'s profile:', userData.games.combine);
+                    console.log('Found games.combine data:', userData.games.combine);
                     const combineData = userData.games.combine;
                     
                     // Map combine data to RAS inputs
-                    if (combineData.fortyYardDash) document.getElementById('forty-score').value = combineData.fortyYardDash;
-                    if (combineData.verticalJump) document.getElementById('vertical-score').value = combineData.verticalJump;
-                    if (combineData.benchPress) document.getElementById('bench-score').value = combineData.benchPress;
-                    if (combineData.broadJump) document.getElementById('broad-score').value = combineData.broadJump;
-                    if (combineData.coneDrill) document.getElementById('cone-score').value = combineData.coneDrill;
-                    if (combineData.shuttleRun) document.getElementById('shuttle-score').value = combineData.shuttleRun;
+                    if (combineData.fortyYardDash) document.getElementById('forty-value').textContent = combineData.fortyYardDash;
+                    if (combineData.verticalJump) document.getElementById('vertical-value').textContent = combineData.verticalJump;
+                    if (combineData.benchPress) document.getElementById('bench-value').textContent = combineData.benchPress;
+                    if (combineData.broadJump) document.getElementById('broad-value').textContent = combineData.broadJump;
+                    if (combineData.coneDrill) document.getElementById('cone-value').textContent = combineData.coneDrill;
+                    if (combineData.shuttleRun) document.getElementById('shuttle-value').textContent = combineData.shuttleRun;
+                }
+                // Next check if we have individual event data
+                else {
+                    console.log('Checking individual event data');
                     
-                    // Update displayed values
-                    updateAllDisplayedValues();
-                    
-                    // Calculate RAS based on loaded scores
-                    calculateRASScores();
-                } 
-                // If we don't have combine data but have existing RAS scores, use those
-                else if (userData.scores) {
-                    console.log('Found RAS scores in user data:', userData.scores);
-                    const scores = userData.scores;
-                    
-                    // Update form values if they exist
-                    if (scores.forty) document.getElementById('forty-score').value = scores.forty;
-                    if (scores.vertical) document.getElementById('vertical-score').value = scores.vertical;
-                    if (scores.bench) document.getElementById('bench-score').value = scores.bench;
-                    if (scores.broad) document.getElementById('broad-score').value = scores.broad;
-                    if (scores.cone) document.getElementById('cone-score').value = scores.cone;
-                    if (scores.shuttle) document.getElementById('shuttle-score').value = scores.shuttle;
-                    
-                    // Update displayed values
-                    updateAllDisplayedValues();
-                    
-                    // Calculate RAS based on loaded scores
-                    calculateRASScores();
-                } else {
-                    // No combine data or RAS scores yet
-                    setDefaultValues();
-                    document.getElementById('player-name').innerText = "COMPLETE COMBINE EVENTS TO SEE YOUR RAS";
+                    // Map individual event data to RAS inputs
+                    if (userData.fortyYardDash) document.getElementById('forty-value').textContent = userData.fortyYardDash;
+                    if (userData.verticalJump) document.getElementById('vertical-value').textContent = userData.verticalJump;
+                    if (userData.benchPress) document.getElementById('bench-value').textContent = userData.benchPress;
+                    if (userData.broadJump) document.getElementById('broad-value').textContent = userData.broadJump;
+                    if (userData.coneDrill) document.getElementById('cone-value').textContent = userData.coneDrill;
+                    if (userData.shuttleRun) document.getElementById('shuttle-value').textContent = userData.shuttleRun;
+                }
+                
+                // Finally, calculate the RAS scores
+                calculateRASScores();
+                
+                // Also load any saved RAS results
+                if (userData.games && userData.games.rasResults) {
+                    console.log('Loading saved RAS results from Firestore:', userData.games.rasResults);
+                    localStorage.setItem('rasResults', JSON.stringify(userData.games.rasResults));
+                    updateSavedResultsList();
                 }
             } else {
                 // User exists but has no data yet
+                console.log('User document exists but has no data');
                 setDefaultValues();
                 document.getElementById('player-name').innerText = "COMPLETE COMBINE EVENTS TO SEE YOUR RAS";
             }
@@ -1067,4 +1148,212 @@ function calculateSizeScore(measurement, type) {
     }
     
     return Math.max(0, Math.min(10, score)).toFixed(2);
+}
+
+// Save RAS scores to Firestore
+function saveRASScorestoFirestore() {
+    console.log('Saving RAS scores to Firestore');
+    // Get existing results from localStorage
+    const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+    
+    // Only proceed if we have results to save
+    if (Object.keys(rasResults).length === 0) {
+        console.log('No RAS results to save');
+        return;
+    }
+    
+    // Check if user is logged in
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log('User logged in, saving RAS results to Firestore');
+            const db = firebase.firestore();
+            
+            // Use set with merge to update only the rasResults field
+            db.collection('users').doc(user.uid).set({
+                games: {
+                    rasResults: rasResults
+                }
+            }, { merge: true })
+            .then(() => {
+                console.log('RAS results saved to Firestore successfully');
+            })
+            .catch((error) => {
+                console.error('Error saving RAS results to Firestore:', error);
+            });
+        } else {
+            console.log('No user logged in, RAS results saved to localStorage only');
+        }
+    } else {
+        console.log('Firebase not available, RAS results saved to localStorage only');
+    }
+}
+
+// This function should be called after calculating RAS scores
+function updateSavedResultsList() {
+    console.log('Updating saved results list');
+    const resultsContainer = document.getElementById('saved-results');
+    
+    // Clear existing results
+    resultsContainer.innerHTML = '';
+    
+    // Get saved results from localStorage
+    const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+    
+    // Check if we have any results
+    if (Object.keys(rasResults).length === 0) {
+        resultsContainer.innerHTML = '<p>No saved results yet.</p>';
+        return;
+    }
+    
+    // Sort results by timestamp (most recent first)
+    const sortedTimestamps = Object.keys(rasResults).sort((a, b) => new Date(b) - new Date(a));
+    
+    // Create a list of results
+    const resultsList = document.createElement('ul');
+    resultsList.className = 'results-list';
+    
+    // Add each result to the list
+    sortedTimestamps.forEach(timestamp => {
+        const result = rasResults[timestamp];
+        const listItem = document.createElement('li');
+        
+        // Format date for display
+        const date = new Date(timestamp);
+        const dateString = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        
+        // Create result display
+        listItem.innerHTML = `
+            <div class="result-header">
+                <span class="result-name">${result.playerName || 'Unnamed Player'}</span>
+                <span class="result-date">${dateString}</span>
+            </div>
+            <div class="result-details">
+                <span class="result-position">${result.position || 'Unknown Position'}</span>
+                <span class="result-score">RAS: ${result.overallRAS.toFixed(2)}</span>
+                <span class="result-grade">${result.grades?.overall || 'N/A'}</span>
+            </div>
+            <div class="result-actions">
+                <button class="load-result" data-timestamp="${timestamp}">Load</button>
+                <button class="delete-result" data-timestamp="${timestamp}">Delete</button>
+            </div>
+        `;
+        
+        resultsList.appendChild(listItem);
+    });
+    
+    // Add the list to the container
+    resultsContainer.appendChild(resultsList);
+    
+    // Add event listeners for load and delete buttons
+    const loadButtons = document.querySelectorAll('.load-result');
+    loadButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const timestamp = this.getAttribute('data-timestamp');
+            loadSavedResult(timestamp);
+        });
+    });
+    
+    const deleteButtons = document.querySelectorAll('.delete-result');
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const timestamp = this.getAttribute('data-timestamp');
+            deleteSavedResult(timestamp);
+        });
+    });
+}
+
+// Load a saved result
+function loadSavedResult(timestamp) {
+    console.log('Loading result from timestamp:', timestamp);
+    
+    // Get saved results from localStorage
+    const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+    
+    // Check if the timestamp exists
+    if (!rasResults[timestamp]) {
+        console.error('Result not found for timestamp:', timestamp);
+        return;
+    }
+    
+    // Get the result
+    const result = rasResults[timestamp];
+    
+    // Update all input fields with the saved values
+    document.getElementById('forty-value').textContent = result.dash || '';
+    document.getElementById('vertical-value').textContent = result.vertical || '';
+    document.getElementById('bench-value').textContent = result.bench || '';
+    document.getElementById('broad-value').textContent = result.broad || '';
+    document.getElementById('cone-value').textContent = result.cone || '';
+    document.getElementById('shuttle-value').textContent = result.shuttle || '';
+    
+    // Update player info
+    if (result.playerName) {
+        const playerInfo = {
+            name: result.playerName,
+            position: result.position || 'NFL PROSPECT',
+            school: result.college || 'NFL',
+            year: new Date().getFullYear()
+        };
+        
+        // Save to localStorage
+        localStorage.setItem('playerInfo', JSON.stringify(playerInfo));
+        
+        // Update the display
+        updatePlayerInfoDisplay();
+    }
+    
+    // Calculate RAS scores based on the loaded values
+    calculateRASScores();
+}
+
+// Delete a saved result
+function deleteSavedResult(timestamp) {
+    console.log('Deleting result from timestamp:', timestamp);
+    
+    // Get saved results from localStorage
+    const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+    
+    // Check if the timestamp exists
+    if (!rasResults[timestamp]) {
+        console.error('Result not found for timestamp:', timestamp);
+        return;
+    }
+    
+    // Delete the result
+    delete rasResults[timestamp];
+    
+    // Save back to localStorage
+    localStorage.setItem('rasResults', JSON.stringify(rasResults));
+    
+    // Save to Firestore as well
+    saveRASScorestoFirestore();
+    
+    // Update the UI
+    updateSavedResultsList();
+}
+
+// Setup event listeners for the RAS calculator
+function setupEventListeners() {
+    console.log('Setting up event listeners');
+    
+    // Event listeners for buttons
+    document.getElementById('update-info').addEventListener('click', updatePlayerInfo);
+    document.getElementById('save-card').addEventListener('click', saveAsImage);
+    document.getElementById('share-card').addEventListener('click', shareResults);
+    
+    // Add event listener for save button
+    document.getElementById('save-result').addEventListener('click', function() {
+        // Calculate RAS scores first to ensure we have the latest data
+        calculateRASScores();
+        
+        // Then save to Firestore
+        saveRASScorestoFirestore();
+        
+        // Update the UI
+        updateSavedResultsList();
+        
+        // Show confirmation
+        alert('RAS scores saved successfully!');
+    });
 }
