@@ -431,54 +431,56 @@
                             this.disabled = true;
                             this.textContent = 'RESETTING...';
                             
-                            // Try to use the resetCombineData helper function if available
-                            if (typeof resetCombineData === 'function') {
-                                console.log('Using resetCombineData helper function');
-                                resetCombineData(); // Function handles reloading internally
-                            } else {
-                                console.log('resetCombineData not available, using fallback reset');
-                                // Clear all localStorage items
-                                localStorage.removeItem('fortyYardDash');
-                                localStorage.removeItem('verticalJump');
-                                localStorage.removeItem('benchPress');
-                                localStorage.removeItem('broadJump');
-                                localStorage.removeItem('coneDrill');
-                                localStorage.removeItem('shuttleRun');
-                                localStorage.removeItem('combineResults');
-                                
-                                // Also clear Firebase if user is logged in
-                                if (typeof firebase !== 'undefined' && firebase.auth) {
-                                    const user = firebase.auth().currentUser;
-                                    if (user) {
-                                        console.log('Resetting Firebase user data');
-                                        const db = firebase.firestore();
+                            // Clear all localStorage items first
+                            localStorage.removeItem('fortyYardDash');
+                            localStorage.removeItem('verticalJump');
+                            localStorage.removeItem('benchPress');
+                            localStorage.removeItem('broadJump');
+                            localStorage.removeItem('coneDrill');
+                            localStorage.removeItem('shuttleRun');
+                            localStorage.removeItem('combineResults');
+                            
+                            // Reset Firebase if user is logged in
+                            if (typeof firebase !== 'undefined' && firebase.auth) {
+                                const user = firebase.auth().currentUser;
+                                if (user) {
+                                    console.log('Resetting Firebase user data');
+                                    const db = firebase.firestore();
+                                    
+                                    // Use the complete reset approach: delete and recreate
+                                    db.collection('users').doc(user.uid).delete()
+                                    .then(() => {
+                                        console.log('Successfully deleted user document');
                                         
-                                        // Delete the document entirely and recreate it with minimal info
-                                        db.collection('users').doc(user.uid).delete()
-                                        .then(() => {
-                                            console.log('Deleted user document');
-                                            return db.collection('users').doc(user.uid).set({
-                                                email: user.email,
-                                                lastUpdate: new Date()
-                                            });
-                                        })
-                                        .then(() => {
-                                            console.log('Reset all combine data in Firebase');
-                                            // Refresh the page to update display
-                                            location.reload();
-                                        }).catch(error => {
-                                            console.error('Error resetting Firebase data:', error);
-                                            // Still refresh even if there's an error
-                                            location.reload();
+                                        // Create a minimal new document
+                                        return db.collection('users').doc(user.uid).set({
+                                            email: user.email,
+                                            lastUpdate: new Date()
                                         });
-                                    } else {
+                                    })
+                                    .then(() => {
+                                        console.log('Reset complete - created new clean document');
+                                        
+                                        // Show debug info in console
+                                        if (typeof window.debugCombineData === 'function') {
+                                            window.debugCombineData();
+                                        }
+                                        
                                         // Refresh the page to update display
-                                        location.reload();
-                                    }
+                                        setTimeout(() => location.reload(), 500);
+                                    })
+                                    .catch(error => {
+                                        console.error('Error resetting Firebase data:', error);
+                                        // Still refresh even if there's an error
+                                        setTimeout(() => location.reload(), 500);
+                                    });
                                 } else {
-                                    // Refresh the page to update display
-                                    location.reload();
+                                    // No user logged in, just refresh the page
+                                    setTimeout(() => location.reload(), 500);
                                 }
+                            } else {
+                                // Firebase not available, just refresh the page
+                                setTimeout(() => location.reload(), 500);
                             }
                         }
                     });
@@ -557,7 +559,7 @@
                                 return db.collection('users').doc(user.uid).delete();
                             })
                             .then(() => {
-                                console.log('Successfully deleted Firebase document');
+                                console.log('Successfully deleted user document');
                                 
                                 // Create a minimal new document
                                 return db.collection('users').doc(user.uid).set({
@@ -590,112 +592,10 @@
                 }
             };
             
-            // Add emergency reset button with special styling (only in development)
-            function addEmergencyResetButton() {
-                if (!document.getElementById('emergency-reset')) {
-                    const container = document.querySelector('.container');
-                    
-                    // Create a small button that appears at the bottom of the page
-                    const emergencyBtn = document.createElement('button');
-                    emergencyBtn.id = 'emergency-reset';
-                    emergencyBtn.textContent = '⚠️ EMERGENCY RESET';
-                    emergencyBtn.style.backgroundColor = '#ff3333';
-                    emergencyBtn.style.color = 'white';
-                    emergencyBtn.style.border = '2px solid #cc0000';
-                    emergencyBtn.style.padding = '8px 12px';
-                    emergencyBtn.style.margin = '30px auto 10px auto';
-                    emergencyBtn.style.display = 'block';
-                    emergencyBtn.style.borderRadius = '5px';
-                    emergencyBtn.style.cursor = 'pointer';
-                    emergencyBtn.style.fontSize = '12px';
-                    
-                    emergencyBtn.addEventListener('click', window.emergencyResetCombineData);
-                    
-                    container.appendChild(emergencyBtn);
-                    
-                    // Also add a Direct DB Reset button for extreme cases
-                    const directDbBtn = document.createElement('button');
-                    directDbBtn.id = 'direct-db-reset';
-                    directDbBtn.textContent = '🔥 DIRECT DB RESET';
-                    directDbBtn.style.backgroundColor = '#990000';
-                    directDbBtn.style.color = 'white';
-                    directDbBtn.style.border = '2px solid #660000';
-                    directDbBtn.style.padding = '8px 12px';
-                    directDbBtn.style.margin = '5px auto 20px auto';
-                    directDbBtn.style.display = 'block';
-                    directDbBtn.style.borderRadius = '5px';
-                    directDbBtn.style.cursor = 'pointer';
-                    directDbBtn.style.fontSize = '11px';
-                    
-                    directDbBtn.addEventListener('click', function() {
-                        if (confirm('⚠️ DIRECT DATABASE RESET: This bypasses all normal reset mechanisms. Are you absolutely sure?')) {
-                            
-                            // Clear localStorage first
-                            const keys = [
-                                'fortyYardDash', 
-                                'verticalJump', 
-                                'benchPress', 
-                                'broadJump', 
-                                'coneDrill', 
-                                'shuttleRun', 
-                                'combineResults'
-                            ];
-                            
-                            keys.forEach(key => localStorage.removeItem(key));
-                            
-                            // Direct Firebase manipulation
-                            if (typeof firebase !== 'undefined' && firebase.auth) {
-                                const user = firebase.auth().currentUser;
-                                if (user) {
-                                    const db = firebase.firestore();
-                                    
-                                    // Show loading state
-                                    this.disabled = true;
-                                    this.textContent = 'RESETTING DB...';
-                                    
-                                    // Create an entirely new document with a timestamp
-                                    const newDoc = {
-                                        email: user.email,
-                                        resetTimestamp: firebase.firestore.FieldValue.serverTimestamp()
-                                    };
-                                    
-                                    // Force recreate the document
-                                    db.collection('users').doc(user.uid).delete()
-                                    .then(() => {
-                                        console.log('Deleted user document successfully');
-                                        return new Promise(resolve => setTimeout(resolve, 1000));
-                                    })
-                                    .then(() => {
-                                        console.log('Creating new clean document');
-                                        return db.collection('users').doc(user.uid).set(newDoc);
-                                    })
-                                    .then(() => {
-                                        console.log('Successfully reset database completely');
-                                        alert('Database successfully reset. Page will reload.');
-                                        window.debugCombineData(); // Show data in console
-                                        setTimeout(() => window.location.reload(), 1500);
-                                    })
-                                    .catch(error => {
-                                        console.error('Error in direct DB reset:', error);
-                                        alert('Error during DB reset. See console for details.');
-                                        this.disabled = false;
-                                        this.textContent = '🔥 DIRECT DB RESET';
-                                    });
-                                } else {
-                                    alert('No user logged in. Cannot reset database.');
-                                }
-                            } else {
-                                alert('Firebase not available. Cannot reset database.');
-                            }
-                        }
-                    });
-                    
-                    container.appendChild(directDbBtn);
-                }
-            }
+            // Log a message for console access to emergency reset
+            console.log("For emergency resets, use: window.emergencyResetCombineData()");
             
-            // Call the addEmergencyResetButton function
-            addEmergencyResetButton();
+            // Don't add emergency reset buttons to the page anymore - removed per user request
         </script>
         
         <!-- Firebase SDK -->
