@@ -18,7 +18,8 @@ class GameEngine {
             maxSpeed: 3.0,    // Max speed
             speedIncrement: 0.05, // Speed increases by this much each rep
             currentSpeed: 1.0,
-            targetZoneWidth: 20 // Width percent of the target zone
+            targetZoneWidth: 20, // Width percent of the target zone
+            hasAttempted: this.checkIfAttempted()
         };
 
         this.elements = {
@@ -32,6 +33,11 @@ class GameEngine {
         this.ballAnimationId = null;
         
         this.initControls();
+        
+        // If user has already attempted, show their previous result
+        if (this.gameState.hasAttempted) {
+            this.showPreviousResult();
+        }
     }
 
     initControls() {
@@ -64,7 +70,8 @@ class GameEngine {
             maxSpeed: 3.0,
             speedIncrement: 0.05,
             currentSpeed: 1.0,
-            targetZoneWidth: 20
+            targetZoneWidth: 20,
+            hasAttempted: false
         };
         
         // Reset UI
@@ -155,7 +162,7 @@ class GameEngine {
         // Check for max reps
         if (this.gameState.reps >= this.gameState.maxReps) {
             // Player has reached the maximum possible reps
-            setTimeout(() => this.endGame(true), 500);
+            setTimeout(() => this.endGame(), 500);
         }
     }
 
@@ -169,7 +176,7 @@ class GameEngine {
         setTimeout(() => targetBall.classList.remove('miss-hit'), 300);
         
         // End the game with failure
-        this.endGame(false);
+        this.endGame();
     }
 
     increaseDifficulty() {
@@ -198,26 +205,25 @@ class GameEngine {
         }
     }
 
-    endGame(isVictory) {
-        // Stop the game
-        this.gameState.isPlaying = false;
-        cancelAnimationFrame(this.ballAnimationId);
+    endGame() {
+        // Stop the animation
+        this.stopGame();
         
-        // Show results screen
+        this.gameState.isPlaying = false;
+        this.elements.bencher.style.animationPlayState = 'paused';
+        
+        // Show the results screen
         const resultsScreen = document.querySelector('.results-screen');
         resultsScreen.classList.remove('hidden');
         
-        // Display final rep count
+        // Update the final score
         const finalReps = document.querySelector('.final-reps');
         finalReps.textContent = `${this.gameState.reps} REPS`;
         
-        // Set rating text based on rep count
+        // Set rating based on reps
         const rating = document.querySelector('.rating');
-        if (this.gameState.reps >= 50) {
+        if (this.gameState.reps >= 40) {
             rating.textContent = "ELITE";
-            rating.style.color = "#ffd700";
-        } else if (this.gameState.reps >= 40) {
-            rating.textContent = "OUTSTANDING";
             rating.style.color = "#00c6ff";
         } else if (this.gameState.reps >= 30) {
             rating.textContent = "EXCELLENT";
@@ -239,12 +245,14 @@ class GameEngine {
         // Save the bench press result
         this.saveResult();
         
+        // Mark as attempted
+        this.gameState.hasAttempted = true;
+        
         // Setup button events
         const restartBtn = document.querySelector('.restart-btn');
-        restartBtn.onclick = () => {
-            resultsScreen.classList.add('hidden');
-            this.startGame();
-        };
+        restartBtn.classList.add('disabled');
+        restartBtn.textContent = 'COMPLETED';
+        restartBtn.onclick = null; // Remove click handler
         
         const returnBtn = document.querySelector('.return-btn');
         returnBtn.onclick = () => {
@@ -296,6 +304,66 @@ class GameEngine {
             }
         } else {
             console.log("Bench press: Firebase not initialized, data not saved");
+        }
+    }
+
+    // Check if user has already attempted this event
+    checkIfAttempted() {
+        const storedReps = localStorage.getItem('benchPress');
+        
+        if (storedReps) {
+            console.log('User has already attempted bench press, reps:', storedReps);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Show the previous result
+    showPreviousResult() {
+        console.log('Showing previous bench press result');
+        
+        // Get the saved reps from localStorage
+        const benchReps = localStorage.getItem('benchPress');
+        
+        // Display the results screen with the saved time
+        document.querySelector('.results-screen').classList.remove('hidden');
+        document.querySelector('.final-reps').textContent = benchReps + ' REPS';
+        
+        // Set rating based on reps
+        const rating = document.querySelector('.rating');
+        if (parseInt(benchReps) >= 40) {
+            rating.textContent = "ELITE";
+            rating.style.color = "#00c6ff";
+        } else if (parseInt(benchReps) >= 30) {
+            rating.textContent = "EXCELLENT";
+            rating.style.color = "#4CAF50";
+        } else if (parseInt(benchReps) >= 25) {
+            rating.textContent = "VERY GOOD";
+            rating.style.color = "#8BC34A";
+        } else if (parseInt(benchReps) >= 20) {
+            rating.textContent = "GOOD";
+            rating.style.color = "#FFC107";
+        } else if (parseInt(benchReps) >= 15) {
+            rating.textContent = "AVERAGE";
+            rating.style.color = "#FF9800";
+        } else {
+            rating.textContent = "BELOW AVERAGE";
+            rating.style.color = "#F44336";
+        }
+        
+        // Update the restart button to be disabled (one attempt only)
+        const restartButton = document.querySelector('.restart-btn');
+        restartButton.classList.add('disabled');
+        restartButton.textContent = 'COMPLETED';
+        restartButton.onclick = null; // Remove the click handler
+        
+        // Still allow returning to the combine page
+        const returnButton = document.querySelector('.return-btn');
+        if (returnButton) {
+            returnButton.onclick = () => {
+                window.location.href = '/combine/';
+            };
         }
     }
 }
