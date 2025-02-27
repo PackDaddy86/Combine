@@ -93,17 +93,24 @@ class GameEngine {
 
     applySpeedEffect(pressRate) {
         const intensity = (pressRate - 6) / 3;
-        this.elements.runner.style.transform = `scale(${1 + intensity * 0.15})`;
+        // Remove the scale transform to prevent twitching
+        // this.elements.runner.style.transform = `scale(${1 + intensity * 0.15})`;
         this.elements.progressFill.style.width = `${this.gameState.progress}%`;
     }
     
     // New method to update the runner's position
     updateRunnerPosition() {
+        // Only update position if game is running
+        if (!this.gameState.isRunning) return;
+        
         // Move the runner to match the progress
         const trackWidth = document.querySelector('.athlete-track').offsetWidth - this.elements.runner.offsetWidth;
         // Adjust the position to account for the runner size and leave space at the finish line
         const position = (this.gameState.progress / 100) * (trackWidth - 20);
+        
+        // Set the new position directly without any transforms
         this.elements.runner.style.left = `${position}px`;
+        this.elements.runner.style.transform = 'none'; // Ensure no transform is applied
         
         // Debug output to see what's happening
         console.log(`Runner position: ${position}px, Progress: ${this.gameState.progress}%, Track width: ${trackWidth}px`);

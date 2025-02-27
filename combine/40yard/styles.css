@@ -35,11 +35,13 @@ body {
     left: 0;
     width: 120px;
     height: 120px;
-    background: url('sprites/runner.png') 0 0;
+    background: url('sprites/runner.png') no-repeat;
     background-size: contain;
-    background-repeat: no-repeat;
-    transition: left 0.3s ease-out;
+    background-position: 0 0;
+    transition: left 0.3s linear;
     z-index: 10;
+    /* Ensure no animations are applied */
+    animation: none !important;
 }
 
 .progress-bar {
