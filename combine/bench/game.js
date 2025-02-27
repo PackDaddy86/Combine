@@ -323,6 +323,9 @@ class GameEngine {
         
         console.log("Bench press save result called with:", formattedReps);
         
+        // First, save to localStorage for immediate access on the combine page
+        localStorage.setItem('benchPress', formattedReps);
+        
         // Skip localStorage entirely and go straight to Firebase
         if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
             const user = firebase.auth().currentUser;
