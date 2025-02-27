@@ -4,9 +4,9 @@ window.saveCombineEventData = saveCombineEventData;
 class GameEngine {
     constructor() {
         this.sounds = {
-            press: new Howl({ src: ['/sounds/press.wav'], volume: 0.3 }),
-            success: new Howl({ src: ['/sounds/success.wav'], volume: 0.5 }),
-            fail: new Howl({ src: ['/sounds/fail.wav'], volume: 0.5 })
+            press: new Howl({ src: ['../../sounds/press.wav'], volume: 0.3 }),
+            success: new Howl({ src: ['../../sounds/success.wav'], volume: 0.5 }),
+            fail: new Howl({ src: ['../../sounds/fail.wav'], volume: 0.5 })
         };
         
         this.gameState = {
@@ -22,7 +22,8 @@ class GameEngine {
             speedIncrement: 0.05, // Speed increases by this much each rep
             currentSpeed: 1.0,
             targetZoneWidth: 20, // Width percent of the target zone
-            hasAttempted: this.checkIfAttempted()
+            hasAttempted: this.checkIfAttempted(),
+            clickCooldown: false
         };
 
         this.elements = {
@@ -36,6 +37,7 @@ class GameEngine {
         this.ballAnimationId = null;
         
         this.initControls();
+        this.initEventListeners();
         
         // If user has already attempted, show their previous result
         if (this.gameState.hasAttempted) {
@@ -65,6 +67,35 @@ class GameEngine {
         setTimeout(() => this.startGame(), 1000);
     }
 
+    initEventListeners() {
+        console.log("Initializing event listeners");
+        
+        // Attempt a rep when spacebar is pressed
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && !event.repeat) {
+                this.attemptRep();
+            }
+        });
+        
+        // Also attempt a rep when the whole bar track is clicked
+        document.querySelector('.bar-track').addEventListener('click', () => {
+            this.attemptRep();
+        });
+        
+        // Return to combine page
+        document.querySelector('.return-btn').addEventListener('click', () => {
+            window.location.href = '/combine/index.html';
+        });
+        
+        // Restart game
+        document.querySelector('.restart-btn').addEventListener('click', () => {
+            if (!document.querySelector('.restart-btn').classList.contains('disabled')) {
+                this.resetGame();
+                this.startGame();
+            }
+        });
+    }
+
     startGame() {
         console.log("Starting game");
         
@@ -82,7 +113,8 @@ class GameEngine {
             speedIncrement: 0.05,
             currentSpeed: 1.0,
             targetZoneWidth: 20,
-            hasAttempted: false
+            hasAttempted: false,
+            clickCooldown: false
         };
         
         // Reset UI
@@ -129,25 +161,30 @@ class GameEngine {
     }
 
     attemptRep() {
-        if (!this.gameState.isPlaying) {
-            console.log("Game not playing, ignoring attempt");
+        if (!this.gameState.isPlaying || this.gameState.clickCooldown) {
             return;
         }
         
-        console.log("Attempting rep");
+        console.log("Rep attempted");
         
-        // Play press sound for any attempt
-        try {
-            this.sounds.press.play();
-        } catch (e) {
-            console.error("Error playing press sound", e);
-        }
+        // Play press sound
+        this.sounds.press.play();
         
-        // SUPER SIMPLE FIXED APPROACH: Use hardcoded center zone for testing
+        // Show press animation immediately on click
+        this.elements.bencher.classList.add('press-up');
         
-        // Ball position from 0-100
+        // Get ball position
         const ballPosition = this.gameState.ballPosition;
-        console.log("Ball position: " + ballPosition);
+        console.log("Ball position:", ballPosition);
+        
+        // Set clickCooldown to prevent rapid clicking
+        this.gameState.clickCooldown = true;
+        setTimeout(() => {
+            this.gameState.clickCooldown = false;
+            
+            // Reset to rest position after a short delay
+            this.elements.bencher.classList.remove('press-up');
+        }, 300);
         
         // If ball is in center 40% of track (30-70), it's a successful hit
         if (ballPosition >= 30 && ballPosition <= 70) {
@@ -169,10 +206,6 @@ class GameEngine {
         const targetBall = document.querySelector('.target-ball');
         targetBall.classList.add('success-hit');
         setTimeout(() => targetBall.classList.remove('success-hit'), 300);
-        
-        // Show press animation
-        this.elements.bencher.classList.add('press-up');
-        setTimeout(() => this.elements.bencher.classList.remove('press-up'), 300);
         
         // Increment rep counter
         this.gameState.reps++;
@@ -199,9 +232,9 @@ class GameEngine {
         targetBall.classList.add('miss-hit');
         setTimeout(() => targetBall.classList.remove('miss-hit'), 300);
         
-        // Show a slight press animation for attempt
-        this.elements.bencher.classList.add('failed-press');
-        setTimeout(() => this.elements.bencher.classList.remove('failed-press'), 300);
+        // Add a failure indicator with opacity
+        this.elements.bencher.classList.add('failed-rep-indicator');
+        setTimeout(() => this.elements.bencher.classList.remove('failed-rep-indicator'), 300);
         
         // End the game with failure - directly call endGame (don't wait)
         console.log("Ending game due to missed green");
@@ -465,6 +498,47 @@ class GameEngine {
                 window.location.href = '/combine/';
             };
         }
+    }
+
+    resetGame() {
+        console.log("Resetting game");
+        
+        // Reset game state
+        this.gameState = {
+            isPlaying: false,
+            reps: 0,
+            maxReps: 51,
+            ballPosition: 0,
+            ballDirection: 1,
+            centerSize: 30,
+            minCenterSize: 8,
+            baseSpeed: 1.0,
+            maxSpeed: 3.0,
+            speedIncrement: 0.05,
+            currentSpeed: 1.0,
+            targetZoneWidth: 20,
+            hasAttempted: false,
+            clickCooldown: false
+        };
+        
+        // Reset UI
+        this.elements.repCounter.textContent = '0';
+        this.elements.targetCenter.style.width = `${this.gameState.centerSize}px`;
+        this.elements.targetCenter.style.height = `${this.gameState.centerSize}px`;
+        
+        // Reset any existing animations
+        if (this.ballAnimationId) {
+            cancelAnimationFrame(this.ballAnimationId);
+            this.ballAnimationId = null;
+        }
+        
+        // Hide results screen if visible
+        document.querySelector('.results-screen').classList.add('hidden');
+        
+        // Reset restart button
+        const restartButton = document.querySelector('.restart-btn');
+        restartButton.classList.remove('disabled');
+        restartButton.textContent = 'RESTART';
     }
 }
 

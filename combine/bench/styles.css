@@ -77,10 +77,11 @@ h1 {
     position: absolute;
     width: 200px;
     height: 120px;
-    background-image: url('/sprites/bench-rest.png');
+    background-image: url('../sprites/bench-rest.svg');
     background-size: contain;
     background-repeat: no-repeat;
     z-index: 2;
+    transition: transform 0.2s ease, background-image 0.1s ease;
 }
 
 .bench-rack {
@@ -242,13 +243,21 @@ h1 {
 
 /* Animation classes */
 .press-up {
-    background-image: url('/sprites/bench-up.png') !important;
+    background-image: url('../sprites/bench-up.svg') !important;
+    transform: translateY(-5px) !important;
+    transition: transform 0.2s ease-out !important;
 }
 
 .failed-press {
-    background-image: url('/sprites/bench-up.png') !important;
+    background-image: url('../sprites/bench-up.svg') !important;
     opacity: 0.6 !important;
     filter: grayscale(50%) !important;
+}
+
+.failed-rep-indicator {
+    opacity: 0.6 !important;
+    filter: grayscale(50%) !important;
+    transform: translateY(3px) !important;
 }
 
 .success-hit {
