@@ -101,7 +101,8 @@ class GameEngine {
     updateRunnerPosition() {
         // Move the runner to match the progress
         const trackWidth = document.querySelector('.athlete-track').offsetWidth - this.elements.runner.offsetWidth;
-        const position = (this.gameState.progress / 100) * trackWidth;
+        // Adjust the position to account for the runner size and leave space at the finish line
+        const position = (this.gameState.progress / 100) * (trackWidth - 20);
         this.elements.runner.style.left = `${position}px`;
         
         // Debug output to see what's happening
