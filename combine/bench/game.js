@@ -120,60 +120,39 @@ class GameEngine {
     }
 
     attemptRep() {
-        if (!this.gameState.isPlaying) return;
+        if (!this.gameState.isPlaying) {
+            console.log("Game not playing, ignoring attempt");
+            return;
+        }
+        
+        console.log("Attempting rep");
         
         // Play press sound for any attempt
-        this.sounds.press.play();
+        try {
+            this.sounds.press.play();
+        } catch (e) {
+            console.error("Error playing press sound", e);
+        }
         
-        // VERY SIMPLE APPROACH: Make a large zone in the middle (40% of the bar) count as green
-        // This is just for testing to ensure the basic success/failure logic is working
-        const ballPos = this.gameState.ballPosition; // 0-100
+        // SUPER SIMPLE FIXED APPROACH: Use hardcoded center zone for testing
         
-        // For testing: Consider a wide zone around the center (40% of the bar) as green
-        // This means if the ball is between 30% and 70% of the bar, it's a successful hit
-        const isInGreenCenter = (ballPos >= 30 && ballPos <= 70);
+        // Ball position from 0-100
+        const ballPosition = this.gameState.ballPosition;
+        console.log("Ball position: " + ballPosition);
         
-        console.log("Ball position:", ballPos);
-        console.log("Is in green center (wide test zone):", isInGreenCenter);
-        
-        // Debug the element that's supposed to be the green center
-        const centerElement = this.elements.targetCenter;
-        console.log("Center element:", centerElement);
-        console.log("Center element width:", centerElement.offsetWidth);
-        
-        if (isInGreenCenter) {
-            console.log("SUCCESS - Ball is in test green center");
-            
-            // Increment rep counter
-            this.gameState.reps++;
-            this.elements.repCounter.textContent = this.gameState.reps;
-            
-            // Flash success feedback
-            const targetBall = document.querySelector('.target-ball');
-            targetBall.classList.add('success-hit');
-            setTimeout(() => targetBall.classList.remove('success-hit'), 300);
-            
-            // Show press animation
-            this.elements.bencher.classList.add('press-up');
-            setTimeout(() => this.elements.bencher.classList.remove('press-up'), 300);
-            
-            // Play success sound
-            this.sounds.success.play();
-            
-            // Increase difficulty
-            this.increaseDifficulty();
-            
-            // Check for max reps
-            if (this.gameState.reps >= this.gameState.maxReps) {
-                setTimeout(() => this.endGame(), 500);
-            }
+        // If ball is in center 40% of track (30-70), it's a successful hit
+        if (ballPosition >= 30 && ballPosition <= 70) {
+            console.log("HIT! Ball in center zone");
+            this.successfulRep();
         } else {
-            console.log("FAILED - Ball missed green center");
+            console.log("MISS! Ball outside center zone");
             this.failedRep();
         }
     }
 
     successfulRep() {
+        console.log("SUCCESSFUL REP METHOD CALLED");
+        
         // Play success sound
         this.sounds.success.play();
         
@@ -201,6 +180,8 @@ class GameEngine {
     }
 
     failedRep() {
+        console.log("FAILED REP METHOD CALLED");
+        
         // Play fail sound
         this.sounds.fail.play();
         
