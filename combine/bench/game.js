@@ -114,39 +114,36 @@ class GameEngine {
         // Play press sound for any attempt
         this.sounds.press.play();
         
-        // Get the target center element dimensions
-        const centerElement = this.elements.targetCenter;
-        const centerRect = centerElement.getBoundingClientRect();
-        const centerWidth = centerRect.width;
+        // Simpler approach: check if the ball is in the center zone
+        // The center is at 50% of the track
+        const ballPos = this.gameState.ballPosition; // 0-100
+        const centerPos = 50; // center of track
         
-        // Get the ball position
-        const ballPosition = this.gameState.ballPosition;
+        // Calculate distance as percentage (0-100)
+        const distanceFromCenter = Math.abs(ballPos - centerPos);
         
-        // Calculate if the ball is in the green center
-        // The track is 100% wide, and the center is at 50%
-        const ballCenterPos = this.gameState.ballPosition;
-        const trackCenter = 50;
+        // Convert the center size from pixels to percentage of track
+        const trackWidth = document.querySelector('.bar-track').offsetWidth;
+        const centerSizeAsPercentage = (this.gameState.centerSize / trackWidth) * 100;
         
-        // Convert percentage distances to pixels for accurate comparison
-        const ballTrackWidth = document.querySelector('.bar-track').offsetWidth;
-        const pixelDistanceFromCenter = Math.abs(ballCenterPos - trackCenter) * ballTrackWidth / 100;
-        const greenCenterRadius = centerWidth / 2;
+        // Half the center size as percentage
+        const centerRadiusAsPercentage = centerSizeAsPercentage / 2;
         
-        // Ball is in green center if its distance from center is less than the green center radius
-        const isInGreenCenter = pixelDistanceFromCenter <= greenCenterRadius;
+        // Ball is in green if distance is less than center radius
+        const isInGreenCenter = distanceFromCenter <= centerRadiusAsPercentage;
         
-        console.log("Ball position: ", ballCenterPos);
-        console.log("Track center: ", trackCenter);
-        console.log("Distance from center (px): ", pixelDistanceFromCenter);
-        console.log("Green center radius (px): ", greenCenterRadius);
-        console.log("Is in green center: ", isInGreenCenter);
+        console.log("Ball position:", ballPos);
+        console.log("Center position:", centerPos);
+        console.log("Distance from center (%):", distanceFromCenter);
+        console.log("Center size (px):", this.gameState.centerSize);
+        console.log("Center size (%):", centerSizeAsPercentage);
+        console.log("Center radius (%):", centerRadiusAsPercentage);
+        console.log("Is in green center:", isInGreenCenter);
         
         if (isInGreenCenter) {
-            // Successful rep - only count if in the green center
             console.log("SUCCESS - Ball is in green center");
             this.successfulRep();
         } else {
-            // Failed rep - end game only when missing the green center
             console.log("FAILED - Ball missed green center");
             this.failedRep();
         }
