@@ -94,6 +94,88 @@ function loadCombineResults() {
     };
 }
 
+/**
+ * Resets all combine data for the current user
+ */
+function resetCombineData() {
+    console.log('🔴 Debug [resetCombineData] Resetting combine data');
+    
+    // First clear all localStorage
+    clearLocalStorageData();
+    
+    // Then reset Firebase if user is logged in
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log(`🔴 Debug [resetCombineData] User logged in, resetting Firebase data for ${user.uid}`);
+            
+            const db = firebase.firestore();
+            
+            // Use FieldValue.delete() to properly remove fields
+            const deleteFields = {
+                fortyYardDash: firebase.firestore.FieldValue.delete(),
+                verticalJump: firebase.firestore.FieldValue.delete(),
+                benchPress: firebase.firestore.FieldValue.delete(),
+                broadJump: firebase.firestore.FieldValue.delete(),
+                coneDrill: firebase.firestore.FieldValue.delete(),
+                shuttleRun: firebase.firestore.FieldValue.delete(),
+                lastUpdate: new Date()
+            };
+            
+            return db.collection('users').doc(user.uid).update(deleteFields)
+                .then(() => {
+                    console.log('🔴 Debug [resetCombineData] Successfully reset Firebase data');
+                    
+                    // Force UI refresh by calling updateResultsAndButtons if it exists
+                    if (typeof updateResultsAndButtons === 'function') {
+                        try {
+                            updateResultsAndButtons();
+                        } catch (e) {
+                            console.error('Error updating UI after reset:', e);
+                        }
+                    }
+                    
+                    return true;
+                })
+                .catch(error => {
+                    console.error('🔴 Debug [resetCombineData] Error resetting Firebase data:', error);
+                    return false;
+                });
+        }
+    }
+    
+    // Force UI refresh by calling updateResultsAndButtons if it exists
+    if (typeof updateResultsAndButtons === 'function') {
+        try {
+            updateResultsAndButtons();
+        } catch (e) {
+            console.error('Error updating UI after reset:', e);
+        }
+    }
+    
+    return Promise.resolve(true); // If no user or Firebase, just return a resolved promise
+}
+
+/**
+ * Clears all combine-related data from localStorage
+ */
+function clearLocalStorageData() {
+    console.log('🔴 Debug [clearLocalStorageData] Clearing combine data from localStorage');
+    
+    // Clear all individual event items
+    localStorage.removeItem('fortyYardDash');
+    localStorage.removeItem('verticalJump');
+    localStorage.removeItem('benchPress');
+    localStorage.removeItem('broadJump');
+    localStorage.removeItem('coneDrill');
+    localStorage.removeItem('shuttleRun');
+    
+    // Clear compound data
+    localStorage.removeItem('combineResults');
+    
+    console.log('🔴 Debug [clearLocalStorageData] All combine data cleared from localStorage');
+}
+
 // Initialize Firebase auth listener if not already listening
 if (typeof firebase !== 'undefined' && firebase.auth) {
     firebase.auth().onAuthStateChanged(user => {
@@ -105,26 +187,6 @@ if (typeof firebase !== 'undefined' && firebase.auth) {
             clearLocalStorageData();
         }
     });
-}
-
-// Clear localStorage data
-function clearLocalStorageData() {
-    console.log('🔴 Debug [clearLocalStorageData] Clearing localStorage data');
-    
-    // List of keys to clear (game-specific data)
-    const keysToRemove = [
-        'combineResults',
-        'rasResults',
-        'fortyYardDash',
-        'verticalJump',
-        'benchPress',
-        'broadJump',
-        'coneDrill',
-        'shuttleRun'
-    ];
-    
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-    console.log('🔴 Debug [clearLocalStorageData] Cleared localStorage data');
 }
 
 // Sync user data between Firestore and localStorage
@@ -144,6 +206,14 @@ function syncUserData(userId) {
             if (doc.exists) {
                 console.log('🔴 Debug [syncUserData] Syncing user data from Firestore to localStorage');
                 const userData = doc.data();
+                
+                // First check if the data exists in Firebase, if not, clear it from localStorage too
+                if (!userData.hasOwnProperty('fortyYardDash')) localStorage.removeItem('fortyYardDash');
+                if (!userData.hasOwnProperty('verticalJump')) localStorage.removeItem('verticalJump');
+                if (!userData.hasOwnProperty('benchPress')) localStorage.removeItem('benchPress');
+                if (!userData.hasOwnProperty('broadJump')) localStorage.removeItem('broadJump');
+                if (!userData.hasOwnProperty('coneDrill')) localStorage.removeItem('coneDrill');
+                if (!userData.hasOwnProperty('shuttleRun')) localStorage.removeItem('shuttleRun');
                 
                 // Update individual event data in localStorage
                 if (userData.fortyYardDash) localStorage.setItem('fortyYardDash', userData.fortyYardDash);

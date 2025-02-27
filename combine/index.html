@@ -371,47 +371,61 @@
                     
                     resetButton.addEventListener('click', function() {
                         if (confirm('Are you sure you want to reset all combine event results? This cannot be undone.')) {
-                            // Clear all localStorage items
-                            localStorage.removeItem('fortyYardDash');
-                            localStorage.removeItem('verticalJump');
-                            localStorage.removeItem('benchPress');
-                            localStorage.removeItem('broadJump');
-                            localStorage.removeItem('coneDrill');
-                            localStorage.removeItem('shuttleRun');
-                            localStorage.removeItem('combineResults');
-                            
-                            // Also clear Firebase if user is logged in
-                            if (typeof firebase !== 'undefined' && firebase.auth) {
-                                const user = firebase.auth().currentUser;
-                                if (user) {
-                                    console.log('Resetting Firebase user data');
-                                    const db = firebase.firestore();
-                                    
-                                    // Create an update object that sets all fields to null or empty
-                                    db.collection('users').doc(user.uid).update({
-                                        fortyYardDash: null,
-                                        verticalJump: null,
-                                        benchPress: null,
-                                        broadJump: null,
-                                        coneDrill: null,
-                                        shuttleRun: null,
-                                        lastUpdate: new Date()
-                                    }).then(() => {
-                                        console.log('Reset all combine data in Firebase');
+                            // Try to use the resetCombineData helper function if available
+                            if (typeof resetCombineData === 'function') {
+                                console.log('Using resetCombineData helper function');
+                                resetCombineData().then(() => {
+                                    // Refresh the page to update display
+                                    location.reload();
+                                });
+                            } else {
+                                console.log('resetCombineData not available, using fallback reset');
+                                // Clear all localStorage items
+                                localStorage.removeItem('fortyYardDash');
+                                localStorage.removeItem('verticalJump');
+                                localStorage.removeItem('benchPress');
+                                localStorage.removeItem('broadJump');
+                                localStorage.removeItem('coneDrill');
+                                localStorage.removeItem('shuttleRun');
+                                localStorage.removeItem('combineResults');
+                                
+                                // Also clear Firebase if user is logged in
+                                if (typeof firebase !== 'undefined' && firebase.auth) {
+                                    const user = firebase.auth().currentUser;
+                                    if (user) {
+                                        console.log('Resetting Firebase user data');
+                                        const db = firebase.firestore();
+                                        
+                                        // Use removeField() instead of null to actually remove the fields
+                                        const deleteFields = {
+                                            fortyYardDash: firebase.firestore.FieldValue.delete(),
+                                            verticalJump: firebase.firestore.FieldValue.delete(),
+                                            benchPress: firebase.firestore.FieldValue.delete(),
+                                            broadJump: firebase.firestore.FieldValue.delete(),
+                                            coneDrill: firebase.firestore.FieldValue.delete(),
+                                            shuttleRun: firebase.firestore.FieldValue.delete(),
+                                            lastUpdate: new Date()
+                                        };
+                                        
+                                        // Update the document by deleting the fields
+                                        db.collection('users').doc(user.uid).update(deleteFields)
+                                        .then(() => {
+                                            console.log('Reset all combine data in Firebase');
+                                            // Refresh the page to update display
+                                            location.reload();
+                                        }).catch(error => {
+                                            console.error('Error resetting Firebase data:', error);
+                                            // Still refresh even if there's an error
+                                            location.reload();
+                                        });
+                                    } else {
                                         // Refresh the page to update display
                                         location.reload();
-                                    }).catch(error => {
-                                        console.error('Error resetting Firebase data:', error);
-                                        // Still refresh even if there's an error
-                                        location.reload();
-                                    });
+                                    }
                                 } else {
                                     // Refresh the page to update display
                                     location.reload();
                                 }
-                            } else {
-                                // Refresh the page to update display
-                                location.reload();
                             }
                         }
                     });
