@@ -167,7 +167,6 @@ class BroadJumpGame {
             // Show results after animation completes
             setTimeout(() => {
                 this.showResults();
-                this.saveResult();
             }, 1500);
         }, 300);
     }
@@ -246,22 +245,29 @@ class BroadJumpGame {
         
         this.elements.rating.textContent = rating;
         
+        // Save the result to Firestore
+        this.saveResult();
+        
         // Show results screen
         this.elements.resultsScreen.classList.remove('hidden');
     }
 
     saveResult() {
         console.log('Saving broad jump result to Firebase');
+        console.log('Game state at save:', this.state);
         
         // Skip localStorage entirely and go straight to Firebase
         if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            console.log('Firebase initialized correctly');
             const user = firebase.auth().currentUser;
             
             if (user) {
-                console.log(`Broad jump: User logged in (${user.uid}), saving to Firestore`);
+                console.log(`Broad jump: User logged in (${user.uid}), saving distance: ${this.state.distance}`);
                 
                 const db = firebase.firestore();
                 const distanceValue = this.state.distance.toFixed(2);
+                
+                console.log(`About to save broadJump = ${distanceValue} to users/${user.uid}`);
                 
                 // Save directly to Firestore as a root property
                 db.collection('users').doc(user.uid).update({
@@ -271,6 +277,7 @@ class BroadJumpGame {
                     console.log(`Broad jump: Successfully saved ${distanceValue} feet to Firestore`);
                 }).catch(error => {
                     console.error(`Broad jump: Error during update:`, error);
+                    console.error(`Error code: ${error.code}, message: ${error.message}`);
                     
                     // If document doesn't exist, create it
                     if (error.code === 'not-found') {
@@ -284,6 +291,7 @@ class BroadJumpGame {
                             console.log(`Broad jump: Created new document with ${distanceValue} feet`);
                         }).catch(err => {
                             console.error("Broad jump: Error creating document:", err);
+                            console.error(`Error code: ${err.code}, message: ${err.message}`);
                         });
                     }
                 });
@@ -292,6 +300,11 @@ class BroadJumpGame {
             }
         } else {
             console.log("Broad jump: Firebase not initialized, data not saved");
+            console.log("Firebase availability:", {
+                firebaseExists: typeof firebase !== 'undefined',
+                authExists: typeof firebase !== 'undefined' && !!firebase.auth,
+                firestoreExists: typeof firebase !== 'undefined' && !!firebase.firestore
+            });
         }
     }
 
