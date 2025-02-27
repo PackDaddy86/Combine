@@ -244,16 +244,35 @@ class GameEngine {
         }
         
         // Show results
-        const resultsDiv = document.querySelector('.results-screen');
-        const resultRepCountElement = document.querySelector('.result-rep-count');
+        const resultsScreen = document.querySelector('.results-screen');
         
-        // Update the rep count in the results screen
-        resultRepCountElement.textContent = this.gameState.reps;
+        // Update the final score
+        const finalReps = document.querySelector('.final-reps');
+        finalReps.textContent = `${this.gameState.reps} REPS`;
         
-        // Show the results screen
-        resultsDiv.classList.remove('hidden');
+        // Set rating based on reps
+        const rating = document.querySelector('.rating');
+        if (this.gameState.reps >= 40) {
+            rating.textContent = "ELITE";
+            rating.style.color = "#00c6ff";
+        } else if (this.gameState.reps >= 30) {
+            rating.textContent = "EXCELLENT";
+            rating.style.color = "#4CAF50";
+        } else if (this.gameState.reps >= 25) {
+            rating.textContent = "VERY GOOD";
+            rating.style.color = "#8BC34A";
+        } else if (this.gameState.reps >= 20) {
+            rating.textContent = "GOOD";
+            rating.style.color = "#FFC107";
+        } else if (this.gameState.reps >= 15) {
+            rating.textContent = "AVERAGE";
+            rating.style.color = "#FF9800";
+        } else {
+            rating.textContent = "BELOW AVERAGE";
+            rating.style.color = "#F44336";
+        }
         
-        // Store the result in the user's profile
+        // Save the bench press result
         if (typeof saveGameResult === 'function') {
             try {
                 saveGameResult('benchpress', this.gameState.reps);
@@ -261,6 +280,23 @@ class GameEngine {
                 console.error('Error saving result:', err);
             }
         }
+        
+        // Mark as attempted
+        this.gameState.hasAttempted = true;
+        
+        // Setup button events
+        const restartBtn = document.querySelector('.restart-btn');
+        restartBtn.classList.add('disabled');
+        restartBtn.textContent = 'COMPLETED';
+        restartBtn.onclick = null; // Remove click handler
+        
+        const returnBtn = document.querySelector('.return-btn');
+        returnBtn.onclick = () => {
+            window.location.href = '/combine/';
+        };
+        
+        // Show the results screen
+        resultsScreen.classList.remove('hidden');
     }
 
     stopGame() {
