@@ -10,6 +10,16 @@
     font-size: 0.8em;
 }
 
+/* Overall RAS grade */
+.ras-grade {
+    font-size: 1em;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 5px;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+}
+
 /* Grade color classes */
 .grade-poor {
     background-color: #ff6b6b;

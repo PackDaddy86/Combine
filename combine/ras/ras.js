@@ -278,6 +278,14 @@ function calculateRASScores() {
         updateScoreDisplay('height-score', heightScore);
         updateScoreDisplay('weight-score', weightScore);
         
+        // Add grade labels for each individual event
+        addGradeLabel('forty-score', fortyScore);
+        addGradeLabel('vertical-score', verticalScore);
+        addGradeLabel('bench-score', benchScore);
+        addGradeLabel('broad-score', broadScore);
+        addGradeLabel('cone-score', coneScore);
+        addGradeLabel('shuttle-score', shuttleScore);
+        
         // Calculate composite scores - respect null values
         const sizeGrade = calculateCompositeGrade([heightScore, weightScore]);
         const speedGrade = calculateCompositeGrade([fortyScore, twentyScore, tenScore]);
@@ -290,34 +298,51 @@ function calculateRASScores() {
         updateGradeDisplay('explosion-grade', explosionGrade, 'COMPOSITE EXPLOSION GRADE');
         updateGradeDisplay('agility-grade', agilityGrade, 'COMPOSITE AGILITY GRADE');
         
-        // Calculate overall RAS score (average of all metrics)
-        const allScores = [
-            fortyScore, twentyScore, tenScore, 
-            verticalScore, broadScore, benchScore,
-            coneScore, shuttleScore,
-            heightScore, weightScore
-        ];
+        // Calculate overall RAS score based on the composite grades
+        const compositeGrades = [sizeGrade, speedGrade, explosionGrade, agilityGrade];
+        const validComposites = compositeGrades.filter(grade => grade !== null);
         
-        // Sum all the valid scores
-        let totalScore = 0;
-        let validCount = 0;
-        
-        for (let i = 0; i < allScores.length; i++) {
-            // Only count scores that are not null
-            if (allScores[i] !== null) {
-                totalScore += parseFloat(allScores[i]);
-                validCount++;
-            }
-        }
-        
-        // Calculate the overall RAS (only default to 7.16 if absolutely no scores are available)
+        // Only use the individual scores as a fallback if no composites are available
         let overallRAS = "7.16"; // Default if nothing is available
-        if (validCount > 0) {
-            overallRAS = (totalScore / validCount).toFixed(2);
+        
+        if (validComposites.length > 0) {
+            // Use composite grades for overall RAS
+            const totalCompositeScore = validComposites.reduce((sum, grade) => sum + parseFloat(grade), 0);
+            overallRAS = (totalCompositeScore / validComposites.length).toFixed(2);
+        } else {
+            // Fallback to individual scores if no composites
+            const allScores = [
+                fortyScore, twentyScore, tenScore, 
+                verticalScore, broadScore, benchScore,
+                coneScore, shuttleScore,
+                heightScore, weightScore
+            ];
+            
+            // Sum all the valid scores
+            let totalScore = 0;
+            let validCount = 0;
+            
+            for (let i = 0; i < allScores.length; i++) {
+                // Only count scores that are not null
+                if (allScores[i] !== null) {
+                    totalScore += parseFloat(allScores[i]);
+                    validCount++;
+                }
+            }
+            
+            if (validCount > 0) {
+                overallRAS = (totalScore / validCount).toFixed(2);
+            }
         }
         
         // Update overall RAS display with color coding
         updateOverallRAS(overallRAS);
+        
+        // Display the grade text for the overall RAS
+        const overallRasElement = document.getElementById('overall-ras-grade');
+        if (overallRasElement) {
+            overallRasElement.textContent = getGradeText(overallRAS);
+        }
         
         // Store the results in localStorage with a meaningful key name
         try {
@@ -339,7 +364,21 @@ function calculateRASScores() {
                 shuttle: document.getElementById('shuttle-value').textContent,
                 cone: document.getElementById('cone-value').textContent,
                 dash: document.getElementById('forty-value').textContent,
-                overallRAS: parseFloat(overallRAS)
+                overallRAS: parseFloat(overallRAS),
+                // Add individual grades
+                grades: {
+                    forty: fortyScore !== null ? getGradeText(fortyScore) : 'N/A',
+                    vertical: verticalScore !== null ? getGradeText(verticalScore) : 'N/A',
+                    bench: benchScore !== null ? getGradeText(benchScore) : 'N/A',
+                    broad: broadScore !== null ? getGradeText(broadScore) : 'N/A',
+                    cone: coneScore !== null ? getGradeText(coneScore) : 'N/A',
+                    shuttle: shuttleScore !== null ? getGradeText(shuttleScore) : 'N/A',
+                    size: sizeGrade !== null ? getGradeText(sizeGrade) : 'N/A',
+                    speed: speedGrade !== null ? getGradeText(speedGrade) : 'N/A',
+                    explosion: explosionGrade !== null ? getGradeText(explosionGrade) : 'N/A',
+                    agility: agilityGrade !== null ? getGradeText(agilityGrade) : 'N/A',
+                    overall: getGradeText(overallRAS)
+                }
             };
             
             // Save back to localStorage
@@ -648,47 +687,6 @@ function getGradeText(score) {
     if (score < 9) return "VERY GOOD";
     if (score < 9.5) return "EXCELLENT";
     return "ELITE";
-}
-
-function calculateSizeScore(measurement, type) {
-    if (isNaN(measurement)) return 5.0; // Default to average if NaN
-    
-    let score;
-    
-    switch(type) {
-        case 'height':
-            // NFL height standards (in inches)
-            if (measurement >= 78) score = 10;      // 6'6" or taller
-            else if (measurement >= 76) score = 9;  // 6'4"
-            else if (measurement >= 74) score = 8;  // 6'2"
-            else if (measurement >= 72) score = 7;  // 6'0"
-            else if (measurement >= 70) score = 6;  // 5'10"
-            else if (measurement >= 69) score = 5;  // 5'9"
-            else if (measurement >= 68) score = 4;  // 5'8"
-            else if (measurement >= 67) score = 3;  // 5'7"
-            else if (measurement >= 66) score = 2;  // 5'6"
-            else if (measurement >= 65) score = 1;  // 5'5"
-            else score = 0;                        // Less than 5'5"
-            break;
-        case 'weight':
-            // NFL weight standards (in lbs)
-            if (measurement >= 300) score = 10;     // 300+ lbs
-            else if (measurement >= 280) score = 9;
-            else if (measurement >= 260) score = 8;
-            else if (measurement >= 240) score = 7;
-            else if (measurement >= 225) score = 6;
-            else if (measurement >= 210) score = 5;
-            else if (measurement >= 195) score = 4;
-            else if (measurement >= 180) score = 3;
-            else if (measurement >= 170) score = 2;
-            else if (measurement >= 160) score = 1;
-            else score = 0;                        // Less than 160 lbs
-            break;
-        default:
-            score = 5;
-    }
-    
-    return Math.max(0, Math.min(10, score)).toFixed(2);
 }
 
 function saveAsImage() {
@@ -1028,4 +1026,45 @@ function calculateAndUpdateCompositeScores() {
     updateGradeDisplay('speed-grade', speedGrade, 'COMPOSITE SPEED GRADE');
     updateGradeDisplay('explosion-grade', explosionGrade, 'COMPOSITE EXPLOSION GRADE');
     updateGradeDisplay('agility-grade', agilityGrade, 'COMPOSITE AGILITY GRADE');
+}
+
+function calculateSizeScore(measurement, type) {
+    if (isNaN(measurement)) return 5.0; // Default to average if NaN
+    
+    let score;
+    
+    switch(type) {
+        case 'height':
+            // NFL height standards (in inches)
+            if (measurement >= 78) score = 10;      // 6'6" or taller
+            else if (measurement >= 76) score = 9;  // 6'4"
+            else if (measurement >= 74) score = 8;  // 6'2"
+            else if (measurement >= 72) score = 7;  // 6'0"
+            else if (measurement >= 70) score = 6;  // 5'10"
+            else if (measurement >= 69) score = 5;  // 5'9"
+            else if (measurement >= 68) score = 4;  // 5'8"
+            else if (measurement >= 67) score = 3;  // 5'7"
+            else if (measurement >= 66) score = 2;  // 5'6"
+            else if (measurement >= 65) score = 1;  // 5'5"
+            else score = 0;                        // Less than 5'5"
+            break;
+        case 'weight':
+            // NFL weight standards (in lbs)
+            if (measurement >= 300) score = 10;     // 300+ lbs
+            else if (measurement >= 280) score = 9;
+            else if (measurement >= 260) score = 8;
+            else if (measurement >= 240) score = 7;
+            else if (measurement >= 225) score = 6;
+            else if (measurement >= 210) score = 5;
+            else if (measurement >= 195) score = 4;
+            else if (measurement >= 180) score = 3;
+            else if (measurement >= 170) score = 2;
+            else if (measurement >= 160) score = 1;
+            else score = 0;                        // Less than 160 lbs
+            break;
+        default:
+            score = 5;
+    }
+    
+    return Math.max(0, Math.min(10, score)).toFixed(2);
 }
