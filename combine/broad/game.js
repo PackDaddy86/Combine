@@ -31,8 +31,7 @@ class BroadJumpGame {
             resultsScreen: document.querySelector('.results-screen'),
             finalDistance: document.querySelector('.final-distance'),
             rating: document.querySelector('.rating'),
-            retryButton: document.querySelector('.retry-button'),
-            returnButton: document.querySelector('.return-button')
+            retryButton: document.querySelector('.retry-button')
         };
     }
 
