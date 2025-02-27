@@ -411,7 +411,7 @@ class ShuttleGameEngine {
     }
 
     showResults(time) {
-        // Save the result to Firebase and localStorage
+        // Save the result to Firestore
         this.saveResult(time);
         
         // Update results screen
@@ -483,38 +483,48 @@ class ShuttleGameEngine {
         }
     }
 
-    saveResult(time) {
-        // Format time to string
-        const formattedTime = time.toFixed(2);
+    saveResult(finalTime) {
+        console.log(`Shuttle run save result called with: ${finalTime}`);
         
-        if (typeof saveCombineEventData === 'function') {
-            // First, check if user is logged in
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    console.log(`Saving shuttle run time to Firestore for user ${user.uid}: ${formattedTime}`);
-                    saveCombineEventData('shuttleRun', formattedTime);
-                } else {
-                    console.log('No user logged in, saving to localStorage only');
-                    localStorage.setItem('shuttleRun', formattedTime);
-                }
+        // Save directly to Firebase
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            const user = firebase.auth().currentUser;
+            
+            if (user) {
+                console.log(`Shuttle run: User logged in (${user.uid}), saving to Firestore`);
+                
+                const db = firebase.firestore();
+                
+                // Save directly to Firestore as a root property
+                db.collection('users').doc(user.uid).update({
+                    shuttleRun: finalTime,
+                    lastUpdate: new Date()
+                }).then(() => {
+                    console.log(`Shuttle run: Successfully saved ${finalTime}s to Firestore`);
+                }).catch(error => {
+                    console.error(`Shuttle run: Error during update:`, error);
+                    
+                    // If document doesn't exist, create it
+                    if (error.code === 'not-found') {
+                        console.log("Shuttle run: Document not found, creating new one");
+                        
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email,
+                            shuttleRun: finalTime,
+                            lastUpdate: new Date()
+                        }).then(() => {
+                            console.log(`Shuttle run: Created new document with ${finalTime}s`);
+                        }).catch(err => {
+                            console.error("Shuttle run: Error creating document:", err);
+                        });
+                    }
+                });
             } else {
-                console.log('Firebase not available, using helper function');
-                saveCombineEventData('shuttleRun', formattedTime);
+                console.log("Shuttle run: No user logged in, data not saved");
             }
         } else {
-            // Fallback to localStorage only
-            console.log('Helper function not available, saving to localStorage only');
-            localStorage.setItem('shuttleRun', formattedTime);
+            console.log("Shuttle run: Firebase not initialized, data not saved");
         }
-        
-        // For backward compatibility, also update the combined results
-        let results = JSON.parse(localStorage.getItem('combineResults')) || {};
-        results.shuttle = {
-            time: formattedTime,
-            date: new Date().toISOString()
-        };
-        localStorage.setItem('combineResults', JSON.stringify(results));
     }
 
     resetGame() {

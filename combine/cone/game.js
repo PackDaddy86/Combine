@@ -335,29 +335,51 @@ class GameEngine {
         // Store the final time
         const formattedTime = finalTime.toFixed(2);
         
-        if (typeof saveCombineEventData === 'function') {
-            // First, check if user is logged in
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    console.log(`Saving cone drill time to Firestore for user ${user.uid}: ${formattedTime}`);
-                    saveCombineEventData('coneDrill', formattedTime);
-                } else {
-                    console.log('No user logged in, saving to localStorage only');
-                    localStorage.setItem('coneDrill', formattedTime);
-                }
+        this.saveResult(formattedTime);
+    }
+
+    saveResult(finalTime) {
+        console.log(`Saving cone drill time: ${finalTime}`);
+        
+        // Save directly to Firebase
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            const user = firebase.auth().currentUser;
+            
+            if (user) {
+                console.log(`User logged in (${user.uid}), saving to Firestore`);
+                
+                const db = firebase.firestore();
+                
+                // Save directly to Firestore as a root property
+                db.collection('users').doc(user.uid).update({
+                    coneDrill: finalTime,
+                    lastUpdate: new Date()
+                }).then(() => {
+                    console.log(`Successfully saved ${finalTime}s to Firestore`);
+                }).catch(error => {
+                    console.error(`Error during update:`, error);
+                    
+                    // If document doesn't exist, create it
+                    if (error.code === 'not-found') {
+                        console.log("Document not found, creating new one");
+                        
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email,
+                            coneDrill: finalTime,
+                            lastUpdate: new Date()
+                        }).then(() => {
+                            console.log(`Created new document with ${finalTime}s`);
+                        }).catch(err => {
+                            console.error("Error creating document:", err);
+                        });
+                    }
+                });
             } else {
-                console.log('Firebase not available, using helper function');
-                saveCombineEventData('coneDrill', formattedTime);
+                console.log("No user logged in, data not saved");
             }
         } else {
-            // Fallback to localStorage only
-            console.log('Helper function not available, saving to localStorage only');
-            localStorage.setItem('coneDrill', formattedTime);
+            console.log("Firebase not initialized, data not saved");
         }
-        
-        // Show results
-        this.showResults(finalTime);
     }
 
     showResults(finalTime) {

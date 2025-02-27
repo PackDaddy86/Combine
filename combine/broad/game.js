@@ -307,26 +307,7 @@ class GameEngine {
         // Store the final jump distance
         const formattedDistance = this.gameState.jumpDistance.toFixed(2);
         
-        if (typeof saveCombineEventData === 'function') {
-            // First, check if user is logged in
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    console.log(`Saving broad jump distance to Firestore for user ${user.uid}: ${formattedDistance}`);
-                    saveCombineEventData('broadJump', formattedDistance);
-                } else {
-                    console.log('No user logged in, saving to localStorage only');
-                    localStorage.setItem('broadJump', formattedDistance);
-                }
-            } else {
-                console.log('Firebase not available, using helper function');
-                saveCombineEventData('broadJump', formattedDistance);
-            }
-        } else {
-            // Fallback to localStorage only
-            console.log('Helper function not available, saving to localStorage only');
-            localStorage.setItem('broadJump', formattedDistance);
-        }
+        this.saveResult(formattedDistance);
         
         // Show results screen
         resultsScreen.classList.remove('hidden');
@@ -342,6 +323,50 @@ class GameEngine {
         returnBtn.onclick = () => {
             window.location.href = '/combine/';
         };
+    }
+
+    saveResult(distance) {
+        console.log(`Broad jump save result called with: ${distance}`);
+        
+        // Save directly to Firebase
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            const user = firebase.auth().currentUser;
+            
+            if (user) {
+                console.log(`Broad jump: User logged in (${user.uid}), saving to Firestore`);
+                
+                const db = firebase.firestore();
+                
+                // Save directly to Firestore as a root property
+                db.collection('users').doc(user.uid).update({
+                    broadJump: distance,
+                    lastUpdate: new Date()
+                }).then(() => {
+                    console.log(`Broad jump: Successfully saved ${distance} feet to Firestore`);
+                }).catch(error => {
+                    console.error(`Broad jump: Error during update:`, error);
+                    
+                    // If document doesn't exist, create it
+                    if (error.code === 'not-found') {
+                        console.log("Broad jump: Document not found, creating new one");
+                        
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email,
+                            broadJump: distance,
+                            lastUpdate: new Date()
+                        }).then(() => {
+                            console.log(`Broad jump: Created new document with ${distance} feet`);
+                        }).catch(err => {
+                            console.error("Broad jump: Error creating document:", err);
+                        });
+                    }
+                });
+            } else {
+                console.log("Broad jump: No user logged in, data not saved");
+            }
+        } else {
+            console.log("Broad jump: Firebase not initialized, data not saved");
+        }
     }
 
     restartGame() {

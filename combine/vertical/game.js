@@ -176,29 +176,8 @@ class GameEngine {
             rating.style.color = "#F44336";
         }
         
-        // Store the vertical jump result
-        const jumpHeight = this.gameState.jumpHeight.toString();
-        
-        if (typeof saveCombineEventData === 'function') {
-            // First, check if user is logged in
-            if (typeof firebase !== 'undefined' && firebase.auth) {
-                const user = firebase.auth().currentUser;
-                if (user) {
-                    console.log(`Saving vertical jump height to Firestore for user ${user.uid}: ${jumpHeight}`);
-                    saveCombineEventData('verticalJump', jumpHeight);
-                } else {
-                    console.log('No user logged in, saving to localStorage only');
-                    localStorage.setItem('verticalJump', jumpHeight);
-                }
-            } else {
-                console.log('Firebase not available, using helper function');
-                saveCombineEventData('verticalJump', jumpHeight);
-            }
-        } else {
-            // Fallback to localStorage only
-            console.log('Helper function not available, saving to localStorage only');
-            localStorage.setItem('verticalJump', jumpHeight);
-        }
+        // Save the result to Firestore
+        this.saveResult(this.gameState.jumpHeight);
         
         // Setup button events
         const restartBtn = document.querySelector('.restart-btn');
@@ -211,6 +190,50 @@ class GameEngine {
         returnBtn.onclick = () => {
             window.location.href = '/combine/';
         };
+    }
+
+    saveResult(jumpHeight) {
+        console.log(`Vertical jump save result called with: ${jumpHeight}`);
+        
+        // Skip localStorage entirely and go straight to Firebase
+        if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+            const user = firebase.auth().currentUser;
+            
+            if (user) {
+                console.log(`Vertical jump: User logged in (${user.uid}), saving to Firestore`);
+                
+                const db = firebase.firestore();
+                
+                // Save directly to Firestore as a root property
+                db.collection('users').doc(user.uid).update({
+                    verticalJump: jumpHeight,
+                    lastUpdate: new Date()
+                }).then(() => {
+                    console.log(`Vertical jump: Successfully saved ${jumpHeight} inches to Firestore`);
+                }).catch(error => {
+                    console.error(`Vertical jump: Error during update:`, error);
+                    
+                    // If document doesn't exist, create it
+                    if (error.code === 'not-found') {
+                        console.log("Vertical jump: Document not found, creating new one");
+                        
+                        db.collection('users').doc(user.uid).set({
+                            email: user.email,
+                            verticalJump: jumpHeight,
+                            lastUpdate: new Date()
+                        }).then(() => {
+                            console.log(`Vertical jump: Created new document with ${jumpHeight} inches`);
+                        }).catch(err => {
+                            console.error("Vertical jump: Error creating document:", err);
+                        });
+                    }
+                });
+            } else {
+                console.log("Vertical jump: No user logged in, data not saved");
+            }
+        } else {
+            console.log("Vertical jump: Firebase not initialized, data not saved");
+        }
     }
 
     resetGame() {
