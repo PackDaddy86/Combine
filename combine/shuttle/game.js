@@ -411,7 +411,7 @@ class ShuttleGameEngine {
     }
 
     showResults(time) {
-        // Save the result to localStorage
+        // Save the result to Firebase and localStorage
         this.saveResult(time);
         
         // Update results screen
@@ -484,16 +484,22 @@ class ShuttleGameEngine {
     }
 
     saveResult(time) {
-        // Get existing results from localStorage
-        let results = JSON.parse(localStorage.getItem('combineResults')) || {};
+        // Format time to string
+        const formattedTime = time.toFixed(2);
         
-        // Update with new result
+        // Store the shuttle run result
+        if (typeof saveCombineEventData === 'function') {
+            saveCombineEventData('shuttleRun', formattedTime);
+        } else {
+            localStorage.setItem('shuttleRun', formattedTime);
+        }
+        
+        // For backward compatibility, also update the combined results
+        let results = JSON.parse(localStorage.getItem('combineResults')) || {};
         results.shuttle = {
-            time: time.toFixed(2),
+            time: formattedTime,
             date: new Date().toISOString()
         };
-        
-        // Save back to localStorage
         localStorage.setItem('combineResults', JSON.stringify(results));
     }
 

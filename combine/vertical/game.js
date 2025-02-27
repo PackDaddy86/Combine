@@ -177,7 +177,28 @@ class GameEngine {
         }
         
         // Store the vertical jump result
-        localStorage.setItem('verticalJump', this.gameState.jumpHeight);
+        const jumpHeight = this.gameState.jumpHeight.toString();
+        
+        if (typeof saveCombineEventData === 'function') {
+            // First, check if user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    console.log(`Saving vertical jump height to Firestore for user ${user.uid}: ${jumpHeight}`);
+                    saveCombineEventData('verticalJump', jumpHeight);
+                } else {
+                    console.log('No user logged in, saving to localStorage only');
+                    localStorage.setItem('verticalJump', jumpHeight);
+                }
+            } else {
+                console.log('Firebase not available, using helper function');
+                saveCombineEventData('verticalJump', jumpHeight);
+            }
+        } else {
+            // Fallback to localStorage only
+            console.log('Helper function not available, saving to localStorage only');
+            localStorage.setItem('verticalJump', jumpHeight);
+        }
         
         // Setup button events
         const restartBtn = document.querySelector('.restart-btn');

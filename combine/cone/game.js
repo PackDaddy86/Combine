@@ -332,6 +332,30 @@ class GameEngine {
         // Update instructions
         this.elements.currentTarget.textContent = "DRILL COMPLETE! See your results...";
         
+        // Store the final time
+        const formattedTime = finalTime.toFixed(2);
+        
+        if (typeof saveCombineEventData === 'function') {
+            // First, check if user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    console.log(`Saving cone drill time to Firestore for user ${user.uid}: ${formattedTime}`);
+                    saveCombineEventData('coneDrill', formattedTime);
+                } else {
+                    console.log('No user logged in, saving to localStorage only');
+                    localStorage.setItem('coneDrill', formattedTime);
+                }
+            } else {
+                console.log('Firebase not available, using helper function');
+                saveCombineEventData('coneDrill', formattedTime);
+            }
+        } else {
+            // Fallback to localStorage only
+            console.log('Helper function not available, saving to localStorage only');
+            localStorage.setItem('coneDrill', formattedTime);
+        }
+        
         // Show results
         this.showResults(finalTime);
     }
@@ -339,9 +363,6 @@ class GameEngine {
     showResults(finalTime) {
         // Format time for display
         const formattedTime = finalTime.toFixed(2);
-        
-        // Save to localStorage
-        localStorage.setItem('coneDrill', formattedTime);
         
         // Show results screen
         const resultsScreen = document.querySelector('.results-screen');

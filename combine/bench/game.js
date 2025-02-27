@@ -237,7 +237,28 @@ class GameEngine {
         }
         
         // Store the bench press result
-        localStorage.setItem('benchPress', this.gameState.reps);
+        const formattedReps = this.gameState.reps.toString();
+        
+        if (typeof saveCombineEventData === 'function') {
+            // First, check if user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    console.log(`Saving bench press reps to Firestore for user ${user.uid}: ${formattedReps}`);
+                    saveCombineEventData('benchPress', formattedReps);
+                } else {
+                    console.log('No user logged in, saving to localStorage only');
+                    localStorage.setItem('benchPress', formattedReps);
+                }
+            } else {
+                console.log('Firebase not available, using helper function');
+                saveCombineEventData('benchPress', formattedReps);
+            }
+        } else {
+            // Fallback to localStorage only
+            console.log('Helper function not available, saving to localStorage only');
+            localStorage.setItem('benchPress', formattedReps);
+        }
         
         // Setup button events
         const restartBtn = document.querySelector('.restart-btn');

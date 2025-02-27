@@ -17,7 +17,8 @@ class GameEngine {
             distance: 0,
             attempts: 0,
             maxAttempts: 3,
-            attemptResults: ['-', '-', '-']
+            attemptResults: ['-', '-', '-'],
+            jumpDistance: 0
         };
 
         this.elements = {
@@ -207,6 +208,7 @@ class GameEngine {
         
         // Record distance
         this.gameState.distance = finalDistance;
+        this.gameState.jumpDistance = finalDistance;
         
         // Move jumper indicator
         const percentDistance = (finalDistance / 12) * 100;
@@ -267,20 +269,19 @@ class GameEngine {
             }
         }
         
-        // Save to localStorage
-        localStorage.setItem('broadJump', bestFormattedDistance);
+        // Calculating feet and inches for display
+        const feet = Math.floor(bestDistance);
+        const inches = Math.round((bestDistance - feet) * 12);
+        const bestFormattedDistance = `${feet}'${inches}"`;
+        const bestDecimalDistance = (bestDistance).toFixed(1);
         
-        // Show results screen
+        // Set text for the result display
         const resultsScreen = document.querySelector('.results-screen');
-        resultsScreen.classList.remove('hidden');
+        resultsScreen.querySelector('.final-distance').textContent = bestFormattedDistance;
         
-        // Update final distance display
-        const finalDistanceElement = document.querySelector('.final-distance');
-        finalDistanceElement.textContent = bestFormattedDistance;
-        
-        // Set rating text based on distance
-        const rating = document.querySelector('.rating');
-        if (bestDistance >= 10.5) {
+        // Set rating text based on jump distance
+        const rating = resultsScreen.querySelector('.rating');
+        if (bestDistance >= 11) { // 11 feet or more
             rating.textContent = "ELITE";
             rating.style.color = "#ffd700";
         } else if (bestDistance >= 9.5) {
@@ -302,6 +303,33 @@ class GameEngine {
             rating.textContent = "BELOW AVERAGE";
             rating.style.color = "#F44336";
         }
+        
+        // Store the final jump distance
+        const formattedDistance = this.gameState.jumpDistance.toFixed(2);
+        
+        if (typeof saveCombineEventData === 'function') {
+            // First, check if user is logged in
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                const user = firebase.auth().currentUser;
+                if (user) {
+                    console.log(`Saving broad jump distance to Firestore for user ${user.uid}: ${formattedDistance}`);
+                    saveCombineEventData('broadJump', formattedDistance);
+                } else {
+                    console.log('No user logged in, saving to localStorage only');
+                    localStorage.setItem('broadJump', formattedDistance);
+                }
+            } else {
+                console.log('Firebase not available, using helper function');
+                saveCombineEventData('broadJump', formattedDistance);
+            }
+        } else {
+            // Fallback to localStorage only
+            console.log('Helper function not available, saving to localStorage only');
+            localStorage.setItem('broadJump', formattedDistance);
+        }
+        
+        // Show results screen
+        resultsScreen.classList.remove('hidden');
         
         // Setup button events
         const restartBtn = document.querySelector('.restart-btn');
@@ -329,7 +357,8 @@ class GameEngine {
             distance: 0,
             attempts: 0,
             maxAttempts: 3,
-            attemptResults: ['-', '-', '-']
+            attemptResults: ['-', '-', '-'],
+            jumpDistance: 0
         };
         
         // Reset UI
