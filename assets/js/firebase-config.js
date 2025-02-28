@@ -299,8 +299,29 @@ function saveUserData(gameType, data) {
       // Update the specific game type
       games[gameType] = data;
       
-      // Update the document with the new games object
-      return userRef.update({ games: games })
+      // Ensure username is set
+      let updateData = { games: games };
+      
+      // If username is missing, add it
+      if (!userData.username && user.displayName) {
+        updateData.username = user.displayName;
+        console.log(`Adding missing username (${user.displayName}) to existing document`);
+      } else if (!userData.username) {
+        // Generate a fallback username
+        const fallbackUsername = `User${Math.floor(Math.random() * 10000)}`;
+        updateData.username = fallbackUsername;
+        console.log(`Adding generated username (${fallbackUsername}) to existing document`);
+        
+        // Also update the Auth displayName
+        user.updateProfile({
+          displayName: fallbackUsername
+        }).catch(err => {
+          console.error("Error updating Auth displayName:", err);
+        });
+      }
+      
+      // Update the document with the new data
+      return userRef.update(updateData)
         .then(() => {
           console.log(`Data for ${gameType} saved to Firestore successfully`);
         })
@@ -310,8 +331,24 @@ function saveUserData(gameType, data) {
     } else {
       // Document doesn't exist, create it with proper structure
       console.log("User document not found, creating new document");
+      
+      // Get or generate username
+      let username = user.displayName;
+      if (!username) {
+        username = `User${Math.floor(Math.random() * 10000)}`;
+        console.log(`Generated fallback username: ${username}`);
+        
+        // Update Auth profile with the username
+        user.updateProfile({
+          displayName: username
+        }).catch(err => {
+          console.error("Error updating Auth displayName:", err);
+        });
+      }
+      
       const newUserData = {
         email: user.email,
+        username: username,
         createdAt: new Date(),
         games: {
           [gameType]: data

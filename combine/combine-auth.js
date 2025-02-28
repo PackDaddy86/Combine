@@ -40,13 +40,28 @@ function loadUserCombineData(userId) {
             if (!doc.exists) {
                 console.log('User document does not exist, creating it');
                 // Create the user document if it doesn't exist
+                let username = firebase.auth().currentUser.displayName;
+                
+                // Generate a username if none exists
+                if (!username) {
+                    username = `User${Math.floor(Math.random() * 10000)}`;
+                    console.log('Generated fallback username:', username);
+                    
+                    // Update Auth profile with the username
+                    firebase.auth().currentUser.updateProfile({
+                        displayName: username
+                    }).catch(err => {
+                        console.error("Error updating Auth displayName:", err);
+                    });
+                }
+                
                 return db.collection('users').doc(userId).set({
                     email: firebase.auth().currentUser.email,
-                    username: firebase.auth().currentUser.displayName || "",
+                    username: username,
                     createdAt: new Date(),
                     games: {}
                 }).then(() => {
-                    console.log('Created new user document');
+                    console.log('Created new user document with username:', username);
                 });
             }
             

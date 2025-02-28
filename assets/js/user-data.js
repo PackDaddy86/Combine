@@ -38,6 +38,15 @@ function saveCombineEventData(eventType, value) {
                     let username = "";
                     if (user.displayName) {
                         username = user.displayName;
+                    } else {
+                        // Generate a fallback username if none exists
+                        username = `User${Math.floor(Math.random() * 10000)}`;
+                        // Also update the Auth displayName
+                        user.updateProfile({
+                            displayName: username
+                        }).catch(err => {
+                            console.error("Error updating Auth displayName:", err);
+                        });
                     }
 
                     db.collection('users').doc(user.uid).set({
