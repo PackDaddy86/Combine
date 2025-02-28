@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Username Field</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 10px 15px;
+            background: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #3367d6;
+        }
+        pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+        }
+        input {
+            padding: 8px;
+            margin: 5px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test Username Field in Firestore</h1>
+        
+        <div id="login-status">Checking login status...</div>
+        
+        <div id="login-form" style="display:none">
+            <h2>Login</h2>
+            <input type="email" id="email" placeholder="Email">
+            <input type="password" id="password" placeholder="Password">
+            <button id="login-btn">Login</button>
+        </div>
+        
+        <div id="signup-form" style="display:none">
+            <h2>Create Test Account</h2>
+            <input type="email" id="signup-email" placeholder="Email">
+            <input type="password" id="signup-password" placeholder="Password">
+            <input type="text" id="signup-username" placeholder="Username">
+            <button id="signup-btn">Create Account</button>
+        </div>
+        
+        <div id="user-actions" style="display:none">
+            <h2>User Actions</h2>
+            <button id="get-data">Get User Data</button>
+            <button id="set-username">Set Username Field</button>
+            <input type="text" id="new-username" placeholder="New Username">
+            <button id="logout">Logout</button>
+        </div>
+        
+        <h3>Output:</h3>
+        <pre id="output">No operations performed yet.</pre>
+    </div>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/assets/js/firebase-config.js"></script>
+    
+    <script>
+        // DOM Elements
+        const loginStatus = document.getElementById('login-status');
+        const loginForm = document.getElementById('login-form');
+        const signupForm = document.getElementById('signup-form');
+        const userActions = document.getElementById('user-actions');
+        const output = document.getElementById('output');
+        
+        // Update output function
+        function updateOutput(text) {
+            output.textContent = text;
+        }
+        
+        // Check auth state
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                // User is signed in
+                loginStatus.textContent = `Logged in as: ${user.email}`;
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'none';
+                userActions.style.display = 'block';
+                
+                // Get user data immediately
+                getUserData();
+            } else {
+                // No user signed in
+                loginStatus.textContent = 'Not logged in';
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'block';
+                userActions.style.display = 'none';
+            }
+        });
+        
+        // Login
+        document.getElementById('login-btn').addEventListener('click', () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            firebase.auth().signInWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    console.log('Logged in:', userCredential.user);
+                    updateOutput(`Logged in as ${userCredential.user.email}`);
+                })
+                .catch(error => {
+                    updateOutput(`Login error: ${error.message}`);
+                });
+        });
+        
+        // Signup
+        document.getElementById('signup-btn').addEventListener('click', () => {
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const username = document.getElementById('signup-username').value;
+            
+            if (!email || !password || !username) {
+                updateOutput('All fields are required!');
+                return;
+            }
+            
+            updateOutput('Creating new user account...');
+            
+            firebase.auth().createUserWithEmailAndPassword(email, password)
+                .then(userCredential => {
+                    updateOutput('User created! Now setting display name...');
+                    
+                    // Set displayName in Auth
+                    return userCredential.user.updateProfile({
+                        displayName: username
+                    }).then(() => {
+                        updateOutput('Display name set! Now creating Firestore document...');
+                        
+                        // Create Firestore document with DIRECT username field
+                        const db = firebase.firestore();
+                        return db.collection('users').doc(userCredential.user.uid).set({
+                            email: email,
+                            username: username,
+                            displayName: username, // Adding both fields for redundancy
+                            createdAt: new Date()
+                        });
+                    });
+                })
+                .then(() => {
+                    updateOutput('Account created and profile saved!');
+                })
+                .catch(error => {
+                    updateOutput(`Error during signup: ${error.message}`);
+                });
+        });
+        
+        // Get User Data
+        function getUserData() {
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                updateOutput('No user logged in');
+                return;
+            }
+            
+            updateOutput('Getting user data...');
+            
+            // Get Auth data
+            const authData = `
+Auth User Data:
+UID: ${user.uid}
+Email: ${user.email}
+Display Name: ${user.displayName || 'NOT SET'}
+`;
+            
+            // Get Firestore data
+            const db = firebase.firestore();
+            db.collection('users').doc(user.uid).get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        updateOutput(
+                            authData +
+                            `\nFirestore User Data:\n` +
+                            `Document exists: Yes\n` +
+                            `Email: ${userData.email || 'NOT SET'}\n` +
+                            `Username: ${userData.username || 'NOT SET'}\n` +
+                            `Display Name: ${userData.displayName || 'NOT SET'}\n` +
+                            `Created: ${userData.createdAt ? userData.createdAt.toDate() : 'NOT SET'}\n\n` +
+                            `Full document data:\n${JSON.stringify(userData, null, 2)}`
+                        );
+                    } else {
+                        updateOutput(
+                            authData +
+                            `\nFirestore User Data:\n` +
+                            `Document exists: No\n` +
+                            `No Firestore document found for this user.`
+                        );
+                    }
+                })
+                .catch(error => {
+                    updateOutput(`${authData}\nError getting Firestore data: ${error.message}`);
+                });
+        }
+        
+        // Button for getting user data
+        document.getElementById('get-data').addEventListener('click', getUserData);
+        
+        // Set Username
+        document.getElementById('set-username').addEventListener('click', () => {
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                updateOutput('No user logged in');
+                return;
+            }
+            
+            const newUsername = document.getElementById('new-username').value;
+            if (!newUsername) {
+                updateOutput('Please enter a username');
+                return;
+            }
+            
+            updateOutput(`Setting username to "${newUsername}"...`);
+            
+            // 1. Update Auth displayName
+            user.updateProfile({
+                displayName: newUsername
+            })
+            .then(() => {
+                updateOutput('Auth displayName updated. Now updating Firestore...');
+                
+                // 2. Update Firestore document with SPECIAL CARE to ensure it works
+                const db = firebase.firestore();
+                const userRef = db.collection('users').doc(user.uid);
+                
+                // Use transaction to make sure we get it right
+                return db.runTransaction(transaction => {
+                    return transaction.get(userRef).then(doc => {
+                        if (!doc.exists) {
+                            // Create the document if it doesn't exist
+                            transaction.set(userRef, {
+                                email: user.email,
+                                username: newUsername,
+                                displayName: newUsername,
+                                createdAt: new Date()
+                            });
+                        } else {
+                            // Update existing document
+                            transaction.update(userRef, {
+                                username: newUsername,
+                                displayName: newUsername
+                            });
+                        }
+                    });
+                });
+            })
+            .then(() => {
+                updateOutput('Username successfully updated!');
+                // Get updated data to verify
+                getUserData();
+            })
+            .catch(error => {
+                updateOutput(`Error updating username: ${error.message}`);
+            });
+        });
+        
+        // Logout
+        document.getElementById('logout').addEventListener('click', () => {
+            firebase.auth().signOut()
+                .then(() => {
+                    updateOutput('Logged out successfully');
+                })
+                .catch(error => {
+                    updateOutput(`Error logging out: ${error.message}`);
+                });
+        });
+    </script>
+</body>
+</html>

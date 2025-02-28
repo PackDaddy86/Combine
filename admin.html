@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Tools</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 5px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        pre {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        #output {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Admin Tools</h1>
+        
+        <div>
+            <h2>Firestore User Management</h2>
+            <button id="listUsers">List All Users</button>
+            <button id="addUsernames">Add Username Field to All Users</button>
+            <button id="updateCurrentUser">Update Current User</button>
+        </div>
+        
+        <div id="output">
+            <h3>Operation Output:</h3>
+            <pre id="outputText">No operations performed yet.</pre>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/assets/js/firebase-config.js"></script>
+    
+    <script>
+        // Reference to output
+        const outputText = document.getElementById('outputText');
+        
+        // Function to update output
+        function updateOutput(text) {
+            outputText.textContent = text;
+        }
+        
+        // List all users in Firestore
+        document.getElementById('listUsers').addEventListener('click', () => {
+            const db = firebase.firestore();
+            
+            // Check if user is authenticated
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                updateOutput('Error: You must be logged in to perform this action.');
+                return;
+            }
+            
+            db.collection('users').get()
+                .then(snapshot => {
+                    let output = `Found ${snapshot.size} users:\n\n`;
+                    
+                    snapshot.forEach(doc => {
+                        const userData = doc.data();
+                        output += `User ID: ${doc.id}\n`;
+                        output += `Email: ${userData.email || 'N/A'}\n`;
+                        output += `Username: ${userData.username || 'NOT SET'}\n`;
+                        output += `Created: ${userData.createdAt ? userData.createdAt.toDate() : 'N/A'}\n`;
+                        output += '--------------------\n';
+                    });
+                    
+                    updateOutput(output);
+                })
+                .catch(error => {
+                    updateOutput(`Error getting users: ${error.message}`);
+                });
+        });
+        
+        // Add username field to all users
+        document.getElementById('addUsernames').addEventListener('click', () => {
+            const db = firebase.firestore();
+            
+            // Check if user is authenticated
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                updateOutput('Error: You must be logged in to perform this action.');
+                return;
+            }
+            
+            updateOutput('Processing users...');
+            
+            db.collection('users').get()
+                .then(snapshot => {
+                    const updates = [];
+                    
+                    snapshot.forEach(doc => {
+                        const userData = doc.data();
+                        
+                        // Skip if username already exists
+                        if (userData.username) {
+                            return;
+                        }
+                        
+                        // Generate a username if none exists
+                        const username = `User${Math.floor(Math.random() * 10000)}`;
+                        
+                        // Add to updates array
+                        updates.push(
+                            db.collection('users').doc(doc.id).update({
+                                username: username
+                            })
+                        );
+                    });
+                    
+                    // Execute all updates
+                    if (updates.length === 0) {
+                        updateOutput('No users needed username updates.');
+                        return;
+                    }
+                    
+                    return Promise.all(updates)
+                        .then(() => {
+                            updateOutput(`Successfully updated ${updates.length} users with username field.`);
+                        });
+                })
+                .catch(error => {
+                    updateOutput(`Error updating users: ${error.message}`);
+                });
+        });
+        
+        // Update current user
+        document.getElementById('updateCurrentUser').addEventListener('click', () => {
+            const db = firebase.firestore();
+            
+            // Check if user is authenticated
+            const user = firebase.auth().currentUser;
+            if (!user) {
+                updateOutput('Error: You must be logged in to perform this action.');
+                return;
+            }
+            
+            // Generate a unique username
+            const username = `User${Math.floor(Math.random() * 10000)}`;
+            
+            // First update Firebase Auth displayName
+            user.updateProfile({
+                displayName: username
+            })
+            .then(() => {
+                // Then update Firestore
+                return db.collection('users').doc(user.uid).set({
+                    username: username
+                }, { merge: true });
+            })
+            .then(() => {
+                updateOutput(`Successfully updated current user with username: ${username}`);
+                
+                // Also fetch the updated document to verify
+                return db.collection('users').doc(user.uid).get();
+            })
+            .then(doc => {
+                if (doc.exists) {
+                    const userData = doc.data();
+                    updateOutput(
+                        `User updated successfully!\n` +
+                        `User ID: ${user.uid}\n` +
+                        `Email: ${userData.email || user.email}\n` +
+                        `Username: ${userData.username || 'NOT SET'}\n` +
+                        `DisplayName: ${user.displayName}\n` +
+                        `Full user data: ${JSON.stringify(userData, null, 2)}`
+                    );
+                }
+            })
+            .catch(error => {
+                updateOutput(`Error updating current user: ${error.message}`);
+            });
+        });
+        
+        // Check if the user is signed in
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                console.log('Signed in as:', user.email);
+                updateOutput(`Signed in as: ${user.email}\nUID: ${user.uid}\nDisplayName: ${user.displayName || 'NOT SET'}\n\nReady to perform operations.`);
+            } else {
+                console.log('No user signed in');
+                updateOutput('You need to sign in to use these admin tools. Please go to the login page first.');
+            }
+        });
+    </script>
+</body>
+</html>
