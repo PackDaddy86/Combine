@@ -16,6 +16,7 @@
             background-color: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            color: white;
         }
         
         .profile-header {
@@ -48,6 +49,7 @@
             display: block;
             margin-bottom: 0.5rem;
             font-weight: bold;
+            color: #f5f5f5;
         }
         
         .form-group input {
@@ -93,6 +95,7 @@
             padding: 1.5rem;
             border-radius: 8px;
             text-align: center;
+            color: white;
         }
         
         .stat-value {
@@ -104,7 +107,7 @@
         
         .stat-label {
             font-size: 0.9rem;
-            color: #ccc;
+            color: #f5f5f5;
         }
         
         .danger-zone {
@@ -112,10 +115,11 @@
             padding: 1.5rem;
             border-radius: 8px;
             margin-top: 3rem;
+            color: white;
         }
         
         .danger-zone h3 {
-            color: #dc3545;
+            color: #ff6b6b;
         }
         
         .delete-button {
@@ -139,6 +143,7 @@
         #login-message {
             text-align: center;
             padding: 3rem;
+            color: white;
         }
         
         .login-prompt {
@@ -184,10 +189,6 @@
                         <div class="form-group">
                             <label for="username">Username</label>
                             <input type="text" id="username" name="username" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="display-name">Display Name</label>
-                            <input type="text" id="display-name" name="displayName">
                         </div>
                         <div class="form-group">
                             <label for="height">Height (inches)</label>
@@ -264,7 +265,6 @@
             const userEmail = document.getElementById('user-email');
             const profileForm = document.getElementById('profile-form');
             const usernameInput = document.getElementById('username');
-            const displayNameInput = document.getElementById('display-name');
             const heightInput = document.getElementById('height');
             const weightInput = document.getElementById('weight');
             const deleteAccountBtn = document.getElementById('delete-account');
@@ -315,7 +315,6 @@
                             
                             // Fill form with user data
                             usernameInput.value = userData.username || '';
-                            displayNameInput.value = userData.displayName || '';
                             heightInput.value = userData.height || '';
                             weightInput.value = userData.weight || '';
                             
@@ -350,20 +349,18 @@
                 
                 // Get form values
                 const username = usernameInput.value.trim();
-                const displayName = displayNameInput.value.trim();
                 const height = heightInput.value ? parseInt(heightInput.value) : null;
                 const weight = weightInput.value ? parseInt(weightInput.value) : null;
                 
                 // Update Firebase Auth display name
                 user.updateProfile({
-                    displayName: displayName || username
+                    displayName: username
                 }).then(() => {
                     console.log('Auth profile updated');
                     
                     // Update Firestore document
                     return db.collection('users').doc(user.uid).update({
                         username: username,
-                        displayName: displayName,
                         height: height,
                         weight: weight,
                         lastUpdate: new Date()
