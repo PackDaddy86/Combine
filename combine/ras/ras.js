@@ -621,13 +621,54 @@ function updateScoreDisplay(elementId, score) {
     updateRelatedGradeLabel(elementId, scoreValue);
 }
 
-// Update related grade label (simplified version)
+// Update related grade label 
 function updateRelatedGradeLabel(scoreElementId, score) {
-    // Just log grade information without creating DOM elements
-    console.log(`Update grade for ${scoreElementId}: ${getGradeText(score)}`);
+    // Extract the base metric name from the score element ID (e.g., "forty-score" -> "forty")
+    const baseName = scoreElementId.replace('-score', '');
     
-    // We will rely on color coding of the scores themselves
-    // instead of adding extra DOM elements that disrupt the layout
+    // Find or create a label element
+    let labelId = `${baseName}-grade-label`;
+    let labelElement = document.getElementById(labelId);
+    
+    if (!labelElement) {
+        // Create a new label element if it doesn't exist
+        labelElement = document.createElement('div');
+        labelElement.id = labelId;
+        labelElement.className = 'grade-label';
+        
+        // Find the score element to insert the label after it
+        const scoreElement = document.getElementById(scoreElementId);
+        if (scoreElement && scoreElement.parentNode) {
+            scoreElement.parentNode.insertBefore(labelElement, scoreElement.nextSibling);
+        }
+    }
+    
+    // Set the grade text based on the score
+    if (score === null || score === undefined || isNaN(parseFloat(score))) {
+        labelElement.textContent = 'N/A';
+        return;
+    }
+    
+    const gradeText = getGradeText(score);
+    labelElement.textContent = gradeText;
+    
+    // Update label styling based on the grade
+    labelElement.className = 'grade-label'; // Reset classes
+    
+    // Add appropriate class based on grade
+    if (score < 4) {
+        labelElement.classList.add('grade-poor');
+    } else if (score < 5) {
+        labelElement.classList.add('grade-below-average');
+    } else if (score < 7) {
+        labelElement.classList.add('grade-average');
+    } else if (score < 9) {
+        labelElement.classList.add('grade-good');
+    } else {
+        labelElement.classList.add('grade-excellent');
+    }
+    
+    console.log(`Updated grade label for ${baseName}: ${gradeText}`);
 }
 
 // Calculate a composite grade from the given scores
