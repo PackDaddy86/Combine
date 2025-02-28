@@ -1457,6 +1457,7 @@ function calculateSpeedScoreDirect(time, type) {
 
 function calculateJumpScoreDirect(value, type) {
     if (value === null || value === undefined || isNaN(value)) {
+        debugLog(`Invalid ${type} value: ${value}`, '#ff0000');
         return 0;
     }
     
@@ -1475,7 +1476,10 @@ function calculateJumpScoreDirect(value, type) {
             else if (value >= 22) score = 2;
             else if (value >= 20) score = 1;
             else score = 0;
+            
+            debugLog(`Vertical jump ${value} inches = score ${score}`, '#ffff00');
             break;
+            
         case 'broad':
             // Handle broad jump in inches (or converted to inches)
             let inches = value;
@@ -1488,16 +1492,32 @@ function calculateJumpScoreDirect(value, type) {
                     inchPart = parseInt(parts[1]) || 0;
                 }
                 inches = feet * 12 + inchPart;
-            } else if (value < 20) {
-                // Likely in meters or cm, convert to inches
-                // Assume meters if under 5
+                debugLog(`Converted ${value} to ${inches} inches`, '#ffff00');
+            } 
+            // If the value is a small number (< 20), it's likely meters or decimal feet
+            else if (value < 20) {
+                // If it's very small (< 5), assume it's meters
                 if (value < 5) {
                     inches = value * 39.37; // Convert meters to inches
-                } else {
-                    inches = value * 0.3937; // Convert cm to inches
+                    debugLog(`Converted ${value} meters to ${inches} inches`, '#ffff00');
+                } 
+                // If it's between 5-20, could be feet in decimal
+                else {
+                    // Try converting as a decimal foot measurement
+                    const tryDecimalFeet = value * 12;
+                    debugLog(`Trying to interpret ${value} as decimal feet = ${tryDecimalFeet} inches`, '#ffff00');
+                    inches = tryDecimalFeet;
                 }
             }
+            // For broad jump specifically, handle the value 120 as 120 inches (10 feet)
+            else if (value == 120) {
+                inches = 120;
+                debugLog(`Interpreting ${value} as 120 inches (10 feet)`, '#ffff00');
+            }
             
+            debugLog(`Final broad jump inches value: ${inches}`, '#00ffff');
+            
+            // Score based on inches
             if (inches >= 130) score = 10;
             else if (inches >= 125) score = 9;
             else if (inches >= 120) score = 8;
@@ -1509,9 +1529,13 @@ function calculateJumpScoreDirect(value, type) {
             else if (inches >= 90) score = 2;
             else if (inches >= 85) score = 1;
             else score = 0;
+            
+            debugLog(`Broad jump ${inches} inches = score ${score}`, '#ffff00');
             break;
+            
         default:
             score = 0;
+            debugLog(`Unknown jump type: ${type}`, '#ff0000');
     }
     
     return score;
