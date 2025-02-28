@@ -906,32 +906,65 @@ function getUserData() {
                 setValueFromMultipleFields('cone-value', ['coneDrill', 'cone', '3cone']);
                 setValueFromMultipleFields('shuttle-value', ['shuttleRun', 'shuttle', 'shortShuttle', '20shuttle']);
                 
-                // Additional info: Name, Position, School
-                if (userData.name) {
-                    document.getElementById('player-name').textContent = userData.name;
-                } else if (userData.displayName) {
-                    document.getElementById('player-name').textContent = userData.displayName;
+                // Set player name from username (priority) or fallback options
+                let playerName = '';
+                
+                // First priority: Use the username field
+                if (userData.username) {
+                    playerName = userData.username;
+                    console.log(`Using username: ${playerName}`);
+                }
+                // Second priority: Use display name from auth
+                else if (user.displayName) {
+                    playerName = user.displayName;
+                    console.log(`Using displayName from auth: ${playerName}`);
+                }
+                // Other fallbacks
+                else if (userData.name) {
+                    playerName = userData.name;
+                } 
+                else if (userData.displayName) {
+                    playerName = userData.displayName;
+                }
+                else {
+                    playerName = "Player";
+                    console.log("No name found, using default 'Player'");
                 }
                 
-                if (userData.position) {
-                    document.getElementById('position-display').textContent = userData.position;
+                // Construct the player display text with position, school, year
+                let playerDisplayText = playerName;
+                
+                const position = userData.position || document.getElementById('position').value || '';
+                const school = userData.school || userData.college || document.getElementById('school').value || '';
+                const year = userData.year || document.getElementById('year').value || '';
+                
+                if (position || school || year) {
+                    playerDisplayText += ' | ';
+                    
+                    if (position) playerDisplayText += position + ' | ';
+                    if (school) playerDisplayText += school;
+                    if (year && school) playerDisplayText += ' | ' + year;
+                    else if (year) playerDisplayText += year;
                 }
                 
-                if (userData.school || userData.college) {
-                    document.getElementById('school-display').textContent = userData.school || userData.college;
-                }
+                document.getElementById('player-name').textContent = playerDisplayText;
                 
                 // Handle height and weight which might be in different formats
                 if (userData.height) {
                     document.getElementById('height-value').textContent = userData.height;
+                    document.getElementById('height').value = userData.height;
+                    console.log(`Set height to: ${userData.height}`);
                 }
                 
                 if (userData.weight) {
                     document.getElementById('weight-value').textContent = userData.weight;
+                    document.getElementById('weight').value = userData.weight;
+                    console.log(`Set weight to: ${userData.weight}`);
                 }
                 
                 // After loading all data, call fixAllScores to update the UI
                 fixAllScores();
+                calculateRASScores();
                 
                 console.log("Successfully loaded user data from Firebase");
             } else {
@@ -1613,7 +1646,7 @@ function calculateCompositeScores() {
         
         // Parse scores as numbers (or null if not a valid score)
         const parseScore = (scoreText) => {
-            if (scoreText === '--' || scoreText === '') return null;
+            if (scoreText === '--' || scoreText === "") return null;
             const value = parseFloat(scoreText);
             return isNaN(value) ? null : value;
         };
@@ -1687,7 +1720,6 @@ function calculateCompositeScores() {
     }
 }
 
-// Save RAS results to localStorage and Firebase
 function saveRASResults(overallRAS, individualScores, compositeScores) {
     try {
         // Get existing results or initialize new object
