@@ -503,7 +503,10 @@ function getBroadJumpInches() {
 }
 
 function calculateSpeedScore(time, type) {
-    if (isNaN(time)) return NaN;
+    if (time === null || time === undefined || isNaN(parseFloat(time))) return null;
+    
+    // Convert to float to ensure proper comparison
+    time = parseFloat(time);
     
     // Lower times are better for speed drills
     let score;
@@ -559,7 +562,10 @@ function calculateSpeedScore(time, type) {
 }
 
 function calculateJumpScore(measurement, type) {
-    if (isNaN(measurement)) return NaN;
+    if (measurement === null || measurement === undefined || isNaN(parseFloat(measurement))) return null;
+    
+    // Convert to float to ensure proper comparison
+    measurement = parseFloat(measurement);
     
     // Higher measurements are better for jumps
     let score;
@@ -601,55 +607,66 @@ function calculateJumpScore(measurement, type) {
 }
 
 function calculateStrengthScore(reps) {
-    if (isNaN(reps)) return NaN;
+    if (reps === null || reps === undefined || isNaN(parseFloat(reps))) return null;
     
-    // NFL bench press standards (225 lbs): Elite (36+ reps), Excellent (30-35), Good (25-29), Average (20-24), Below Average (15-19), Poor (< 15)
-    if (reps >= 36) return 10;
-    else if (reps >= 32) return 9;
-    else if (reps >= 28) return 8;
-    else if (reps >= 25) return 7;
-    else if (reps >= 22) return 6;
-    else if (reps >= 20) return 5;
-    else if (reps >= 17) return 4;
-    else if (reps >= 15) return 3;
-    else if (reps >= 10) return 2;
-    else if (reps >= 5) return 1;
-    else return 0;
+    // Convert to float to ensure proper comparison
+    reps = parseFloat(reps);
+    
+    // Higher reps are better
+    let score;
+    
+    // NFL standards: Elite (36+ reps), Excellent (30-35), Good (24-29), Average (18-23), Below Average (12-17), Poor (< 12)
+    if (reps >= 36) score = 10;
+    else if (reps >= 30) score = 9;
+    else if (reps >= 25) score = 8;
+    else if (reps >= 20) score = 7;
+    else if (reps >= 18) score = 6;
+    else if (reps >= 15) score = 5;
+    else if (reps >= 12) score = 4;
+    else if (reps >= 10) score = 3;
+    else if (reps >= 8) score = 2;
+    else if (reps >= 6) score = 1;
+    else score = 0;
+    
+    return Math.max(0, Math.min(10, score)).toFixed(2);
 }
 
 function calculateAgilityScore(time, type) {
-    if (isNaN(time)) return NaN;
+    if (time === null || time === undefined || isNaN(parseFloat(time))) return null;
+    
+    // Convert to float to ensure proper comparison
+    time = parseFloat(time);
     
     // Lower times are better for agility drills
     let score;
     
     switch(type) {
         case 'cone':
-            // NFL 3-cone standards: Elite (< 6.5s), Excellent (6.5-6.7s), Good (6.8-6.95s), Average (7.0-7.15s), Below Average (7.2-7.4s), Poor (> 7.4s)
-            if (time <= 6.45) score = 10;
-            else if (time <= 6.55) score = 9;
-            else if (time <= 6.65) score = 8;
-            else if (time <= 6.8) score = 7;
-            else if (time <= 6.95) score = 6;
-            else if (time <= 7.1) score = 5;
-            else if (time <= 7.25) score = 4;
-            else if (time <= 7.4) score = 3;
-            else if (time <= 7.55) score = 2;
-            else if (time <= 7.7) score = 1;
+            // NFL standards: Elite (6.5s or less), Excellent (6.51-6.8s), Good (6.81-7.1s), Average (7.11-7.4s), Below Average (7.41-7.7s), Poor (7.71+)
+            if (time <= 6.5) score = 10;
+            else if (time <= 6.65) score = 9;
+            else if (time <= 6.8) score = 8;
+            else if (time <= 6.95) score = 7;
+            else if (time <= 7.1) score = 6;
+            else if (time <= 7.25) score = 5;
+            else if (time <= 7.4) score = 4;
+            else if (time <= 7.55) score = 3;
+            else if (time <= 7.7) score = 2;
+            else if (time <= 7.85) score = 1;
             else score = 0;
             break;
         case 'shuttle':
-            // NFL shuttle standards: Elite (< 4.0s), Excellent (4.0-4.1s), Good (4.11-4.2s), Average (4.21-4.3s), Below Average (4.31-4.5s), Poor (> 4.5s)
-            if (time <= 3.9) score = 10;
-            else if (time <= 4.0) score = 9;
-            else if (time <= 4.1) score = 8;
-            else if (time <= 4.2) score = 7;
-            else if (time <= 4.3) score = 6;
-            else if (time <= 4.4) score = 5;
-            else if (time <= 4.5) score = 4;
-            else if (time <= 4.6) score = 3;
-            else if (time <= 4.7) score = 2;
-            else if (time <= 4.8) score = 1;
+            // NFL standards: Elite (4.0s or less), Excellent (4.01-4.2s), Good (4.21-4.4s), Average (4.41-4.6s), Below Average (4.61-4.8s), Poor (4.81+)
+            if (time <= 4.0) score = 10;
+            else if (time <= 4.1) score = 9;
+            else if (time <= 4.2) score = 8;
+            else if (time <= 4.3) score = 7;
+            else if (time <= 4.4) score = 6;
+            else if (time <= 4.5) score = 5;
+            else if (time <= 4.6) score = 4;
+            else if (time <= 4.7) score = 3;
+            else if (time <= 4.8) score = 2;
+            else if (time <= 4.9) score = 1;
             else score = 0;
             break;
         default:
@@ -663,7 +680,7 @@ function updateScoreDisplay(elementId, score) {
     const element = document.getElementById(elementId);
     if (!element) return;
     
-    if (score === null) {
+    if (score === null || score === undefined) {
         element.textContent = "--";
         element.className = "metric-score";
         return;
@@ -676,6 +693,11 @@ function updateScoreDisplay(elementId, score) {
     
     // Add appropriate color class based on score
     const scoreValue = parseFloat(score);
+    if (isNaN(scoreValue)) {
+        element.textContent = "--";
+        return;
+    }
+    
     if (scoreValue < 4) {
         element.classList.add("score-poor");
     } else if (scoreValue < 5) {
@@ -713,65 +735,41 @@ function updateAllDisplayedValues() {
 
 // Calculate a composite grade from the given scores
 function calculateCompositeGrade(scores) {
-    // Filter out null values
-    const validScores = scores.filter(score => score !== null);
-    if (validScores.length === 0) return null;
+    // Filter out null/undefined/NaN values
+    const validScores = scores.filter(score => score !== null && score !== undefined && !isNaN(parseFloat(score)));
     
-    // Calculate average of valid scores
-    const sum = validScores.reduce((total, score) => total + parseFloat(score), 0);
-    return sum / validScores.length;
-}
-
-// Update the display for a grade element
-function updateGradeDisplay(elementId, score, prefix) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    
-    if (score === null) {
-        element.textContent = `${prefix} : N/A`;
-        element.className = "composite-grade";
-        element.classList.add(elementId);
-        return;
+    // If no valid scores, return null
+    if (validScores.length === 0) {
+        return null;
     }
     
-    const gradeText = getGradeText(score);
-    element.textContent = `${prefix} : ${gradeText}`;
+    // Calculate average score
+    const totalScore = validScores.reduce((sum, score) => sum + parseFloat(score), 0);
+    const averageScore = totalScore / validScores.length;
     
-    // Remove any existing color classes
-    element.className = "composite-grade";
-    element.classList.add(elementId); // Add back the position class
-    
-    // Add appropriate color class based on grade
-    if (score < 4) {
-        element.classList.add("grade-poor");
-    } else if (score < 5) {
-        element.classList.add("grade-below-average");
-    } else if (score < 7) {
-        element.classList.add("grade-average");
-    } else if (score < 9) {
-        element.classList.add("grade-good");
-    } else {
-        element.classList.add("grade-excellent");
-    }
+    // Return the average score rounded to 2 decimal places
+    return averageScore.toFixed(2);
 }
 
 // Get a text grade based on a numeric score
 function getGradeText(score) {
-    if (score === null) return "N/A";
-    score = parseFloat(score);
-    if (isNaN(score)) return "N/A";
+    if (score === null || score === undefined || isNaN(parseFloat(score))) {
+        return 'N/A';
+    }
     
-    if (score < 2) return "POOR";
-    if (score < 3) return "BELOW POOR";
-    if (score < 4) return "POOR+";
-    if (score < 5) return "BELOW AVERAGE";
-    if (score < 6) return "AVERAGE-";
-    if (score < 7) return "AVERAGE+";
-    if (score < 8) return "ABOVE AVERAGE";
-    if (score < 8.5) return "GOOD";
-    if (score < 9) return "VERY GOOD";
-    if (score < 9.5) return "EXCELLENT";
-    return "ELITE";
+    // Convert to numeric value
+    const numericScore = parseFloat(score);
+    
+    if (numericScore >= 9) return 'Elite';
+    else if (numericScore >= 8) return 'Excellent';
+    else if (numericScore >= 7) return 'Good+';
+    else if (numericScore >= 6) return 'Good';
+    else if (numericScore >= 5) return 'Average+';
+    else if (numericScore >= 4) return 'Average';
+    else if (numericScore >= 3) return 'Below Avg';
+    else if (numericScore >= 2) return 'Poor+';
+    else if (numericScore >= 1) return 'Poor';
+    else return 'Very Poor';
 }
 
 function saveAsImage() {
@@ -1051,22 +1049,23 @@ function addGradeLabel(inputId, score) {
     }
     
     // Set the grade text and class
-    if (isNaN(score)) {
+    if (score === null || score === undefined || isNaN(parseFloat(score))) {
         label.textContent = 'N/A';
         label.className = 'grade-label';
     } else {
-        const gradeText = getGradeText(score);
+        const scoreValue = parseFloat(score);
+        const gradeText = getGradeText(scoreValue);
         label.textContent = gradeText;
         label.className = 'grade-label';
         
         // Add appropriate color class
-        if (score < 4) {
+        if (scoreValue < 4) {
             label.classList.add('grade-poor');
-        } else if (score < 5) {
+        } else if (scoreValue < 5) {
             label.classList.add('grade-below-average');
-        } else if (score < 7) {
+        } else if (scoreValue < 7) {
             label.classList.add('grade-average');
-        } else if (score < 9) {
+        } else if (scoreValue < 9) {
             label.classList.add('grade-good');
         } else {
             label.classList.add('grade-excellent');
@@ -1107,6 +1106,39 @@ function calculateAndUpdateCompositeScores() {
     updateGradeDisplay('speed-grade', speedGrade, 'COMPOSITE SPEED GRADE');
     updateGradeDisplay('explosion-grade', explosionGrade, 'COMPOSITE EXPLOSION GRADE');
     updateGradeDisplay('agility-grade', agilityGrade, 'COMPOSITE AGILITY GRADE');
+}
+
+function updateGradeDisplay(elementId, score, prefix) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    if (score === null || score === undefined || isNaN(parseFloat(score))) {
+        element.textContent = `${prefix} : N/A`;
+        element.className = "composite-grade";
+        element.classList.add(elementId);
+        return;
+    }
+    
+    const scoreValue = parseFloat(score);
+    const gradeText = getGradeText(scoreValue);
+    element.textContent = `${prefix} : ${gradeText} (${scoreValue})`;
+    
+    // Remove any existing color classes
+    element.className = "composite-grade";
+    element.classList.add(elementId); // Add back the position class
+    
+    // Add appropriate color class based on grade
+    if (scoreValue < 4) {
+        element.classList.add("grade-poor");
+    } else if (scoreValue < 5) {
+        element.classList.add("grade-below-average");
+    } else if (scoreValue < 7) {
+        element.classList.add("grade-average");
+    } else if (scoreValue < 9) {
+        element.classList.add("grade-good");
+    } else {
+        element.classList.add("grade-excellent");
+    }
 }
 
 function calculateSizeScore(measurement, type) {
