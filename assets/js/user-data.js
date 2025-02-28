@@ -34,10 +34,17 @@ function saveCombineEventData(eventType, value) {
                     // If update fails, try set instead (document might not exist)
                     console.log(`Update failed, trying to create document: ${error.message}`);
                     
+                    // First check if we can get the username
+                    let username = "";
+                    if (user.displayName) {
+                        username = user.displayName;
+                    }
+
                     db.collection('users').doc(user.uid).set({
                         [eventType]: value,
                         lastUpdate: new Date(),
-                        email: user.email
+                        email: user.email,
+                        username: username
                     }, { merge: true }) // Use merge option to preserve other fields
                     .then(() => {
                         console.log(`Successfully created/merged document`);

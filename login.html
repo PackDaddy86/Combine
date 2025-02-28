@@ -184,12 +184,17 @@
                 
                 auth.createUserWithEmailAndPassword(email, password)
                     .then(userCredential => {
-                        // Create a user profile in Firestore
-                        return db.collection('users').doc(userCredential.user.uid).set({
-                            email: email,
-                            username: username,
-                            createdAt: new Date(),
-                            games: {}
+                        // First update profile to include username
+                        return userCredential.user.updateProfile({
+                            displayName: username
+                        }).then(() => {
+                            // Then create a user profile in Firestore
+                            return db.collection('users').doc(userCredential.user.uid).set({
+                                email: email,
+                                username: username,
+                                createdAt: new Date(),
+                                games: {}
+                            });
                         });
                     })
                     .then(() => {

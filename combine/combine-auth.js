@@ -42,6 +42,7 @@ function loadUserCombineData(userId) {
                 // Create the user document if it doesn't exist
                 return db.collection('users').doc(userId).set({
                     email: firebase.auth().currentUser.email,
+                    username: firebase.auth().currentUser.displayName || "",
                     createdAt: new Date(),
                     games: {}
                 }).then(() => {
