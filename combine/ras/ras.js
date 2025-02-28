@@ -16,6 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update saved results list
     updateSavedResultsList();
+    
+    // Call our debug function when the page loads
+    setTimeout(showDebugScores, 1000); // Delay slightly to ensure all elements are loaded
 });
 
 // Check user status and load data
@@ -307,6 +310,8 @@ function calculateRASScores() {
         const heightValue = document.getElementById('height-value').textContent;
         const weightValue = document.getElementById('weight-value').textContent;
         
+        console.log('Forty Value:', fortyValue); // Debug - Log the 40 time value
+        
         // Parse values (only use defaults if the field is empty or "--")
         const fortyTime = fortyValue === "--" || fortyValue === "" ? null : parseFloat(fortyValue);
         const twentyTime = twentyValue === "--" || twentyValue === "" ? null : parseFloat(twentyValue);
@@ -314,7 +319,9 @@ function calculateRASScores() {
         const verticalHeight = verticalValue === "--" || verticalValue === "" ? null : parseFloat(verticalValue);
         const benchReps = benchValue === "--" || benchValue === "" ? null : parseFloat(benchValue);
         const coneTime = coneValue === "--" || coneValue === "" ? null : parseFloat(coneValue);
-        const shuttleTime = shuttleValue === "--" || shuttleValue === "" ? null : parseFloat(shuttleTime);
+        const shuttleTime = shuttleValue === "--" || shuttleValue === "" ? null : parseFloat(shuttleValue);
+        
+        console.log('Parsed Forty Time:', fortyTime); // Debug - Log the parsed 40 time
         
         // Parse broad jump (special handling for feet/inches format)
         let broadInches = null;
@@ -350,6 +357,8 @@ function calculateRASScores() {
         const shuttleScore = shuttleTime !== null ? calculateAgilityScore(shuttleTime, 'shuttle') : null;
         const heightScore = heightInches !== null ? calculateSizeScore(heightInches, 'height') : null;
         const weightScore = weight !== null ? calculateSizeScore(weight, 'weight') : null;
+        
+        console.log('Forty Score:', fortyScore); // Debug - Log the calculated forty score
         
         // Update score displays with color coding - respect null values
         updateScoreDisplay('forty-score', fortyScore);
@@ -1410,4 +1419,93 @@ function setupEventListeners() {
         // Show confirmation
         alert('RAS scores saved successfully!');
     });
+}
+
+// Add a debugging function to show all calculated scores directly in the DOM
+function showDebugScores() {
+    try {
+        // Create or get debug element
+        let debugElement = document.getElementById('debug-scores');
+        if (!debugElement) {
+            debugElement = document.createElement('div');
+            debugElement.id = 'debug-scores';
+            debugElement.style.position = 'fixed';
+            debugElement.style.bottom = '0';
+            debugElement.style.right = '0';
+            debugElement.style.backgroundColor = 'rgba(0,0,0,0.8)';
+            debugElement.style.color = 'white';
+            debugElement.style.padding = '10px';
+            debugElement.style.zIndex = '9999';
+            debugElement.style.fontFamily = 'monospace';
+            debugElement.style.fontSize = '12px';
+            debugElement.style.maxWidth = '400px';
+            debugElement.style.maxHeight = '300px';
+            debugElement.style.overflow = 'auto';
+            document.body.appendChild(debugElement);
+        }
+        
+        // Get values from DOM
+        const fortyValue = document.getElementById('forty-value').textContent;
+        const fortyScoreElement = document.getElementById('forty-score');
+        const fortyScoreText = fortyScoreElement ? fortyScoreElement.textContent : 'Not found';
+        
+        // Parse and calculate score directly
+        let directScore = 'N/A';
+        if (fortyValue !== "--" && fortyValue !== "") {
+            const parsedForty = parseFloat(fortyValue);
+            if (!isNaN(parsedForty)) {
+                directScore = calculateSpeedScore(parsedForty, 'forty');
+            }
+        }
+        
+        // Show debug info
+        debugElement.innerHTML = `
+            <h3>Debug Info:</h3>
+            <p>40yd Dash Value: ${fortyValue}</p>
+            <p>40yd Score Element: ${fortyScoreText}</p>
+            <p>Directly Calculated Score: ${directScore}</p>
+            <button onclick="fixFortyScore()">Fix Score</button>
+        `;
+    } catch (error) {
+        console.error('Debug error:', error);
+    }
+}
+
+// Function to manually fix the forty score
+function fixFortyScore() {
+    try {
+        const fortyValue = document.getElementById('forty-value').textContent;
+        if (fortyValue !== "--" && fortyValue !== "") {
+            const parsedForty = parseFloat(fortyValue);
+            if (!isNaN(parsedForty)) {
+                const correctScore = calculateSpeedScore(parsedForty, 'forty');
+                const fortyScoreElement = document.getElementById('forty-score');
+                if (fortyScoreElement) {
+                    fortyScoreElement.textContent = correctScore;
+                    // Also update color
+                    fortyScoreElement.className = "metric-score";
+                    const scoreValue = parseFloat(correctScore);
+                    if (scoreValue < 4) {
+                        fortyScoreElement.classList.add("score-poor");
+                    } else if (scoreValue < 5) {
+                        fortyScoreElement.classList.add("score-below-average");
+                    } else if (scoreValue < 7) {
+                        fortyScoreElement.classList.add("score-average");
+                    } else if (scoreValue < 9) {
+                        fortyScoreElement.classList.add("score-good");
+                    } else {
+                        fortyScoreElement.classList.add("score-excellent");
+                    }
+                    
+                    // Update any related grade label
+                    updateRelatedGradeLabel('forty-score', scoreValue);
+                    
+                    // Recalculate composite scores
+                    calculateCompositeScores();
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Fix error:', error);
+    }
 }
