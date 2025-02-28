@@ -185,6 +185,34 @@
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <script src="ras.js"></script>
     <script src="ras-data-fix.js"></script>
+    <script>
+        // Load user data using all available methods when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("RAS page loaded, attempting to load user data from all sources");
+            
+            // Wait for Firebase to initialize
+            setTimeout(function() {
+                // Try loading from games.combine first
+                if (window.loadFromNestedCombineData) {
+                    window.loadFromNestedCombineData();
+                }
+                
+                // Then try enhanced method
+                setTimeout(function() {
+                    if (window.enhancedGetUserData) {
+                        window.enhancedGetUserData();
+                    }
+                    
+                    // Finally try fallback
+                    setTimeout(function() {
+                        if (window.inspectAllFirestoreData) {
+                            window.inspectAllFirestoreData();
+                        }
+                    }, 500);
+                }, 500);
+            }, 1000);
+        });
+    </script>
     
     <!-- Navigation Script -->
     <script src="../../assets/js/navigation.js"></script>
