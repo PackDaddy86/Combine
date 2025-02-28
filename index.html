@@ -356,9 +356,23 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
     
     <!-- Firebase Configuration -->
     <script src="assets/js/firebase-config.js"></script>
+    
+    <!-- Initialize Firebase Analytics -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof firebase !== 'undefined') {
+                // Initialize Analytics
+                firebase.analytics();
+                console.log('Firebase Analytics initialized');
+            } else {
+                console.error('Firebase not properly initialized');
+            }
+        });
+    </script>
     
     <!-- Include script -->
     <script src="assets/js/include.js"></script>

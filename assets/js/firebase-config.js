@@ -16,6 +16,18 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// Initialize Analytics if available
+if (typeof firebase.analytics === 'function') {
+  const analytics = firebase.analytics();
+  console.log('Firebase Analytics initialized with measurement ID:', firebaseConfig.measurementId);
+  
+  // Enable analytics debugging in console if in development environment
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    analytics.setAnalyticsCollectionEnabled(true);
+    console.log('Analytics debug mode enabled for development');
+  }
+}
+
 // Remove any existing user-nav elements that might be showing 
 function removeExistingUserNav() {
   const userNavs = document.querySelectorAll('.user-nav');

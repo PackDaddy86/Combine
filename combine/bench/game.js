@@ -35,6 +35,7 @@ class GameEngine {
         };
         
         this.ballAnimationId = null;
+        this.gameStartTime = null;
         
         this.initControls();
         this.initEventListeners();
@@ -133,6 +134,7 @@ class GameEngine {
         
         // Start the ball animation
         this.moveBall();
+        this.gameStartTime = Date.now();
     }
 
     moveBall() {
@@ -356,86 +358,30 @@ class GameEngine {
     }
 
     saveResult() {
-        // Store the bench press result
-        const formattedReps = this.gameState.reps.toString();
+        const reps = this.gameState.reps;
+        console.log('Saving bench press result:', reps);
         
-        console.log("===== BENCH PRESS SAVE RESULT CALLED =====");
-        console.log(`Saving ${formattedReps} reps to localStorage and Firebase`);
+        // Save to localStorage
+        localStorage.setItem('benchPress', reps);
         
-        // First, save to localStorage for immediate access on the combine page
-        try {
-            localStorage.setItem('benchPress', formattedReps);
-            console.log(`Successfully saved ${formattedReps} to localStorage`);
-        } catch (err) {
-            console.error(`Error saving to localStorage:`, err);
+        // Save to Firebase via the global function if available
+        if (typeof window.saveCombineEventData === 'function') {
+            window.saveCombineEventData('benchPress', reps);
+            console.log('Saved bench press result to Firebase');
         }
         
-        // Debug localStorage values
-        console.log("Current localStorage values:");
-        console.log("- benchPress:", localStorage.getItem('benchPress'));
-        console.log("- fortyYardDash:", localStorage.getItem('fortyYardDash'));
-        console.log("- verticalJump:", localStorage.getItem('verticalJump'));
-        
-        // Try to use the saveCombineEventData function from user-data.js if available
-        if (typeof saveCombineEventData === 'function') {
-            try {
-                console.log("Using saveCombineEventData function directly");
-                saveCombineEventData('benchPress', formattedReps)
-                    .then(() => {
-                        console.log("✅ Successfully saved via saveCombineEventData function");
-                    })
-                    .catch(error => {
-                        console.error("❌ Error saving via saveCombineEventData:", error);
-                    });
-            } catch (err) {
-                console.error("❌ Error calling saveCombineEventData:", err);
-            }
-        } else {
-            console.log("⚠️ saveCombineEventData function not found, using fallback method");
+        // Log the event to Firebase Analytics if available
+        if (window.firebaseAnalytics) {
+            window.firebaseAnalytics.logGameCompletion('bench_press', reps);
+            console.log('Logged bench press completion to Firebase Analytics');
             
-            // Skip localStorage entirely and go straight to Firebase
-            if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-                console.log("Firebase is available, checking user state...");
-                const user = firebase.auth().currentUser;
-                
-                if (user) {
-                    console.log(`User logged in as ${user.email} (${user.uid}), saving to Firestore`);
-                    
-                    const db = firebase.firestore();
-                    
-                    // Save directly to Firestore as a root property
-                    console.log(`Calling Firestore update for user ${user.uid}`);
-                    db.collection('users').doc(user.uid).update({
-                        benchPress: formattedReps,
-                        lastUpdate: new Date()
-                    }).then(() => {
-                        console.log(`✅ Successfully saved ${formattedReps} reps to Firestore via update`);
-                    }).catch(error => {
-                        console.error(`❌ Error during update:`, error);
-                        
-                        // If document doesn't exist, create it
-                        if (error.code === 'not-found') {
-                            console.log("Document not found, trying to create new one");
-                            
-                            db.collection('users').doc(user.uid).set({
-                                email: user.email,
-                                benchPress: formattedReps,
-                                lastUpdate: new Date()
-                            }, { merge: true }).then(() => {
-                                console.log(`✅ Created/merged document with ${formattedReps} reps`);
-                            }).catch(err => {
-                                console.error("❌ Error creating document:", err);
-                            });
-                        }
-                    });
-                } else {
-                    console.log("❌ No user logged in, data not saved to Firebase");
-                }
-            } else {
-                console.log("❌ Firebase not initialized, data not saved to Firebase");
-                console.log("Firebase object:", typeof firebase);
-                console.log("Auth available:", firebase && typeof firebase.auth);
-                console.log("Firestore available:", firebase && typeof firebase.firestore);
+            // Also track as a custom event with more detailed data
+            if (typeof firebase !== 'undefined' && typeof firebase.analytics === 'function') {
+                firebase.analytics().logEvent('bench_press_completed', {
+                    score: reps,
+                    difficulty_level: this.gameState.currentSpeed.toFixed(2),
+                    time_spent: (Date.now() - this.gameStartTime) / 1000 // seconds
+                });
             }
         }
     }
