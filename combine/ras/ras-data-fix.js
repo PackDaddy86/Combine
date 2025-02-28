@@ -1365,7 +1365,7 @@ const addEmergencyFixButton = function() {
     // Create button
     const btn = document.createElement('button');
     btn.id = 'emergency-fix-button';
-    btn.innerText = 'Emergency Fix';
+    btn.innerText = 'Calculate RAS Score';
     btn.style.position = 'fixed';
     btn.style.bottom = '60px';
     btn.style.right = '10px';
@@ -1390,8 +1390,8 @@ const addEmergencyFixButton = function() {
         // Verify DOM elements
         verifyDOMElements();
         
-        // Run direct calculation
-        directCalculationTest();
+        // Run full direct calculation with our implementation
+        window.directCalculateAllScores();
     });
     
     // Add to document body
@@ -1400,3 +1400,396 @@ const addEmergencyFixButton = function() {
 
 // Add the emergency fix button after a delay to ensure page is loaded
 setTimeout(addEmergencyFixButton, 2000);
+
+// Add our own calculation functions since the originals aren't available
+// Direct calculation functions for each metric type
+function calculateSpeedScoreDirect(time, type) {
+    if (time === null || time === undefined || isNaN(time)) {
+        return 0;
+    }
+    
+    let score;
+    
+    switch (type) {
+        case 'forty':
+            if (time <= 4.2) score = 10;
+            else if (time <= 4.3) score = 9;
+            else if (time <= 4.4) score = 8;
+            else if (time <= 4.5) score = 7;
+            else if (time <= 4.6) score = 6;
+            else if (time <= 4.7) score = 5;
+            else if (time <= 4.8) score = 3;
+            else if (time <= 4.9) score = 1;
+            else score = 0;
+            break;
+        case 'twenty':
+            if (time <= 2.5) score = 10;
+            else if (time <= 2.55) score = 9;
+            else if (time <= 2.6) score = 8;
+            else if (time <= 2.65) score = 7;
+            else if (time <= 2.7) score = 6;
+            else if (time <= 2.8) score = 5;
+            else if (time <= 2.9) score = 4;
+            else if (time <= 3.0) score = 3;
+            else if (time <= 3.1) score = 2;
+            else if (time <= 3.2) score = 1;
+            else score = 0;
+            break;
+        case 'ten':
+            if (time <= 1.4) score = 10;
+            else if (time <= 1.45) score = 9;
+            else if (time <= 1.5) score = 8;
+            else if (time <= 1.55) score = 7;
+            else if (time <= 1.6) score = 6;
+            else if (time <= 1.65) score = 5;
+            else if (time <= 1.7) score = 4;
+            else if (time <= 1.75) score = 3;
+            else if (time <= 1.8) score = 2;
+            else if (time <= 1.85) score = 1;
+            else score = 0;
+            break;
+        default:
+            score = 0;
+    }
+    
+    return score;
+}
+
+function calculateJumpScoreDirect(value, type) {
+    if (value === null || value === undefined || isNaN(value)) {
+        return 0;
+    }
+    
+    let score;
+    
+    switch (type) {
+        case 'vertical':
+            if (value >= 40) score = 10;
+            else if (value >= 37) score = 9;
+            else if (value >= 35) score = 8;
+            else if (value >= 33) score = 7;
+            else if (value >= 30) score = 6;
+            else if (value >= 28) score = 5;
+            else if (value >= 26) score = 4;
+            else if (value >= 24) score = 3;
+            else if (value >= 22) score = 2;
+            else if (value >= 20) score = 1;
+            else score = 0;
+            break;
+        case 'broad':
+            // Handle broad jump in inches (or converted to inches)
+            let inches = value;
+            // Check if it might be in feet/inches format
+            if (typeof value === 'string' && value.includes("'")) {
+                const parts = value.split("'");
+                const feet = parseInt(parts[0]) || 0;
+                let inchPart = 0;
+                if (parts[1]) {
+                    inchPart = parseInt(parts[1]) || 0;
+                }
+                inches = feet * 12 + inchPart;
+            } else if (value < 20) {
+                // Likely in meters or cm, convert to inches
+                // Assume meters if under 5
+                if (value < 5) {
+                    inches = value * 39.37; // Convert meters to inches
+                } else {
+                    inches = value * 0.3937; // Convert cm to inches
+                }
+            }
+            
+            if (inches >= 130) score = 10;
+            else if (inches >= 125) score = 9;
+            else if (inches >= 120) score = 8;
+            else if (inches >= 115) score = 7;
+            else if (inches >= 110) score = 6;
+            else if (inches >= 105) score = 5;
+            else if (inches >= 100) score = 4;
+            else if (inches >= 95) score = 3;
+            else if (inches >= 90) score = 2;
+            else if (inches >= 85) score = 1;
+            else score = 0;
+            break;
+        default:
+            score = 0;
+    }
+    
+    return score;
+}
+
+function calculateStrengthScoreDirect(reps) {
+    if (reps === null || reps === undefined || isNaN(reps)) {
+        return 0;
+    }
+    
+    if (reps >= 36) return 10;
+    else if (reps >= 32) return 9;
+    else if (reps >= 28) return 8;
+    else if (reps >= 24) return 7;
+    else if (reps >= 20) return 6;
+    else if (reps >= 16) return 5;
+    else if (reps >= 12) return 4;
+    else if (reps >= 8) return 3;
+    else if (reps >= 4) return 2;
+    else if (reps >= 1) return 1;
+    else return 0;
+}
+
+function calculateAgilityScoreDirect(time, type) {
+    if (time === null || time === undefined || isNaN(time)) {
+        return 0;
+    }
+    
+    let score;
+    
+    switch (type) {
+        case 'cone':
+            if (time <= 6.45) score = 10;
+            else if (time <= 6.6) score = 9;
+            else if (time <= 6.75) score = 8;
+            else if (time <= 6.9) score = 7;
+            else if (time <= 7.05) score = 6;
+            else if (time <= 7.2) score = 5;
+            else if (time <= 7.35) score = 4;
+            else if (time <= 7.5) score = 3;
+            else if (time <= 7.65) score = 2;
+            else if (time <= 7.8) score = 1;
+            else score = 0;
+            break;
+        case 'shuttle':
+            if (time <= 4.0) score = 10;
+            else if (time <= 4.1) score = 9;
+            else if (time <= 4.2) score = 8;
+            else if (time <= 4.3) score = 7;
+            else if (time <= 4.4) score = 6;
+            else if (time <= 4.5) score = 5;
+            else if (time <= 4.6) score = 4;
+            else if (time <= 4.7) score = 3;
+            else if (time <= 4.8) score = 2;
+            else if (time <= 4.9) score = 1;
+            else score = 0;
+            break;
+        default:
+            score = 0;
+    }
+    
+    return score;
+}
+
+// Main function to calculate all scores directly
+window.directCalculateAllScores = function() {
+    debugLog('=== PERFORMING COMPLETE CALCULATION ON ALL VALUES ===', '#ffff00');
+    
+    // Calculate scores for all metrics
+    try {
+        // Get all metric values
+        const metrics = {
+            forty: {
+                element: document.getElementById('forty-value'),
+                scoreElement: document.getElementById('forty-score'),
+                calculator: calculateSpeedScoreDirect
+            },
+            vertical: {
+                element: document.getElementById('vertical-value'),
+                scoreElement: document.getElementById('vertical-score'),
+                calculator: calculateJumpScoreDirect
+            },
+            broad: {
+                element: document.getElementById('broad-value'),
+                scoreElement: document.getElementById('broad-score'),
+                calculator: calculateJumpScoreDirect
+            },
+            bench: {
+                element: document.getElementById('bench-value'),
+                scoreElement: document.getElementById('bench-score'),
+                calculator: calculateStrengthScoreDirect
+            },
+            cone: {
+                element: document.getElementById('cone-value'),
+                scoreElement: document.getElementById('cone-score'),
+                calculator: calculateAgilityScoreDirect
+            },
+            shuttle: {
+                element: document.getElementById('shuttle-value'),
+                scoreElement: document.getElementById('shuttle-score'),
+                calculator: calculateAgilityScoreDirect
+            }
+        };
+        
+        // Process each metric
+        Object.keys(metrics).forEach(key => {
+            const metric = metrics[key];
+            if (metric.element && metric.scoreElement) {
+                const value = parseFloat(metric.element.textContent);
+                if (!isNaN(value)) {
+                    debugLog(`Found ${key} value: ${value}`, '#00ff00');
+                    const score = metric.calculator(value, key);
+                    debugLog(`Calculated ${key} score directly: ${score}`, '#ffff00');
+                    updateScoreElementDirect(metric.scoreElement, score);
+                } else {
+                    debugLog(`Invalid ${key} value: ${metric.element.textContent}`, '#ff0000');
+                }
+            } else {
+                debugLog(`Missing elements for ${key}`, '#ff0000');
+            }
+        });
+        
+        // Calculate composite scores after individual scores
+        calculateCompositeScoresDirect();
+        
+        debugLog('=== CALCULATION COMPLETE ===', '#ffff00');
+    } catch (error) {
+        debugLog(`ERROR DURING CALCULATION: ${error.message}`, '#ff0000');
+    }
+};
+
+// Function to update score element
+function updateScoreElementDirect(element, score) {
+    if (!element) return;
+    
+    const formattedScore = parseFloat(score).toFixed(2);
+    element.textContent = formattedScore;
+    
+    // Set color based on score
+    let bgColor, textColor;
+    const scoreValue = parseFloat(score);
+    
+    if (scoreValue < 4) {
+        bgColor = "#ff6b6b";
+        textColor = "white";
+    } else if (scoreValue < 5) {
+        bgColor = "#ffa06b";
+        textColor = "white";
+    } else if (scoreValue < 7) {
+        bgColor = "#ffc56b";
+        textColor = "black";
+    } else if (scoreValue < 9) {
+        bgColor = "#6bd46b";
+        textColor = "white";
+    } else {
+        bgColor = "#53c2f0";
+        textColor = "white";
+    }
+    
+    // Apply inline styles
+    element.style.backgroundColor = bgColor;
+    element.style.color = textColor;
+    element.style.padding = "3px";
+    element.style.borderRadius = "3px";
+    element.style.fontWeight = "bold";
+    
+    debugLog(`Updated ${element.id} element to: ${formattedScore}`, '#00ffff');
+}
+
+// Calculate composite scores
+function calculateCompositeScoresDirect() {
+    try {
+        // Get all scores
+        const fortyScore = getScoreValue('forty-score');
+        const verticalScore = getScoreValue('vertical-score');
+        const broadScore = getScoreValue('broad-score');
+        const benchScore = getScoreValue('bench-score');
+        const coneScore = getScoreValue('cone-score');
+        const shuttleScore = getScoreValue('shuttle-score');
+        
+        // Calculate composite scores
+        // Speed (40 only for now)
+        const speedScores = [fortyScore].filter(score => !isNaN(score));
+        const speedTotal = speedScores.length > 0 ? 
+            speedScores.reduce((sum, score) => sum + score, 0) / speedScores.length : 0;
+        
+        // Explosion (vertical, broad, bench)
+        const explosiveScores = [verticalScore, broadScore, benchScore].filter(score => !isNaN(score));
+        const explosiveTotal = explosiveScores.length > 0 ? 
+            explosiveScores.reduce((sum, score) => sum + score, 0) / explosiveScores.length : 0;
+        
+        // Agility (cone, shuttle)
+        const agilityScores = [coneScore, shuttleScore].filter(score => !isNaN(score));
+        const agilityTotal = agilityScores.length > 0 ? 
+            agilityScores.reduce((sum, score) => sum + score, 0) / agilityScores.length : 0;
+        
+        // Total (all scores)
+        const allScores = [fortyScore, verticalScore, broadScore, benchScore, coneScore, shuttleScore].filter(score => !isNaN(score));
+        const totalScore = allScores.length > 0 ? 
+            allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
+        
+        // Update composite score displays
+        updateCompositeElement('speed-score', speedTotal);
+        updateCompositeElement('explosive-score', explosiveTotal);
+        updateCompositeElement('agility-score', agilityTotal);
+        updateCompositeElement('total-score', totalScore);
+        
+        // Update RAS grade
+        const rasGrade = calculateRASGrade(totalScore);
+        const rasElement = document.getElementById('composite-score');
+        if (rasElement) {
+            rasElement.textContent = rasGrade;
+            rasElement.style.fontWeight = 'bold';
+            rasElement.style.fontSize = '24px';
+        }
+        
+        debugLog(`Speed score: ${speedTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Explosive score: ${explosiveTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Agility score: ${agilityTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Total score: ${totalScore.toFixed(2)}`, '#00ff00');
+        debugLog(`RAS Grade: ${rasGrade}`, '#00ff00');
+    } catch (error) {
+        debugLog(`Error calculating composite scores: ${error.message}`, '#ff0000');
+    }
+}
+
+// Helper to get score value
+function getScoreValue(elementId) {
+    const element = document.getElementById(elementId);
+    return element ? parseFloat(element.textContent) : NaN;
+}
+
+// Update composite element 
+function updateCompositeElement(elementId, score) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    element.textContent = score.toFixed(2);
+    
+    // Color based on score
+    let bgColor, textColor;
+    if (score < 4) {
+        bgColor = "#ff6b6b";
+        textColor = "white";
+    } else if (score < 5) {
+        bgColor = "#ffa06b";
+        textColor = "white";
+    } else if (score < 7) {
+        bgColor = "#ffc56b";
+        textColor = "black";
+    } else if (score < 9) {
+        bgColor = "#6bd46b";
+        textColor = "white";
+    } else {
+        bgColor = "#53c2f0";
+        textColor = "white";
+    }
+    
+    element.style.backgroundColor = bgColor;
+    element.style.color = textColor;
+    element.style.padding = "3px";
+    element.style.borderRadius = "3px";
+    element.style.fontWeight = "bold";
+}
+
+// Calculate RAS grade from total score
+function calculateRASGrade(score) {
+    if (score >= 9.5) return "A+";
+    else if (score >= 9.0) return "A";
+    else if (score >= 8.5) return "A-";
+    else if (score >= 8.0) return "B+";
+    else if (score >= 7.5) return "B";
+    else if (score >= 7.0) return "B-";
+    else if (score >= 6.5) return "C+";
+    else if (score >= 6.0) return "C";
+    else if (score >= 5.5) return "C-";
+    else if (score >= 5.0) return "D+";
+    else if (score >= 4.5) return "D";
+    else if (score >= 4.0) return "D-";
+    else return "F";
+}
