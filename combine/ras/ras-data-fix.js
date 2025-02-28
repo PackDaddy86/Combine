@@ -222,8 +222,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     // Try to populate each metric with various possible field names
                     setValueFromMultipleFields('forty-value', ['fortyYardDash', 'forty', '40yard', '40-yard', '40yd', '40', 'games.combine.fortyYardDash']);
-                    setValueFromMultipleFields('twenty-value', ['twentyYardDash', 'twenty', '20yard', '20-yard', '20yd', '20', 'games.combine.twentyYardDash']);
-                    setValueFromMultipleFields('ten-value', ['tenYardDash', 'ten', '10yard', '10-yard', '10yd', '10', 'games.combine.tenYardDash']);
+                    setValueFromMultipleFields('twenty-value', ['twentyYardDash', 'twenty', '20yard', '20-yard', '20yd', '20', 'twenty_yard', 'twenty_yard_dash', 'twenty_split']);
+                    setValueFromMultipleFields('ten-value', ['tenYardDash', 'ten', '10yard', '10-yard', '10yd', '10', 'ten_yard', 'ten_yard_dash', 'ten_split']);
                     setValueFromMultipleFields('vertical-value', ['verticalJump', 'vertical', 'vert', 'games.combine.verticalJump']);
                     setValueFromMultipleFields('broad-value', ['broadJump', 'broad', 'jump', 'games.combine.broadJump']);
                     setValueFromMultipleFields('bench-value', ['benchPress', 'bench', 'games.combine.benchPress']);
@@ -829,6 +829,82 @@ document.addEventListener('DOMContentLoaded', function() {
         return result;
     }
 
+    // Patch the updateAllGrades function to correctly use score elements instead of input values
+    window.patchedUpdateAllGrades = function() {
+        console.log("Running patched updateAllGrades function");
+        
+        try {
+            // Get all scores from the score display elements (not inputs)
+            const fortyScore = document.getElementById('forty-score');
+            const verticalScore = document.getElementById('vertical-score');
+            const benchScore = document.getElementById('bench-score');  
+            const broadScore = document.getElementById('broad-score');
+            const coneScore = document.getElementById('cone-score');
+            const shuttleScore = document.getElementById('shuttle-score');
+            
+            // Check if all the score elements exist
+            if (!fortyScore || !verticalScore || !benchScore || !broadScore || !coneScore || !shuttleScore) {
+                console.error("Some score elements not found");
+                return;
+            }
+            
+            // Get the raw metric values from the display elements
+            const fortyValue = parseFloat(document.getElementById('forty-value').textContent);
+            const verticalValue = parseFloat(document.getElementById('vertical-value').textContent);
+            const benchValue = parseFloat(document.getElementById('bench-value').textContent);
+            const broadValue = parseFloat(document.getElementById('broad-value').textContent);
+            const coneValue = parseFloat(document.getElementById('cone-value').textContent);
+            const shuttleValue = parseFloat(document.getElementById('shuttle-value').textContent);
+            
+            console.log("Raw values for calculation:");
+            console.log(`Forty: ${fortyValue}`);
+            console.log(`Vertical: ${verticalValue}`);
+            console.log(`Bench: ${benchValue}`);
+            console.log(`Broad: ${broadValue}`);
+            console.log(`Cone: ${coneValue}`);
+            console.log(`Shuttle: ${shuttleValue}`);
+            
+            // Calculate scores directly
+            const calculatedFortyScore = calculateSpeedScore(fortyValue, 'forty');
+            const calculatedVerticalScore = calculateJumpScore(verticalValue, 'vertical');
+            const calculatedBenchScore = calculateStrengthScore(benchValue);
+            const calculatedBroadScore = calculateJumpScore(broadValue, 'broad');
+            const calculatedConeScore = calculateAgilityScore(coneValue, 'cone');
+            const calculatedShuttleScore = calculateAgilityScore(shuttleValue, 'shuttle');
+            
+            console.log("Calculated scores:");
+            console.log(`Forty: ${calculatedFortyScore}`);
+            console.log(`Vertical: ${calculatedVerticalScore}`);
+            console.log(`Bench: ${calculatedBenchScore}`);
+            console.log(`Broad: ${calculatedBroadScore}`);
+            console.log(`Cone: ${calculatedConeScore}`);
+            console.log(`Shuttle: ${calculatedShuttleScore}`);
+            
+            // Directly update score displays
+            updateScoreDisplay('forty-score', calculatedFortyScore);
+            updateScoreDisplay('vertical-score', calculatedVerticalScore);
+            updateScoreDisplay('bench-score', calculatedBenchScore);
+            updateScoreDisplay('broad-score', calculatedBroadScore);
+            updateScoreDisplay('cone-score', calculatedConeScore);
+            updateScoreDisplay('shuttle-score', calculatedShuttleScore);
+            
+            // Update composite scores
+            if (typeof calculateAndUpdateCompositeScores === 'function') {
+                calculateAndUpdateCompositeScores();
+            }
+            
+            console.log("Patched updateAllGrades completed successfully");
+        } catch (error) {
+            console.error("Error in patched updateAllGrades:", error);
+        }
+    };
+
+    // Override the updateAllGrades function
+    if (typeof updateAllGrades === 'function') {
+        console.log("Overriding updateAllGrades with patched version");
+        window.updateAllGrades = window.patchedUpdateAllGrades;
+    }
+    
     // Override the default getUserData function with our enhanced version
     if (typeof window.getUserData === 'function') {
         console.log("Overriding getUserData with enhanced version");
@@ -939,6 +1015,103 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add the refresh button
     setTimeout(addDataRefreshButton, 1000);
+    
+    // Add a direct call to manually trigger calculations and test
+    window.manualTestRasCalculations = function() {
+        console.log("=== MANUAL TEST CALCULATION ===");
+        
+        // Try to set some test values
+        const testValues = {
+            'forty': '4.5',
+            'vertical': '36',
+            'broad': '120',
+            'bench': '20',
+            'cone': '6.8',
+            'shuttle': '4.2',
+            'height': '72',
+            'weight': '200'
+        };
+        
+        // Set values directly to form inputs
+        Object.keys(testValues).forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.value = testValues[id];
+                console.log(`Set test value for ${id}: ${testValues[id]}`);
+            }
+        });
+        
+        // Set display values to match
+        Object.keys(testValues).forEach(id => {
+            const displayId = `${id}-value`;
+            const element = document.getElementById(displayId);
+            if (element) {
+                element.textContent = testValues[id];
+                console.log(`Set display value for ${displayId}: ${testValues[id]}`);
+            }
+        });
+        
+        // Force direct call to original calculation functions
+        console.log("Running direct calculation sequence");
+        
+        if (typeof fixAllScores === 'function') {
+            console.log("Running fixAllScores directly");
+            fixAllScores();
+        }
+        
+        if (typeof calculateRASScores === 'function') {
+            console.log("Running calculateRASScores directly");
+            calculateRASScores(); 
+        }
+        
+        if (typeof updateAllGrades === 'function') {
+            console.log("Running updateAllGrades directly");
+            updateAllGrades();
+        }
+        
+        if (typeof calculateAndUpdateCompositeScores === 'function') {
+            console.log("Running calculateAndUpdateCompositeScores directly");
+            calculateAndUpdateCompositeScores();
+        }
+        
+        console.log("=== MANUAL TEST COMPLETE ===");
+    };
+
+    // Add a debug button for manual testing
+    const addManualTestButton = function() {
+        // Create button container
+        const btnContainer = document.createElement('div');
+        btnContainer.style.position = 'fixed';
+        btnContainer.style.bottom = '10px';
+        btnContainer.style.right = '10px';
+        btnContainer.style.zIndex = '9999';
+        
+        // Create button
+        const btn = document.createElement('button');
+        btn.id = 'manual-test-button';
+        btn.innerText = 'Test Calculation';
+        btn.style.padding = '8px 12px';
+        btn.style.backgroundColor = '#ff6b6b';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.style.fontWeight = 'bold';
+        
+        // Add click event
+        btn.addEventListener('click', () => {
+            window.manualTestRasCalculations();
+        });
+        
+        // Add to container
+        btnContainer.appendChild(btn);
+        
+        // Add to document
+        document.body.appendChild(btnContainer);
+    };
+
+    // Add the test button
+    setTimeout(addManualTestButton, 1500);
 });
 
 // Add a function to explicitly recalculate all scores and update the UI
