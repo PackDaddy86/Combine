@@ -2002,3 +2002,103 @@ window.calculateHeightScore = calculateHeightScore;
 window.calculateWeightScore = calculateWeightScore;
 window.calculateCompositeScoresDirect = calculateCompositeScoresDirect;
 window.updateTopRASDisplay = updateTopRASDisplay;
+
+// Function to create or update the RAS score display in the metrics grid
+function updateTopRASDisplay(score) {
+    // Disabled RAS display function since RAS is not working properly
+    debugLog(`RAS display functionality has been disabled`, '#ff0000');
+    return;
+}
+
+// Update our composite score calculation to include height and weight
+function calculateCompositeScoresDirect() {
+    // Disabled composite score calculation since RAS is not working properly
+    debugLog(`Composite score calculation has been disabled`, '#ff0000');
+    return;
+    
+    /* Original function code commented out
+    try {
+        // Get all scores
+        const fortyScore = getScoreValue('forty-score');
+        const verticalScore = getScoreValue('vertical-score');
+        const broadScore = getScoreValue('broad-score');
+        const benchScore = getScoreValue('bench-score');
+        const coneScore = getScoreValue('cone-score');
+        const shuttleScore = getScoreValue('shuttle-score');
+        
+        // Get height and weight values
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        
+        // Calculate height and weight scores
+        let heightScore = 0;
+        let weightScore = 0;
+        
+        if (heightInput && heightInput.value) {
+            heightScore = calculateHeightScore(heightInput.value);
+            debugLog(`Height input value: ${heightInput.value}, score: ${heightScore}`, '#00ff00');
+        }
+        
+        if (weightInput && weightInput.value) {
+            weightScore = calculateWeightScore(weightInput.value);
+            debugLog(`Weight input value: ${weightInput.value}, score: ${weightScore}`, '#00ff00');
+        }
+        
+        // Calculate composite scores
+        // Speed (40 only for now)
+        const speedScores = [fortyScore].filter(score => !isNaN(score));
+        const speedTotal = speedScores.length > 0 ? 
+            speedScores.reduce((sum, score) => sum + score, 0) / speedScores.length : 0;
+        
+        // Explosion (vertical, broad, bench)
+        const explosiveScores = [verticalScore, broadScore, benchScore].filter(score => !isNaN(score));
+        const explosiveTotal = explosiveScores.length > 0 ? 
+            explosiveScores.reduce((sum, score) => sum + score, 0) / explosiveScores.length : 0;
+        
+        // Agility (cone, shuttle)
+        const agilityScores = [coneScore, shuttleScore].filter(score => !isNaN(score));
+        const agilityTotal = agilityScores.length > 0 ? 
+            agilityScores.reduce((sum, score) => sum + score, 0) / agilityScores.length : 0;
+        
+        // Size (height, weight)
+        const sizeScores = [heightScore, weightScore].filter(score => !isNaN(score));
+        const sizeTotal = sizeScores.length > 0 ? 
+            sizeScores.reduce((sum, score) => sum + score, 0) / sizeScores.length : 0;
+        
+        // Total (all scores, including height and weight)
+        const allScores = [
+            fortyScore, verticalScore, broadScore, 
+            benchScore, coneScore, shuttleScore,
+            heightScore, weightScore
+        ].filter(score => !isNaN(score));
+        
+        const totalScore = allScores.length > 0 ? 
+            allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
+        
+        // Update composite score displays
+        updateCompositeElement('speed-score', speedTotal);
+        updateCompositeElement('explosive-score', explosiveTotal);
+        updateCompositeElement('agility-score', agilityTotal);
+        updateCompositeElement('total-score', totalScore);
+        
+        // Also update the size score if that element exists
+        const sizeScoreElement = document.getElementById('size-score');
+        if (sizeScoreElement) {
+            updateCompositeElement('size-score', sizeTotal);
+        } else {
+            debugLog('Size score element not found, size score: ' + sizeTotal.toFixed(2), '#ffff00');
+        }
+        
+        // Update the main RAS score and grade
+        updateTopRASDisplay(totalScore);
+        
+        debugLog(`Speed score: ${speedTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Explosive score: ${explosiveTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Agility score: ${agilityTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Size score: ${sizeTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Total score: ${totalScore.toFixed(2)}`, '#00ff00');
+    } catch (error) {
+        debugLog(`Error calculating composite scores: ${error.message}`, '#ff0000');
+    }
+    */
+}
