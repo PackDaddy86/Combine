@@ -1,9 +1,14 @@
 // EMERGENCY FIX FOR RAS METRICS
 // This script completely bypasses all other code and applies styles directly
 
+// Debugging
+console.log("========================");
+console.log("EMERGENCY FIX SCRIPT LOADED");
+console.log("========================");
+
 // Execute immediately when loaded
 (function() {
-  console.log("EMERGENCY FIX SCRIPT LOADED");
+  console.log("EMERGENCY FIX STARTING EXECUTION");
   
   // Run immediately and also on load
   fixAllMetrics();
@@ -25,16 +30,19 @@
     btn.id = 'emergency-fix-btn';
     btn.innerText = 'EMERGENCY FIX ALL GRADES';
     btn.style.position = 'fixed';
-    btn.style.bottom = '50px';
-    btn.style.right = '50px';
+    btn.style.top = '50px';
+    btn.style.left = '50%';
+    btn.style.transform = 'translateX(-50%)';
     btn.style.zIndex = '99999';
     btn.style.backgroundColor = 'red';
     btn.style.color = 'white';
     btn.style.fontWeight = 'bold';
-    btn.style.padding = '15px';
+    btn.style.fontSize = '18px';
+    btn.style.padding = '15px 20px';
     btn.style.borderRadius = '5px';
     btn.style.cursor = 'pointer';
-    btn.style.boxShadow = '0 0 10px rgba(0,0,0,0.5)';
+    btn.style.boxShadow = '0 0 20px rgba(255,0,0,0.7)';
+    btn.style.border = '3px solid white';
     
     // Add click handler
     btn.addEventListener('click', function() {
@@ -47,6 +55,7 @@
     
     // Add to document
     document.body.appendChild(btn);
+    console.log("Emergency fix button added to page");
   }
   
   // Function to directly apply styles to a metric
