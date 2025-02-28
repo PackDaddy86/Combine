@@ -728,40 +728,13 @@ function updateScoreDisplay(elementId, score) {
     updateRelatedGradeLabel(elementId, scoreValue);
 }
 
-// Add a new function to ensure grade labels are properly updated
+// Update related grade label (simplified version)
 function updateRelatedGradeLabel(scoreElementId, score) {
-    // Find if there's a related grade label
-    const element = document.getElementById(scoreElementId);
-    if (!element) return;
+    // Just log grade information without creating DOM elements
+    console.log(`Update grade for ${scoreElementId}: ${getGradeText(score)}`);
     
-    // Check if a grade label already exists
-    let label = element.nextElementSibling;
-    if (!label || !label.classList.contains('grade-label')) {
-        // Create a new label if it doesn't exist
-        label = document.createElement('span');
-        label.classList.add('grade-label');
-        if (element.parentNode) {
-            element.parentNode.insertBefore(label, element.nextSibling);
-        }
-    }
-    
-    // Set the grade text and class
-    const gradeText = getGradeText(score);
-    label.textContent = gradeText;
-    label.className = 'grade-label';
-    
-    // Add appropriate color class
-    if (score < 4) {
-        label.classList.add('grade-poor');
-    } else if (score < 5) {
-        label.classList.add('grade-below-average');
-    } else if (score < 7) {
-        label.classList.add('grade-average');
-    } else if (score < 9) {
-        label.classList.add('grade-good');
-    } else {
-        label.classList.add('grade-excellent');
-    }
+    // We will rely on color coding of the scores themselves
+    // instead of adding extra DOM elements that disrupt the layout
 }
 
 // Calculate a composite grade from the given scores
@@ -1067,41 +1040,11 @@ function updateAllGrades() {
 
 // Add a grade label next to an input field
 function addGradeLabel(inputId, score) {
-    const input = document.getElementById(inputId);
-    if (!input) return;
+    // Log the grade instead of creating DOM elements
+    console.log(`Grade for ${inputId}: ${getGradeText(score)}`);
     
-    // Check if a grade label already exists
-    let label = input.nextElementSibling;
-    if (!label || !label.classList.contains('grade-label')) {
-        // Create a new label if it doesn't exist
-        label = document.createElement('span');
-        label.classList.add('grade-label');
-        input.parentNode.insertBefore(label, input.nextSibling);
-    }
-    
-    // Set the grade text and class
-    if (score === null || score === undefined || isNaN(parseFloat(score))) {
-        label.textContent = 'N/A';
-        label.className = 'grade-label';
-    } else {
-        const scoreValue = parseFloat(score);
-        const gradeText = getGradeText(scoreValue);
-        label.textContent = gradeText;
-        label.className = 'grade-label';
-        
-        // Add appropriate color class
-        if (scoreValue < 4) {
-            label.classList.add('grade-poor');
-        } else if (scoreValue < 5) {
-            label.classList.add('grade-below-average');
-        } else if (scoreValue < 7) {
-            label.classList.add('grade-average');
-        } else if (scoreValue < 9) {
-            label.classList.add('grade-good');
-        } else {
-            label.classList.add('grade-excellent');
-        }
-    }
+    // We will rely on color coding of the scores themselves
+    // instead of adding extra DOM elements that disrupt the layout
 }
 
 // Add event listeners to update grades when input values change
@@ -1481,8 +1424,10 @@ function fixFortyScore() {
                 const correctScore = calculateSpeedScore(parsedForty, 'forty');
                 const fortyScoreElement = document.getElementById('forty-score');
                 if (fortyScoreElement) {
+                    // Update the score text
                     fortyScoreElement.textContent = correctScore;
-                    // Also update color
+                    
+                    // Style the score element directly instead of adding other elements
                     fortyScoreElement.className = "metric-score";
                     const scoreValue = parseFloat(correctScore);
                     if (scoreValue < 4) {
@@ -1497,11 +1442,19 @@ function fixFortyScore() {
                         fortyScoreElement.classList.add("score-excellent");
                     }
                     
-                    // Update any related grade label
-                    updateRelatedGradeLabel('forty-score', scoreValue);
+                    // Recalculate all scores for consistency
+                    calculateRASScores();
                     
-                    // Recalculate composite scores
-                    calculateCompositeScores();
+                    // Update debug info to show what was fixed
+                    let debugElement = document.getElementById('debug-scores');
+                    if (debugElement) {
+                        debugElement.innerHTML = `
+                            <h3>Score Fixed!</h3>
+                            <p>40yd Dash (${fortyValue}) Score: ${correctScore}</p>
+                            <p>Grade: ${getGradeText(scoreValue)}</p>
+                            <button onclick="document.getElementById('debug-scores').style.display='none'">Close</button>
+                        `;
+                    }
                 }
             }
         }

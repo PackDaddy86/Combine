@@ -2,12 +2,7 @@
 
 /* Grade label styling */
 .grade-label {
-    display: inline-block;
-    margin-left: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.8em;
+    display: none; /* Hide all grade labels for now as they're causing layout issues */
 }
 
 /* Overall RAS grade */
@@ -49,26 +44,52 @@
 /* Score color classes */
 .score-poor {
     color: #ff6b6b;
+    background-color: #ff6b6b;
+    color: white;
 }
 
 .score-below-average {
     color: #ffa06b;
+    background-color: #ffa06b;
+    color: white;
 }
 
 .score-average {
     color: #ffc56b;
+    background-color: #ffc56b;
+    color: black;
 }
 
 .score-good {
     color: #6bd46b;
+    background-color: #6bd46b;
+    color: white;
 }
 
 .score-excellent {
     color: #53c2f0;
+    background-color: #53c2f0;
+    color: white;
+}
+
+/* Make scores display better */
+.metric-score {
+    font-weight: bold;
+    text-align: center;
+    display: block;
+    width: 100%;
 }
 
 /* Input field adjustments to accommodate grade labels */
 .ras-input {
     width: calc(100% - 90px);
     display: inline-block;
+}
+
+/* Fix for the debug panel to not interfere with the UI */
+#debug-scores {
+    z-index: 9999;
+    opacity: 0.9;
+    border: 1px solid #333;
+    border-radius: 5px;
 }
