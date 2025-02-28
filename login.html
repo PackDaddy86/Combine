@@ -184,10 +184,14 @@
                 
                 auth.createUserWithEmailAndPassword(email, password)
                     .then(userCredential => {
+                        console.log("User created with email and password");
+                        
                         // First update profile to include username
                         return userCredential.user.updateProfile({
                             displayName: username
                         }).then(() => {
+                            console.log("Updated Auth profile with displayName:", username);
+                            
                             // Then create a user profile in Firestore
                             return db.collection('users').doc(userCredential.user.uid).set({
                                 email: email,
@@ -198,6 +202,8 @@
                         });
                     })
                     .then(() => {
+                        console.log("Successfully created account and profile");
+                        
                         // Check if there's a redirect URL saved
                         const redirectUrl = localStorage.getItem('authRedirectUrl');
                         if (redirectUrl) {
@@ -233,5 +239,8 @@
             });
         });
     </script>
+    
+    <!-- Debug script -->
+    <script src="/assets/js/debug-user.js"></script>
 </body>
 </html>

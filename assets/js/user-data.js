@@ -273,11 +273,26 @@ function syncUserData(userId) {
     const db = firebase.firestore();
     db.collection('users').doc(userId).get()
         .then(doc => {
-            console.log(`🔴 Debug [syncUserData] Retrieved user document, exists: ${doc.exists}`);
-            
             if (doc.exists) {
-                console.log('🔴 Debug [syncUserData] Syncing user data from Firestore to localStorage');
+                // Document exists
                 const userData = doc.data();
+                console.log('User document exists:', userData);
+                
+                // Check if username field exists, add it if not
+                if (!userData.username) {
+                    console.log('Username field missing, attempting to update');
+                    const user = firebase.auth().currentUser;
+                    const username = user.displayName || "User" + Date.now().toString().substring(8, 12);
+                    
+                    // Update the document to add username
+                    db.collection('users').doc(userId).update({
+                        username: username
+                    }).then(() => {
+                        console.log('Added username field:', username);
+                    }).catch(err => {
+                        console.error('Error adding username field:', err);
+                    });
+                }
                 
                 // First check if the data exists in Firebase, if not, clear it from localStorage too
                 if (!userData.hasOwnProperty('fortyYardDash')) localStorage.removeItem('fortyYardDash');
