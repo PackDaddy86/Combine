@@ -148,8 +148,17 @@
                 
                 auth.signInWithEmailAndPassword(email, password)
                     .then(userCredential => {
-                        // Redirect to home page after successful login
-                        window.location.href = 'index.html';
+                        // Check if there's a redirect URL saved
+                        const redirectUrl = localStorage.getItem('authRedirectUrl');
+                        if (redirectUrl) {
+                            // Clear the saved URL
+                            localStorage.removeItem('authRedirectUrl');
+                            // Redirect to the original URL
+                            window.location.href = redirectUrl;
+                        } else {
+                            // Default redirect to home page
+                            window.location.href = 'index.html';
+                        }
                     })
                     .catch(error => {
                         alert(`Login error: ${error.message}`);
@@ -178,8 +187,17 @@
                         });
                     })
                     .then(() => {
-                        // Redirect to home page after successful signup
-                        window.location.href = 'index.html';
+                        // Check if there's a redirect URL saved
+                        const redirectUrl = localStorage.getItem('authRedirectUrl');
+                        if (redirectUrl) {
+                            // Clear the saved URL
+                            localStorage.removeItem('authRedirectUrl');
+                            // Redirect to the original URL
+                            window.location.href = redirectUrl;
+                        } else {
+                            // Default redirect to home page
+                            window.location.href = 'index.html';
+                        }
                     })
                     .catch(error => {
                         alert(`Sign up error: ${error.message}`);
@@ -189,8 +207,17 @@
             // Check if user is already logged in
             auth.onAuthStateChanged(user => {
                 if (user) {
-                    // User is already logged in, redirect to home page
-                    window.location.href = 'index.html';
+                    // User is already logged in, check for redirect URL
+                    const redirectUrl = localStorage.getItem('authRedirectUrl');
+                    if (redirectUrl) {
+                        // Clear the saved URL
+                        localStorage.removeItem('authRedirectUrl');
+                        // Redirect to the original URL
+                        window.location.href = redirectUrl;
+                    } else {
+                        // Default redirect to home page
+                        window.location.href = 'index.html';
+                    }
                 }
             });
         });
