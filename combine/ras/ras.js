@@ -580,7 +580,10 @@ function calculateAgilityScore(time, type) {
 
 function updateScoreDisplay(elementId, score) {
     const element = document.getElementById(elementId);
-    if (!element) return;
+    if (!element) {
+        console.error(`Element not found: ${elementId}`);
+        return;
+    }
     
     // When the element is found in DOM
     console.log(`Updating score display for ${elementId} with score: ${score}`);
@@ -588,6 +591,10 @@ function updateScoreDisplay(elementId, score) {
     if (score === null || score === undefined) {
         element.textContent = "--";
         element.className = "metric-score";
+        // Reset any inline styles
+        element.style.backgroundColor = "";
+        element.style.color = "";
+        console.log(`${elementId} score is null or undefined, setting to "--"`);
         return;
     }
     
@@ -595,30 +602,79 @@ function updateScoreDisplay(elementId, score) {
     const scoreValue = parseFloat(score);
     if (isNaN(scoreValue)) {
         element.textContent = "--";
+        // Reset any inline styles
+        element.style.backgroundColor = "";
+        element.style.color = "";
+        console.log(`${elementId} score is NaN, setting to "--"`);
         return;
     }
     
     // Set the score text with 2 decimal places
     element.textContent = scoreValue.toFixed(2);
     
-    // Remove any existing color classes
+    // Set inline styles directly (more reliable than classes)
+    let bgColor, textColor;
+    
+    if (scoreValue < 4) {
+        bgColor = "#ff6b6b";
+        textColor = "white";
+    } else if (scoreValue < 5) {
+        bgColor = "#ffa06b";
+        textColor = "white";
+    } else if (scoreValue < 7) {
+        bgColor = "#ffc56b";
+        textColor = "black";
+    } else if (scoreValue < 9) {
+        bgColor = "#6bd46b";
+        textColor = "white";
+    } else {
+        bgColor = "#53c2f0";
+        textColor = "white";
+    }
+    
+    // Apply inline styles
+    element.style.backgroundColor = bgColor;
+    element.style.color = textColor;
+    element.style.padding = "3px";
+    element.style.borderRadius = "3px";
+    element.style.fontWeight = "bold";
+    
+    console.log(`Applied styles to ${elementId}: background-color: ${bgColor}, color: ${textColor}`);
+    
+    // Also set class (as backup)
     element.className = "metric-score";
     
     // Add appropriate color class based on score
+    let colorClass = "";
     if (scoreValue < 4) {
-        element.classList.add("score-poor");
+        colorClass = "score-poor";
     } else if (scoreValue < 5) {
-        element.classList.add("score-below-average");
+        colorClass = "score-below-average";
     } else if (scoreValue < 7) {
-        element.classList.add("score-average");
+        colorClass = "score-average";
     } else if (scoreValue < 9) {
-        element.classList.add("score-good");
+        colorClass = "score-good";
     } else {
-        element.classList.add("score-excellent");
+        colorClass = "score-excellent";
     }
+    
+    element.classList.add(colorClass);
+    
+    // Force a repaint to ensure styles are applied
+    void element.offsetWidth;
     
     // Also update any related grade label
     updateRelatedGradeLabel(elementId, scoreValue);
+    
+    // For debugging, log complete element state
+    console.log(`${elementId} final state:`, {
+        text: element.textContent,
+        classes: element.className,
+        backgroundColor: element.style.backgroundColor,
+        color: element.style.color,
+        padding: element.style.padding,
+        borderRadius: element.style.borderRadius
+    });
 }
 
 // Update related grade label 
@@ -1006,12 +1062,25 @@ function fixAllScores() {
             }
         }
         
-        // Calculate composite scores after fixing individual scores
+        // 40-Yard Dash
+        const fortyValue = document.getElementById('forty-value').textContent;
+        console.log(`Processing 40-yard dash: ${fortyValue}`);
+        let parsedForty = parseFloat(fortyValue);
+        if (!isNaN(parsedForty)) {
+            const correctScore = calculateSpeedScore(parsedForty, 'forty');
+            console.log(`Calculated 40-yard dash score: ${correctScore}`);
+            updateScoreDisplay('forty-score', correctScore);
+        } else {
+            console.error(`Failed to parse 40-yard dash value: ${fortyValue}`);
+        }
+        
+        // After fixing individual scores, recalculate composite scores
         calculateCompositeScores();
         
-        console.log('All scores fixed and composite scores recalculated.');
+        console.log("All scores have been fixed.");
+        
     } catch (error) {
-        console.error('Error in fixAllScores:', error);
+        console.error("Error in fixAllScores:", error);
     }
 }
 
@@ -1024,7 +1093,7 @@ function convertBroadJumpToInches(broadJump) {
         return parseFloat(broadJump);
     }
     
-    // Try to parse feet and inches format (e.g. "9'2")
+    // Try to parse feet and inches format (e.g., 9'2")
     try {
         const feetInchesPattern = /(\d+)'(\d+)"/;
         const match = broadJump.match(feetInchesPattern);
@@ -1272,106 +1341,95 @@ function setupEventListeners() {
     });
 }
 
-// Add a debugging function to show all calculated scores directly in the DOM
-function showDebugScores() {
-    try {
-        // Create or get debug element
-        let debugElement = document.getElementById('debug-scores');
-        if (!debugElement) {
-            debugElement = document.createElement('div');
-            debugElement.id = 'debug-scores';
-            debugElement.style.position = 'fixed';
-            debugElement.style.bottom = '0';
-            debugElement.style.right = '0';
-            debugElement.style.backgroundColor = 'rgba(0,0,0,0.8)';
-            debugElement.style.color = 'white';
-            debugElement.style.padding = '10px';
-            debugElement.style.zIndex = '9999';
-            debugElement.style.fontFamily = 'monospace';
-            debugElement.style.fontSize = '12px';
-            debugElement.style.maxWidth = '400px';
-            debugElement.style.maxHeight = '300px';
-            debugElement.style.overflow = 'auto';
-            document.body.appendChild(debugElement);
+// Function to execute when the window loads
+window.onload = function() {
+    // Check if user is logged in
+    console.log("Checking if user is logged in...");
+    checkUserLoggedIn().then(isLoggedIn => {
+        if (isLoggedIn) {
+            console.log("User is logged in. Loading user data...");
+            getUserData()
+                .then(() => {
+                    // The player information should now be loaded and displayed
+                    console.log("User data loaded successfully.");
+                    // Fix scores if needed
+                    fixAllScores();
+                    // Add a small delay before showing debug info
+                    setTimeout(showDebugInfo, 1000);
+                })
+                .catch(error => {
+                    console.error("Error loading user data:", error);
+                });
+        } else {
+            console.log("User is not logged in. Using default values.");
+            // Fix scores if needed
+            fixAllScores();
+            // Add a small delay before showing debug info
+            setTimeout(showDebugInfo, 1000);
         }
+    }).catch(error => {
+        console.error("Error checking login status:", error);
+    });
+    
+    // Set up event listeners
+    setupEventListeners();
+};
+
+// Function to display debug information about all scores
+function showDebugInfo() {
+    console.log("=== DEBUG: SCORE STATUS ===");
+    
+    const metrics = [
+        { name: 'forty', id: 'forty-score' },
+        { name: 'twenty', id: 'twenty-score' },
+        { name: 'ten', id: 'ten-score' },
+        { name: 'vertical', id: 'vertical-score' },
+        { name: 'broad', id: 'broad-score' },
+        { name: 'bench', id: 'bench-score' },
+        { name: 'shuttle', id: 'shuttle-score' },
+        { name: 'cone', id: 'cone-score' }
+    ];
+    
+    for (const metric of metrics) {
+        const valueElement = document.getElementById(`${metric.name}-value`);
+        const scoreElement = document.getElementById(metric.id);
         
-        // Get values from DOM
-        const fortyValue = document.getElementById('forty-value').textContent;
-        const fortyScoreElement = document.getElementById('forty-score');
-        const fortyScoreText = fortyScoreElement ? fortyScoreElement.textContent : 'Not found';
-        
-        // Parse and calculate score directly
-        let directScore = 'N/A';
-        if (fortyValue !== "--" && fortyValue !== "") {
-            const parsedForty = parseFloat(fortyValue);
-            if (!isNaN(parsedForty)) {
-                directScore = calculateSpeedScore(parsedForty, 'forty');
-            }
+        if (valueElement && scoreElement) {
+            console.log(`${metric.name.toUpperCase()}: Value = ${valueElement.textContent}, Score = ${scoreElement.textContent}`);
+            console.log(`  Score Element Classes: ${scoreElement.className}`);
+            console.log(`  Score Element Style: background-color: ${scoreElement.style.backgroundColor}, color: ${scoreElement.style.color}`);
+        } else {
+            console.log(`${metric.name.toUpperCase()}: Missing element(s)`);
         }
-        
-        // Show debug info
-        debugElement.innerHTML = `
-            <h3>Debug Info:</h3>
-            <p>40yd Dash Value: ${fortyValue}</p>
-            <p>40yd Score Element: ${fortyScoreText}</p>
-            <p>Directly Calculated Score: ${directScore}</p>
-            <button onclick="fixFortyScore()">Fix Score</button>
-        `;
-    } catch (error) {
-        console.error('Debug error:', error);
     }
+    
+    console.log("=== END DEBUG INFO ===");
+    
+    // Force a recalculation to ensure all scores are properly displayed
+    fixAllScores();
 }
 
-// Function to manually fix the forty score
-function fixFortyScore() {
-    try {
-        const fortyValue = document.getElementById('forty-value').textContent;
-        if (fortyValue !== "--" && fortyValue !== "") {
-            const parsedForty = parseFloat(fortyValue);
-            if (!isNaN(parsedForty)) {
-                const correctScore = calculateSpeedScore(parsedForty, 'forty');
-                const fortyScoreElement = document.getElementById('forty-score');
-                if (fortyScoreElement) {
-                    // Update the score text
-                    fortyScoreElement.textContent = correctScore;
-                    
-                    // Style the score element directly instead of adding other elements
-                    fortyScoreElement.className = "metric-score";
-                    const scoreValue = parseFloat(correctScore);
-                    if (scoreValue < 4) {
-                        fortyScoreElement.classList.add("score-poor");
-                    } else if (scoreValue < 5) {
-                        fortyScoreElement.classList.add("score-below-average");
-                    } else if (scoreValue < 7) {
-                        fortyScoreElement.classList.add("score-average");
-                    } else if (scoreValue < 9) {
-                        fortyScoreElement.classList.add("score-good");
-                    } else {
-                        fortyScoreElement.classList.add("score-excellent");
-                    }
-                    
-                    // Recalculate all scores for consistency
-                    calculateRASScores();
-                    
-                    // Update debug info to show what was fixed
-                    let debugElement = document.getElementById('debug-scores');
-                    if (debugElement) {
-                        debugElement.innerHTML = `
-                            <h3>Score Fixed!</h3>
-                            <p>40yd Dash (${fortyValue}) Score: ${correctScore}</p>
-                            <p>Grade: ${getGradeText(scoreValue)}</p>
-                            <button onclick="document.getElementById('debug-scores').style.display='none'">Close</button>
-                        `;
-                    }
-                }
-            }
+// Add event listeners to update grades when input values change
+function setupGradeListeners() {
+    const inputs = [
+        'forty-score', 
+        'vertical-score', 
+        'bench-score', 
+        'broad-score', 
+        'cone-score', 
+        'shuttle-score'
+    ];
+    
+    inputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', updateAllGrades);
+            input.addEventListener('change', updateAllGrades);
         }
-    } catch (error) {
-        console.error('Fix error:', error);
-    }
+    });
 }
 
-// Function to update all the grades when data changes
+// Update all grades when data changes
 function updateAllGrades() {
     // Get all input values
     const fortyValue = parseFloat(document.getElementById('forty-score').value);
@@ -1408,26 +1466,6 @@ function addGradeLabel(inputId, score) {
     
     // We will rely on color coding of the scores themselves
     // instead of adding extra DOM elements that disrupt the layout
-}
-
-// Add event listeners to update grades when input values change
-function setupGradeListeners() {
-    const inputs = [
-        'forty-score', 
-        'vertical-score', 
-        'bench-score', 
-        'broad-score', 
-        'cone-score', 
-        'shuttle-score'
-    ];
-    
-    inputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', updateAllGrades);
-            input.addEventListener('change', updateAllGrades);
-        }
-    });
 }
 
 // Calculate and update composite scores
@@ -1700,4 +1738,376 @@ function saveRASResults(overallRAS, individualScores, compositeScores) {
     } catch (error) {
         console.error('Error saving RAS results:', error);
     }
+}
+
+function getDisplayedValue(elementId) {
+    const element = document.getElementById(elementId);
+    if (!element) return null;
+    
+    const value = element.textContent;
+    if (value === "--" || value === "") return null;
+    
+    return parseFloat(value);
+}
+
+function calculateRASScores() {
+    try {
+        // Get values from display elements
+        const fortyValue = getDisplayedValue('forty-value');
+        const twentyValue = getDisplayedValue('twenty-value');
+        const tenValue = getDisplayedValue('ten-value');
+        const verticalValue = getDisplayedValue('vertical-value');
+        const broadValue = getDisplayedValue('broad-value');
+        const benchValue = getDisplayedValue('bench-value');
+        const coneValue = getDisplayedValue('cone-value');
+        const shuttleValue = getDisplayedValue('shuttle-value');
+        const heightValue = getDisplayedValue('height-value');
+        const weightValue = getDisplayedValue('weight-value');
+        
+        console.log('Calculating RAS scores with these values:');
+        console.log('Forty:', fortyValue);
+        console.log('Vertical:', verticalValue);
+        console.log('Bench:', benchValue);
+        console.log('Broad:', broadValue);
+        console.log('Cone:', coneValue);
+        console.log('Shuttle:', shuttleValue);
+        
+        // Convert values to numbers
+        const fortyTime = fortyValue;
+        const twentyTime = twentyValue;
+        const tenTime = tenValue;
+        const verticalHeight = verticalValue;
+        const benchReps = benchValue;
+        const coneTime = coneValue;
+        const shuttleTime = shuttleValue;
+        
+        console.log('Parsed values:');
+        console.log('Forty Time:', fortyTime); 
+        console.log('Vertical Height:', verticalHeight);
+        console.log('Bench Reps:', benchReps);
+        console.log('Cone Time:', coneTime);
+        console.log('Shuttle Time:', shuttleTime);
+        
+        // Handle broad jump specially as it might be in feet/inches format
+        let broadInches = null;
+        if (broadValue !== null) {
+            // Check if it's in the format X'Y"
+            if (broadValue.toString().includes("'")) {
+                const parts = broadValue.toString().split("'");
+                const feet = parseInt(parts[0]);
+                let inches = 0;
+                if (parts[1] && parts[1].includes('"')) {
+                    inches = parseInt(parts[1].replace('"', ''));
+                }
+                broadInches = (feet * 12) + inches;
+            } else {
+                broadInches = broadValue;
+            }
+        }
+        console.log('Broad Jump (inches):', broadInches);
+        
+        // Calculate individual scores
+        const fortyScore = calculateSpeedScore(fortyTime, 'forty');
+        const twentyScore = calculateSpeedScore(twentyTime, 'twenty');
+        const tenScore = calculateSpeedScore(tenTime, 'ten');
+        const verticalScore = calculateJumpScore(verticalHeight, 'vertical');
+        const broadScore = calculateJumpScore(broadInches, 'broad');
+        const benchScore = calculateStrengthScore(benchReps);
+        const coneScore = calculateAgilityScore(coneTime, 'cone');
+        const shuttleScore = calculateAgilityScore(shuttleTime, 'shuttle');
+        
+        console.log('Calculated scores:');
+        console.log('Forty Score:', fortyScore);
+        console.log('Vertical Score:', verticalScore);
+        console.log('Broad Score:', broadScore);
+        console.log('Bench Score:', benchScore);
+        console.log('Cone Score:', coneScore);
+        console.log('Shuttle Score:', shuttleScore);
+        
+        // Update score displays
+        updateScoreDisplay('forty-score', fortyScore);
+        updateScoreDisplay('twenty-score', twentyScore);
+        updateScoreDisplay('ten-score', tenScore);
+        updateScoreDisplay('vertical-score', verticalScore);
+        updateScoreDisplay('broad-score', broadScore);
+        updateScoreDisplay('bench-score', benchScore);
+        updateScoreDisplay('cone-score', coneScore);
+        updateScoreDisplay('shuttle-score', shuttleScore);
+        
+        // Calculate composite scores
+        calculateCompositeScores();
+    } catch (error) {
+        console.error('Error calculating RAS scores:', error);
+    }
+}
+
+function fixAllScores() {
+    console.log('Fixing all scores...');
+    
+    try {
+        // Vertical Jump
+        const verticalValue = document.getElementById('vertical-value').textContent;
+        console.log(`Processing vertical jump: ${verticalValue}`);
+        let parsedVertical = parseFloat(verticalValue);
+        if (!isNaN(parsedVertical)) {
+            const correctScore = calculateJumpScore(parsedVertical, 'vertical');
+            console.log(`Calculated vertical jump score: ${correctScore}`);
+            updateScoreDisplay('vertical-score', correctScore);
+        } else {
+            console.error(`Failed to parse vertical jump value: ${verticalValue}`);
+        }
+        
+        // Bench Press
+        const benchValue = document.getElementById('bench-value').textContent;
+        console.log(`Processing bench press: ${benchValue}`);
+        let parsedBench = parseFloat(benchValue);
+        if (!isNaN(parsedBench)) {
+            const correctScore = calculateStrengthScore(parsedBench);
+            console.log(`Calculated bench press score: ${correctScore}`);
+            updateScoreDisplay('bench-score', correctScore);
+        } else {
+            console.error(`Failed to parse bench press value: ${benchValue}`);
+        }
+        
+        // Broad Jump
+        const broadValue = document.getElementById('broad-value').textContent;
+        console.log(`Processing broad jump: ${broadValue}`);
+        // Broad jump might be in feet/inches format or just inches
+        let parsedBroad;
+        if (broadValue.includes("'")) {
+            // Format: 9'2" - convert to total inches
+            const parts = broadValue.split("'");
+            const feet = parseInt(parts[0]);
+            let inches = 0;
+            if (parts[1] && parts[1].includes('"')) {
+                inches = parseInt(parts[1].replace('"', ''));
+            }
+            parsedBroad = (feet * 12) + inches;
+            console.log(`Converted broad jump from ${broadValue} to ${parsedBroad} inches`);
+        } else {
+            parsedBroad = parseFloat(broadValue);
+        }
+        
+        if (!isNaN(parsedBroad)) {
+            const correctScore = calculateJumpScore(parsedBroad, 'broad');
+            console.log(`Calculated broad jump score: ${correctScore}`);
+            updateScoreDisplay('broad-score', correctScore);
+        } else {
+            console.error(`Failed to parse broad jump value: ${broadValue}`);
+        }
+        
+        // Shuttle
+        const shuttleValue = document.getElementById('shuttle-value').textContent;
+        console.log(`Processing shuttle run: ${shuttleValue}`);
+        let parsedShuttle = parseFloat(shuttleValue);
+        if (!isNaN(parsedShuttle)) {
+            const correctScore = calculateAgilityScore(parsedShuttle, 'shuttle');
+            console.log(`Calculated shuttle run score: ${correctScore}`);
+            updateScoreDisplay('shuttle-score', correctScore);
+        } else {
+            console.error(`Failed to parse shuttle run value: ${shuttleValue}`);
+        }
+        
+        // 3-Cone
+        const coneValue = document.getElementById('cone-value').textContent;
+        console.log(`Processing 3-cone drill: ${coneValue}`);
+        let parsedCone = parseFloat(coneValue);
+        if (!isNaN(parsedCone)) {
+            const correctScore = calculateAgilityScore(parsedCone, 'cone');
+            console.log(`Calculated 3-cone drill score: ${correctScore}`);
+            updateScoreDisplay('cone-score', correctScore);
+        } else {
+            console.error(`Failed to parse 3-cone drill value: ${coneValue}`);
+        }
+        
+        // 40-Yard Dash
+        const fortyValue = document.getElementById('forty-value').textContent;
+        console.log(`Processing 40-yard dash: ${fortyValue}`);
+        let parsedForty = parseFloat(fortyValue);
+        if (!isNaN(parsedForty)) {
+            const correctScore = calculateSpeedScore(parsedForty, 'forty');
+            console.log(`Calculated 40-yard dash score: ${correctScore}`);
+            updateScoreDisplay('forty-score', correctScore);
+        } else {
+            console.error(`Failed to parse 40-yard dash value: ${fortyValue}`);
+        }
+        
+        // After fixing individual scores, recalculate composite scores
+        calculateCompositeScores();
+        
+        console.log("All scores have been fixed.");
+        
+    } catch (error) {
+        console.error("Error in fixAllScores:", error);
+    }
+}
+
+// Score calculation functions for different metric types
+function calculateSpeedScore(time, type) {
+    if (time === null || time === undefined || isNaN(parseFloat(time))) {
+        console.log(`${type} time is invalid: ${time}`);
+        return null;
+    }
+    
+    time = parseFloat(time);
+    console.log(`Calculating ${type} score for time: ${time}`);
+    
+    let score;
+    switch (type) {
+        case 'forty':
+            if (time <= 4.2) score = 10;
+            else if (time <= 4.3) score = 9;
+            else if (time <= 4.4) score = 8;
+            else if (time <= 4.5) score = 7;
+            else if (time <= 4.6) score = 6;
+            else if (time <= 4.7) score = 5;
+            else if (time <= 4.8) score = 3;
+            else if (time <= 4.9) score = 1;
+            else score = 0;
+            break;
+        case 'twenty':
+            if (time <= 2.5) score = 10;
+            else if (time <= 2.6) score = 9;
+            else if (time <= 2.7) score = 8;
+            else if (time <= 2.8) score = 7;
+            else if (time <= 2.9) score = 6;
+            else if (time <= 3.0) score = 5;
+            else if (time <= 3.1) score = 3;
+            else if (time <= 3.2) score = 1;
+            else score = 0;
+            break;
+        case 'ten':
+            if (time <= 1.4) score = 10;
+            else if (time <= 1.5) score = 9;
+            else if (time <= 1.6) score = 8;
+            else if (time <= 1.7) score = 7;
+            else if (time <= 1.8) score = 6;
+            else if (time <= 1.9) score = 5;
+            else if (time <= 2.0) score = 3;
+            else if (time <= 2.1) score = 1;
+            else score = 0;
+            break;
+        default:
+            score = 5;
+    }
+    
+    console.log(`Calculated ${type} score: ${score}`);
+    return Math.max(0, Math.min(10, score)).toFixed(2);
+}
+
+function calculateJumpScore(measurement, type) {
+    if (measurement === null || measurement === undefined || isNaN(parseFloat(measurement))) {
+        console.log(`${type} measurement is invalid: ${measurement}`);
+        return null;
+    }
+    
+    measurement = parseFloat(measurement);
+    console.log(`Calculating ${type} score for measurement: ${measurement}`);
+    
+    let score;
+    switch (type) {
+        case 'vertical':
+            if (measurement >= 42) score = 10;
+            else if (measurement >= 40) score = 9;
+            else if (measurement >= 38) score = 8;
+            else if (measurement >= 36) score = 7;
+            else if (measurement >= 34) score = 6;
+            else if (measurement >= 32) score = 5;
+            else if (measurement >= 30) score = 4;
+            else if (measurement >= 28) score = 3;
+            else if (measurement >= 26) score = 2;
+            else if (measurement >= 24) score = 1;
+            else score = 0;
+            break;
+        case 'broad':
+            // Convert to inches if needed
+            if (measurement >= 132) score = 10; // 11'0"
+            else if (measurement >= 126) score = 9; // 10'6"
+            else if (measurement >= 120) score = 8; // 10'0"
+            else if (measurement >= 114) score = 7; // 9'6"
+            else if (measurement >= 108) score = 6; // 9'0"
+            else if (measurement >= 102) score = 5; // 8'6"
+            else if (measurement >= 96) score = 4;  // 8'0"
+            else if (measurement >= 90) score = 3;  // 7'6"
+            else if (measurement >= 84) score = 2;  // 7'0"
+            else if (measurement >= 78) score = 1;  // 6'6"
+            else score = 0;
+            break;
+        default:
+            score = 5;
+    }
+    
+    console.log(`Calculated ${type} score: ${score}`);
+    return Math.max(0, Math.min(10, score)).toFixed(2);
+}
+
+function calculateStrengthScore(reps) {
+    if (reps === null || reps === undefined || isNaN(parseFloat(reps))) {
+        console.log(`Bench press reps is invalid: ${reps}`);
+        return null;
+    }
+    
+    reps = parseFloat(reps);
+    console.log(`Calculating bench press score for reps: ${reps}`);
+    
+    let score;
+    if (reps >= 36) score = 10;
+    else if (reps >= 33) score = 9;
+    else if (reps >= 30) score = 8;
+    else if (reps >= 27) score = 7;
+    else if (reps >= 24) score = 6;
+    else if (reps >= 21) score = 5;
+    else if (reps >= 18) score = 4;
+    else if (reps >= 15) score = 3;
+    else if (reps >= 12) score = 2;
+    else if (reps >= 9) score = 1;
+    else score = 0;
+    
+    console.log(`Calculated bench press score: ${score}`);
+    return Math.max(0, Math.min(10, score)).toFixed(2);
+}
+
+function calculateAgilityScore(time, type) {
+    if (time === null || time === undefined || isNaN(parseFloat(time))) {
+        console.log(`${type} time is invalid: ${time}`);
+        return null;
+    }
+    
+    time = parseFloat(time);
+    console.log(`Calculating ${type} score for time: ${time}`);
+    
+    let score;
+    switch (type) {
+        case 'shuttle':
+            if (time <= 3.9) score = 10;
+            else if (time <= 4.0) score = 9;
+            else if (time <= 4.1) score = 8;
+            else if (time <= 4.2) score = 7;
+            else if (time <= 4.3) score = 6;
+            else if (time <= 4.4) score = 5;
+            else if (time <= 4.5) score = 4;
+            else if (time <= 4.6) score = 3;
+            else if (time <= 4.7) score = 2;
+            else if (time <= 4.8) score = 1;
+            else score = 0;
+            break;
+        case 'cone':
+            if (time <= 6.5) score = 10;
+            else if (time <= 6.7) score = 9;
+            else if (time <= 6.9) score = 8;
+            else if (time <= 7.1) score = 7;
+            else if (time <= 7.3) score = 6;
+            else if (time <= 7.5) score = 5;
+            else if (time <= 7.7) score = 4;
+            else if (time <= 7.9) score = 3;
+            else if (time <= 8.1) score = 2;
+            else if (time <= 8.3) score = 1;
+            else score = 0;
+            break;
+        default:
+            score = 5;
+    }
+    
+    console.log(`Calculated ${type} score: ${score}`);
+    return Math.max(0, Math.min(10, score)).toFixed(2);
 }
