@@ -854,6 +854,12 @@ function getUserData(userId) {
             const userData = doc.data();
             console.log('Firebase user data loaded:', userData);
             
+            // Debug all available fields
+            console.log('Available Firebase fields:');
+            for (const key in userData) {
+                console.log(`${key}: ${JSON.stringify(userData[key])}`);
+            }
+            
             // Update player info if available
             if (userData.name) {
                 const position = userData.position || 'NFL PROSPECT';
@@ -876,12 +882,14 @@ function getUserData(userId) {
                 document.getElementById('height-value').textContent = userData.height;
                 document.getElementById('height').value = userData.height;
                 dataChanged = true;
+                console.log('Loaded height:', userData.height);
             }
             
             if (userData.weight) {
                 document.getElementById('weight-value').textContent = userData.weight;
                 document.getElementById('weight').value = userData.weight;
                 dataChanged = true;
+                console.log('Loaded weight:', userData.weight);
             }
             
             // Load event data
@@ -891,67 +899,127 @@ function getUserData(userId) {
                 document.getElementById('twenty-value').textContent = estimateSplitTime(userData.fortyYardDash, 20);
                 document.getElementById('ten-value').textContent = estimateSplitTime(userData.fortyYardDash, 10);
                 dataChanged = true;
+                console.log('Loaded fortyYardDash:', userData.fortyYardDash);
             }
             
-            if (userData.verticalJump) {
-                document.getElementById('vertical-value').textContent = userData.verticalJump;
+            // Check for different field name variations
+            const verticalJumpValue = userData.verticalJump || userData.verticalLeap || userData.vertical;
+            if (verticalJumpValue) {
+                document.getElementById('vertical-value').textContent = verticalJumpValue;
                 dataChanged = true;
+                console.log('Loaded verticalJump:', verticalJumpValue);
             }
             
-            if (userData.benchPress) {
-                document.getElementById('bench-value').textContent = userData.benchPress;
+            const benchPressValue = userData.benchPress || userData.bench;
+            if (benchPressValue) {
+                document.getElementById('bench-value').textContent = benchPressValue;
                 dataChanged = true;
+                console.log('Loaded benchPress:', benchPressValue);
             }
             
-            if (userData.broadJump) {
-                document.getElementById('broad-value').textContent = formatBroadJump(userData.broadJump);
+            const broadJumpValue = userData.broadJump || userData.broad;
+            if (broadJumpValue) {
+                document.getElementById('broad-value').textContent = formatBroadJump(broadJumpValue);
                 dataChanged = true;
+                console.log('Loaded broadJump:', broadJumpValue);
             }
             
-            if (userData.coneDrill) {
-                document.getElementById('cone-value').textContent = userData.coneDrill;
+            const coneDrillValue = userData.coneDrill || userData.cone || userData["3coneDrill"] || userData.threeCone;
+            if (coneDrillValue) {
+                document.getElementById('cone-value').textContent = coneDrillValue;
                 dataChanged = true;
+                console.log('Loaded coneDrill:', coneDrillValue);
             }
             
-            if (userData.shuttleRun) {
-                document.getElementById('shuttle-value').textContent = userData.shuttleRun;
+            const shuttleRunValue = userData.shuttleRun || userData.shuttle || userData.proShuttle;
+            if (shuttleRunValue) {
+                document.getElementById('shuttle-value').textContent = shuttleRunValue;
                 dataChanged = true;
+                console.log('Loaded shuttleRun:', shuttleRunValue);
+            }
+            
+            // Check for game results
+            if (userData.games) {
+                console.log('Games data found:', userData.games);
+                
+                // Check vertical game
+                if (userData.games.vertical && userData.games.vertical.bestJump) {
+                    document.getElementById('vertical-value').textContent = userData.games.vertical.bestJump;
+                    dataChanged = true;
+                    console.log('Loaded vertical from games:', userData.games.vertical.bestJump);
+                }
+                
+                // Check bench game
+                if (userData.games.bench && userData.games.bench.reps) {
+                    document.getElementById('bench-value').textContent = userData.games.bench.reps;
+                    dataChanged = true;
+                    console.log('Loaded bench from games:', userData.games.bench.reps);
+                }
+                
+                // Check broad game
+                if (userData.games.broad && userData.games.broad.bestJump) {
+                    document.getElementById('broad-value').textContent = formatBroadJump(userData.games.broad.bestJump);
+                    dataChanged = true;
+                    console.log('Loaded broad from games:', userData.games.broad.bestJump);
+                }
+                
+                // Check cone game
+                if (userData.games.cone && userData.games.cone.bestTime) {
+                    document.getElementById('cone-value').textContent = userData.games.cone.bestTime;
+                    dataChanged = true;
+                    console.log('Loaded cone from games:', userData.games.cone.bestTime);
+                }
+                
+                // Check shuttle game
+                if (userData.games.shuttle && userData.games.shuttle.bestTime) {
+                    document.getElementById('shuttle-value').textContent = userData.games.shuttle.bestTime;
+                    dataChanged = true;
+                    console.log('Loaded shuttle from games:', userData.games.shuttle.bestTime);
+                }
             }
             
             // Use combined saved results if individual fields aren't found
             const combineResults = userData.combineResults;
             if (combineResults) {
+                console.log('Combined results found:', combineResults);
+                
                 if (!userData.fortyYardDash && combineResults.fortyYardDash) {
                     document.getElementById('forty-value').textContent = combineResults.fortyYardDash;
                     // Calculate splits from forty time
                     document.getElementById('twenty-value').textContent = estimateSplitTime(combineResults.fortyYardDash, 20);
                     document.getElementById('ten-value').textContent = estimateSplitTime(combineResults.fortyYardDash, 10);
                     dataChanged = true;
+                    console.log('Loaded fortyYardDash from combineResults:', combineResults.fortyYardDash);
                 }
                 
                 if (!userData.verticalJump && combineResults.verticalJump) {
                     document.getElementById('vertical-value').textContent = combineResults.verticalJump;
                     dataChanged = true;
+                    console.log('Loaded verticalJump from combineResults:', combineResults.verticalJump);
                 }
                 
                 if (!userData.benchPress && combineResults.benchPress) {
                     document.getElementById('bench-value').textContent = combineResults.benchPress;
                     dataChanged = true;
+                    console.log('Loaded benchPress from combineResults:', combineResults.benchPress);
                 }
                 
                 if (!userData.broadJump && combineResults.broadJump) {
                     document.getElementById('broad-value').textContent = formatBroadJump(combineResults.broadJump);
                     dataChanged = true;
+                    console.log('Loaded broadJump from combineResults:', combineResults.broadJump);
                 }
                 
                 if (!userData.coneDrill && combineResults.coneDrill) {
                     document.getElementById('cone-value').textContent = combineResults.coneDrill;
                     dataChanged = true;
+                    console.log('Loaded coneDrill from combineResults:', combineResults.coneDrill);
                 }
                 
                 if (!userData.shuttleRun && combineResults.shuttleRun) {
                     document.getElementById('shuttle-value').textContent = combineResults.shuttleRun;
                     dataChanged = true;
+                    console.log('Loaded shuttleRun from combineResults:', combineResults.shuttleRun);
                 }
             }
             
@@ -963,6 +1031,9 @@ function getUserData(userId) {
                 if (userData.fortyYardDash || (combineResults && combineResults.fortyYardDash)) {
                     fixFortyScore();
                 }
+                
+                // Also run similar fixes for other scores
+                fixAllScores();
             }
         } else {
             console.log('No Firebase data found for user, using local storage');
@@ -972,6 +1043,101 @@ function getUserData(userId) {
         console.error('Error getting user data:', error);
         loadFromLocalStorage();
     });
+}
+
+// Add a function to fix all scores, not just forty
+function fixAllScores() {
+    console.log("Fixing all scores");
+    
+    // Fix forty score
+    const fortyValue = document.getElementById('forty-value').textContent;
+    if (fortyValue !== "--" && fortyValue !== "") {
+        const parsedForty = parseFloat(fortyValue);
+        if (!isNaN(parsedForty)) {
+            const correctScore = calculateSpeedScore(parsedForty, 'forty');
+            updateScoreDisplay('forty-score', correctScore);
+        }
+    }
+    
+    // Fix vertical score
+    const verticalValue = document.getElementById('vertical-value').textContent;
+    if (verticalValue !== "--" && verticalValue !== "") {
+        const parsedVertical = parseFloat(verticalValue);
+        if (!isNaN(parsedVertical)) {
+            const correctScore = calculateJumpScore(parsedVertical, 'vertical');
+            updateScoreDisplay('vertical-score', correctScore);
+        }
+    }
+    
+    // Fix broad score
+    const broadValue = document.getElementById('broad-value').textContent;
+    if (broadValue !== "--" && broadValue !== "") {
+        // Convert from feet and inches format if needed
+        let broadInches = convertBroadJumpToInches(broadValue);
+        if (broadInches) {
+            const correctScore = calculateJumpScore(broadInches, 'broad');
+            updateScoreDisplay('broad-score', correctScore);
+        }
+    }
+    
+    // Fix bench score
+    const benchValue = document.getElementById('bench-value').textContent;
+    if (benchValue !== "--" && benchValue !== "") {
+        const parsedBench = parseFloat(benchValue);
+        if (!isNaN(parsedBench)) {
+            const correctScore = calculateStrengthScore(parsedBench);
+            updateScoreDisplay('bench-score', correctScore);
+        }
+    }
+    
+    // Fix cone score
+    const coneValue = document.getElementById('cone-value').textContent;
+    if (coneValue !== "--" && coneValue !== "") {
+        const parsedCone = parseFloat(coneValue);
+        if (!isNaN(parsedCone)) {
+            const correctScore = calculateAgilityScore(parsedCone, 'cone');
+            updateScoreDisplay('cone-score', correctScore);
+        }
+    }
+    
+    // Fix shuttle score
+    const shuttleValue = document.getElementById('shuttle-value').textContent;
+    if (shuttleValue !== "--" && shuttleValue !== "") {
+        const parsedShuttle = parseFloat(shuttleValue);
+        if (!isNaN(parsedShuttle)) {
+            const correctScore = calculateAgilityScore(parsedShuttle, 'shuttle');
+            updateScoreDisplay('shuttle-score', correctScore);
+        }
+    }
+    
+    // Recalculate composite scores
+    calculateCompositeScores();
+}
+
+// Helper function to convert broad jump to inches
+function convertBroadJumpToInches(broadJump) {
+    if (!broadJump) return null;
+    
+    // If already a number, assume it's inches
+    if (!isNaN(parseFloat(broadJump))) {
+        return parseFloat(broadJump);
+    }
+    
+    // Try to parse feet and inches format (e.g. "9'2")
+    try {
+        const feetInchesPattern = /(\d+)'(\d+)"/;
+        const match = broadJump.match(feetInchesPattern);
+        
+        if (match) {
+            const feet = parseInt(match[1]);
+            const inches = parseInt(match[2]);
+            return (feet * 12) + inches;
+        }
+    } catch (e) {
+        console.error('Error converting broad jump:', e);
+    }
+    
+    return null;
 }
 
 // Update all displayed values from form inputs
@@ -999,221 +1165,6 @@ function updateAllDisplayedValues() {
 
 // Save scores to Firebase
 function saveScoresToFirebase() {
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        alert('You must be logged in to save your RAS card');
-        return;
-    }
-    
-    const db = firebase.firestore();
-    
-    // Get values from display
-    const fortyValue = document.getElementById('forty-value').textContent;
-    const verticalValue = document.getElementById('vertical-value').textContent;
-    const benchValue = document.getElementById('bench-value').textContent;
-    const broadValue = document.getElementById('broad-value').textContent;
-    const coneValue = document.getElementById('cone-value').textContent;
-    const shuttleValue = document.getElementById('shuttle-value').textContent;
-    
-    // Prepare scores object
-    const scores = {
-        forty: fortyValue !== "--" ? fortyValue : null,
-        vertical: verticalValue !== "--" ? verticalValue : null,
-        bench: benchValue !== "--" ? benchValue : null,
-        broad: broadValue !== "--" ? broadValue : null,
-        cone: coneValue !== "--" ? coneValue : null,
-        shuttle: shuttleValue !== "--" ? shuttleValue : null
-    };
-    
-    // Get the overall RAS score
-    const overallRAS = document.getElementById('overall-ras').textContent;
-    scores.overallRAS = overallRAS;
-    
-    // Also save data in the standard combine format
-    if (typeof saveUserData === 'function') {
-        const combineData = {
-            fortyYardDash: fortyValue !== "--" ? fortyValue : null,
-            verticalJump: verticalValue !== "--" ? verticalValue : null,
-            benchPress: benchValue !== "--" ? benchValue : null,
-            broadJump: broadValue !== "--" ? broadValue : null,
-            coneDrill: coneValue !== "--" ? coneValue : null,
-            shuttleRun: shuttleValue !== "--" ? shuttleValue : null
-        };
-        
-        saveUserData('combine', combineData);
-        console.log('Saved combine data using the global saveUserData function');
-    }
-    
-    // Update the user document with scores
-    db.collection('users').doc(user.uid).update({
-        scores: scores
-    })
-    .then(() => {
-        alert('Your RAS card has been saved to your account!');
-    })
-    .catch((error) => {
-        console.error("Error saving scores:", error);
-        alert('Error saving your RAS card. Please try again.');
-    });
-}
-
-// Override the original updatePlayerInfo function to also save to Firebase
-const originalUpdatePlayerInfo = updatePlayerInfo;
-updatePlayerInfo = function() {
-    originalUpdatePlayerInfo();
-    saveScoresToFirebase();
-};
-
-// Function to update all the grades when data changes
-function updateAllGrades() {
-    // Get all input values
-    const fortyValue = parseFloat(document.getElementById('forty-score').value);
-    const verticalValue = parseFloat(document.getElementById('vertical-score').value);
-    const benchValue = parseFloat(document.getElementById('bench-score').value);
-    const broadValue = parseFloat(document.getElementById('broad-score').value);
-    const coneValue = parseFloat(document.getElementById('cone-score').value);
-    const shuttleValue = parseFloat(document.getElementById('shuttle-score').value);
-    
-    // Calculate individual scores
-    const fortyScore = calculateSpeedScore(fortyValue, 'forty');
-    const verticalScore = calculateJumpScore(verticalValue, 'vertical');
-    const benchScore = calculateStrengthScore(benchValue);
-    const broadScore = calculateJumpScore(broadValue, 'broad');
-    const coneScore = calculateAgilityScore(coneValue, 'cone');
-    const shuttleScore = calculateAgilityScore(shuttleValue, 'shuttle');
-    
-    // Add grade next to each input
-    addGradeLabel('forty-score', fortyScore);
-    addGradeLabel('vertical-score', verticalScore);
-    addGradeLabel('bench-score', benchScore);
-    addGradeLabel('broad-score', broadScore);
-    addGradeLabel('cone-score', coneScore);
-    addGradeLabel('shuttle-score', shuttleScore);
-
-    // Update composite scores based on the calculations
-    calculateAndUpdateCompositeScores();
-}
-
-// Add a grade label next to an input field
-function addGradeLabel(inputId, score) {
-    // Log the grade instead of creating DOM elements
-    console.log(`Grade for ${inputId}: ${getGradeText(score)}`);
-    
-    // We will rely on color coding of the scores themselves
-    // instead of adding extra DOM elements that disrupt the layout
-}
-
-// Add event listeners to update grades when input values change
-function setupGradeListeners() {
-    const inputs = [
-        'forty-score', 
-        'vertical-score', 
-        'bench-score', 
-        'broad-score', 
-        'cone-score', 
-        'shuttle-score'
-    ];
-    
-    inputs.forEach(inputId => {
-        const input = document.getElementById(inputId);
-        if (input) {
-            input.addEventListener('input', updateAllGrades);
-            input.addEventListener('change', updateAllGrades);
-        }
-    });
-}
-
-// Calculate and update composite scores
-function calculateAndUpdateCompositeScores() {
-    // Calculate composite scores
-    const sizeGrade = calculateCompositeGrade([calculateSizeScore(parseFloat(document.getElementById('height-value').textContent), 'height'), calculateSizeScore(parseFloat(document.getElementById('weight-value').textContent), 'weight')]);
-    const speedGrade = calculateCompositeGrade([calculateSpeedScore(parseFloat(document.getElementById('forty-value').textContent), 'forty'), calculateSpeedScore(parseFloat(document.getElementById('twenty-value').textContent), 'twenty'), calculateSpeedScore(parseFloat(document.getElementById('ten-value').textContent), 'ten')]);
-    const explosionGrade = calculateCompositeGrade([calculateJumpScore(parseFloat(document.getElementById('vertical-value').textContent), 'vertical'), calculateJumpScore(parseFloat(document.getElementById('broad-value').textContent), 'broad'), calculateStrengthScore(parseFloat(document.getElementById('bench-value').textContent))]);
-    const agilityGrade = calculateCompositeGrade([calculateAgilityScore(parseFloat(document.getElementById('cone-value').textContent), 'cone'), calculateAgilityScore(parseFloat(document.getElementById('shuttle-value').textContent), 'shuttle')]);
-    
-    // Update composite grades with color coding
-    updateGradeDisplay('size-grade', sizeGrade, 'COMPOSITE SIZE GRADE');
-    updateGradeDisplay('speed-grade', speedGrade, 'COMPOSITE SPEED GRADE');
-    updateGradeDisplay('explosion-grade', explosionGrade, 'COMPOSITE EXPLOSION GRADE');
-    updateGradeDisplay('agility-grade', agilityGrade, 'COMPOSITE AGILITY GRADE');
-}
-
-function updateGradeDisplay(elementId, score, prefix) {
-    const element = document.getElementById(elementId);
-    if (!element) return;
-    
-    if (score === null || score === undefined || isNaN(parseFloat(score))) {
-        element.textContent = `${prefix} : N/A`;
-        element.className = "composite-grade";
-        element.classList.add(elementId);
-        return;
-    }
-    
-    const scoreValue = parseFloat(score);
-    const gradeText = getGradeText(scoreValue);
-    element.textContent = `${prefix} : ${gradeText} (${scoreValue})`;
-    
-    // Remove any existing color classes
-    element.className = "composite-grade";
-    element.classList.add(elementId); // Add back the position class
-    
-    // Add appropriate color class based on grade
-    if (scoreValue < 4) {
-        element.classList.add("grade-poor");
-    } else if (scoreValue < 5) {
-        element.classList.add("grade-below-average");
-    } else if (scoreValue < 7) {
-        element.classList.add("grade-average");
-    } else if (scoreValue < 9) {
-        element.classList.add("grade-good");
-    } else {
-        element.classList.add("grade-excellent");
-    }
-}
-
-function calculateSizeScore(measurement, type) {
-    if (isNaN(measurement)) return 5.0; // Default to average if NaN
-    
-    let score;
-    
-    switch(type) {
-        case 'height':
-            // NFL height standards (in inches)
-            if (measurement >= 78) score = 10;      // 6'6" or taller
-            else if (measurement >= 76) score = 9;  // 6'4"
-            else if (measurement >= 74) score = 8;  // 6'2"
-            else if (measurement >= 72) score = 7;  // 6'0"
-            else if (measurement >= 70) score = 6;  // 5'10"
-            else if (measurement >= 69) score = 5;  // 5'9"
-            else if (measurement >= 68) score = 4;  // 5'8"
-            else if (measurement >= 67) score = 3;  // 5'7"
-            else if (measurement >= 66) score = 2;  // 5'6"
-            else if (measurement >= 65) score = 1;  // 5'5"
-            else score = 0;                        // Less than 5'5"
-            break;
-        case 'weight':
-            // NFL weight standards (in lbs)
-            if (measurement >= 300) score = 10;     // 300+ lbs
-            else if (measurement >= 280) score = 9;
-            else if (measurement >= 260) score = 8;
-            else if (measurement >= 240) score = 7;
-            else if (measurement >= 225) score = 6;
-            else if (measurement >= 210) score = 5;
-            else if (measurement >= 195) score = 4;
-            else if (measurement >= 180) score = 3;
-            else if (measurement >= 170) score = 2;
-            else if (measurement >= 160) score = 1;
-            else score = 0;                        // Less than 160 lbs
-            break;
-        default:
-            score = 5;
-    }
-    
-    return Math.max(0, Math.min(10, score)).toFixed(2);
-}
-
-// Save RAS scores to Firestore
-function saveRASScorestoFirestore() {
     console.log('Saving RAS scores to Firestore');
     // Get existing results from localStorage
     const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
@@ -1516,5 +1467,192 @@ function fixFortyScore() {
         }
     } catch (error) {
         console.error('Fix error:', error);
+    }
+}
+
+// Function to update all the grades when data changes
+function updateAllGrades() {
+    // Get all input values
+    const fortyValue = parseFloat(document.getElementById('forty-score').value);
+    const verticalValue = parseFloat(document.getElementById('vertical-score').value);
+    const benchValue = parseFloat(document.getElementById('bench-score').value);
+    const broadValue = parseFloat(document.getElementById('broad-score').value);
+    const coneValue = parseFloat(document.getElementById('cone-score').value);
+    const shuttleValue = parseFloat(document.getElementById('shuttle-score').value);
+    
+    // Calculate individual scores
+    const fortyScore = calculateSpeedScore(fortyValue, 'forty');
+    const verticalScore = calculateJumpScore(verticalValue, 'vertical');
+    const benchScore = calculateStrengthScore(benchValue);
+    const broadScore = calculateJumpScore(broadValue, 'broad');
+    const coneScore = calculateAgilityScore(coneValue, 'cone');
+    const shuttleScore = calculateAgilityScore(shuttleValue, 'shuttle');
+    
+    // Add grade next to each input
+    addGradeLabel('forty-score', fortyScore);
+    addGradeLabel('vertical-score', verticalScore);
+    addGradeLabel('bench-score', benchScore);
+    addGradeLabel('broad-score', broadScore);
+    addGradeLabel('cone-score', coneScore);
+    addGradeLabel('shuttle-score', shuttleScore);
+
+    // Update composite scores based on the calculations
+    calculateAndUpdateCompositeScores();
+}
+
+// Add a grade label next to an input field
+function addGradeLabel(inputId, score) {
+    // Log the grade instead of creating DOM elements
+    console.log(`Grade for ${inputId}: ${getGradeText(score)}`);
+    
+    // We will rely on color coding of the scores themselves
+    // instead of adding extra DOM elements that disrupt the layout
+}
+
+// Add event listeners to update grades when input values change
+function setupGradeListeners() {
+    const inputs = [
+        'forty-score', 
+        'vertical-score', 
+        'bench-score', 
+        'broad-score', 
+        'cone-score', 
+        'shuttle-score'
+    ];
+    
+    inputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('input', updateAllGrades);
+            input.addEventListener('change', updateAllGrades);
+        }
+    });
+}
+
+// Calculate and update composite scores
+function calculateAndUpdateCompositeScores() {
+    // Calculate composite scores
+    const sizeGrade = calculateCompositeGrade([calculateSizeScore(parseFloat(document.getElementById('height-value').textContent), 'height'), calculateSizeScore(parseFloat(document.getElementById('weight-value').textContent), 'weight')]);
+    const speedGrade = calculateCompositeGrade([calculateSpeedScore(parseFloat(document.getElementById('forty-value').textContent), 'forty'), calculateSpeedScore(parseFloat(document.getElementById('twenty-value').textContent), 'twenty'), calculateSpeedScore(parseFloat(document.getElementById('ten-value').textContent), 'ten')]);
+    const explosionGrade = calculateCompositeGrade([calculateJumpScore(parseFloat(document.getElementById('vertical-value').textContent), 'vertical'), calculateJumpScore(parseFloat(document.getElementById('broad-value').textContent), 'broad'), calculateStrengthScore(parseFloat(document.getElementById('bench-value').textContent))]);
+    const agilityGrade = calculateCompositeGrade([calculateAgilityScore(parseFloat(document.getElementById('cone-value').textContent), 'cone'), calculateAgilityScore(parseFloat(document.getElementById('shuttle-value').textContent), 'shuttle')]);
+    
+    // Update composite grades with color coding
+    updateGradeDisplay('size-grade', sizeGrade, 'COMPOSITE SIZE GRADE');
+    updateGradeDisplay('speed-grade', speedGrade, 'COMPOSITE SPEED GRADE');
+    updateGradeDisplay('explosion-grade', explosionGrade, 'COMPOSITE EXPLOSION GRADE');
+    updateGradeDisplay('agility-grade', agilityGrade, 'COMPOSITE AGILITY GRADE');
+}
+
+function updateGradeDisplay(elementId, score, prefix) {
+    const element = document.getElementById(elementId);
+    if (!element) return;
+    
+    if (score === null || score === undefined || isNaN(parseFloat(score))) {
+        element.textContent = `${prefix} : N/A`;
+        element.className = "composite-grade";
+        element.classList.add(elementId);
+        return;
+    }
+    
+    const scoreValue = parseFloat(score);
+    const gradeText = getGradeText(scoreValue);
+    element.textContent = `${prefix} : ${gradeText} (${scoreValue})`;
+    
+    // Remove any existing color classes
+    element.className = "composite-grade";
+    element.classList.add(elementId); // Add back the position class
+    
+    // Add appropriate color class based on grade
+    if (scoreValue < 4) {
+        element.classList.add("grade-poor");
+    } else if (scoreValue < 5) {
+        element.classList.add("grade-below-average");
+    } else if (scoreValue < 7) {
+        element.classList.add("grade-average");
+    } else if (scoreValue < 9) {
+        element.classList.add("grade-good");
+    } else {
+        element.classList.add("grade-excellent");
+    }
+}
+
+function calculateSizeScore(measurement, type) {
+    if (isNaN(measurement)) return 5.0; // Default to average if NaN
+    
+    let score;
+    
+    switch(type) {
+        case 'height':
+            // NFL height standards (in inches)
+            if (measurement >= 78) score = 10;      // 6'6" or taller
+            else if (measurement >= 76) score = 9;  // 6'4"
+            else if (measurement >= 74) score = 8;  // 6'2"
+            else if (measurement >= 72) score = 7;  // 6'0"
+            else if (measurement >= 70) score = 6;  // 5'10"
+            else if (measurement >= 69) score = 5;  // 5'9"
+            else if (measurement >= 68) score = 4;  // 5'8"
+            else if (measurement >= 67) score = 3;  // 5'7"
+            else if (measurement >= 66) score = 2;  // 5'6"
+            else if (measurement >= 65) score = 1;  // 5'5"
+            else score = 0;                        // Less than 5'5"
+            break;
+        case 'weight':
+            // NFL weight standards (in lbs)
+            if (measurement >= 300) score = 10;     // 300+ lbs
+            else if (measurement >= 280) score = 9;
+            else if (measurement >= 260) score = 8;
+            else if (measurement >= 240) score = 7;
+            else if (measurement >= 225) score = 6;
+            else if (measurement >= 210) score = 5;
+            else if (measurement >= 195) score = 4;
+            else if (measurement >= 180) score = 3;
+            else if (measurement >= 170) score = 2;
+            else if (measurement >= 160) score = 1;
+            else score = 0;                        // Less than 160 lbs
+            break;
+        default:
+            score = 5;
+    }
+    
+    return Math.max(0, Math.min(10, score)).toFixed(2);
+}
+
+// Save RAS scores to Firestore
+function saveRASScorestoFirestore() {
+    console.log('Saving RAS scores to Firestore');
+    // Get existing results from localStorage
+    const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+    
+    // Only proceed if we have results to save
+    if (Object.keys(rasResults).length === 0) {
+        console.log('No RAS results to save');
+        return;
+    }
+    
+    // Check if user is logged in
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log('User logged in, saving RAS results to Firestore');
+            const db = firebase.firestore();
+            
+            // Use set with merge to update only the rasResults field
+            db.collection('users').doc(user.uid).set({
+                games: {
+                    rasResults: rasResults
+                }
+            }, { merge: true })
+            .then(() => {
+                console.log('RAS results saved to Firestore successfully');
+            })
+            .catch((error) => {
+                console.error('Error saving RAS results to Firestore:', error);
+            });
+        } else {
+            console.log('No user logged in, RAS results saved to localStorage only');
+        }
+    } else {
+        console.log('Firebase not available, RAS results saved to localStorage only');
     }
 }
