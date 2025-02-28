@@ -221,14 +221,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     };
                     
                     // Try to populate each metric with various possible field names
-                    setValueFromMultipleFields('forty-value', ['fortyYardDash', 'forty', '40yard', '40-yard', '40yd', '40', 'games.combine.fortyYardDash']);
+                    setValueFromMultipleFields('forty-value', ['fortyYardDash', 'forty', '40yard', '40-yard', '40yd', '40', 'fortyYard', 'forty_yard_dash']);
                     setValueFromMultipleFields('twenty-value', ['twentyYardDash', 'twenty', '20yard', '20-yard', '20yd', '20', 'twenty_yard', 'twenty_yard_dash', 'twenty_split']);
                     setValueFromMultipleFields('ten-value', ['tenYardDash', 'ten', '10yard', '10-yard', '10yd', '10', 'ten_yard', 'ten_yard_dash', 'ten_split']);
-                    setValueFromMultipleFields('vertical-value', ['verticalJump', 'vertical', 'vert', 'games.combine.verticalJump']);
-                    setValueFromMultipleFields('broad-value', ['broadJump', 'broad', 'jump', 'games.combine.broadJump']);
-                    setValueFromMultipleFields('bench-value', ['benchPress', 'bench', 'games.combine.benchPress']);
-                    setValueFromMultipleFields('cone-value', ['coneDrill', 'cone', '3cone', 'games.combine.coneDrill']);
-                    setValueFromMultipleFields('shuttle-value', ['shuttleRun', 'shuttle', 'shortShuttle', '20shuttle', 'games.combine.shuttleRun']);
+                    setValueFromMultipleFields('vertical-value', ['verticalJump', 'vertical', 'vert', 'vertical_jump', 'vert_jump']);
+                    setValueFromMultipleFields('broad-value', ['broadJump', 'broad', 'jump', 'broad_jump']);
+                    setValueFromMultipleFields('bench-value', ['benchPress', 'bench', 'benchpress', 'bench_press', 'bench_reps']);
+                    setValueFromMultipleFields('cone-value', ['coneDrill', 'cone', '3cone', 'three_cone', '3-cone', 'threeCone']);
+                    setValueFromMultipleFields('shuttle-value', ['shuttleRun', 'shuttle', 'shortShuttle', '20shuttle', '20_shuttle', 'short_shuttle', 'shuttle_run']);
                     
                     // Set player name from username (priority) or fallback options
                     let playerName = '';
@@ -1817,3 +1817,244 @@ function calculateRASGrade(score) {
     else if (score >= 4.0) return "D-";
     else return "F";
 }
+
+// Add functions to calculate height and weight scores
+function calculateHeightScore(height) {
+    if (height === null || height === undefined || height === '') {
+        debugLog(`Invalid height value: ${height}`, '#ff0000');
+        return 0;
+    }
+    
+    // Convert height to inches if it's in feet/inches format (e.g., "6'2")
+    let inches = height;
+    if (typeof height === 'string') {
+        if (height.includes("'")) {
+            const parts = height.split("'");
+            const feet = parseInt(parts[0]) || 0;
+            let inchPart = 0;
+            if (parts[1]) {
+                inchPart = parseInt(parts[1]) || 0;
+            }
+            inches = feet * 12 + inchPart;
+            debugLog(`Converted height ${height} to ${inches} inches`, '#ffff00');
+        } else {
+            // Try to parse as a simple number
+            inches = parseFloat(height);
+        }
+    }
+    
+    if (isNaN(inches)) {
+        debugLog(`Could not parse height: ${height}`, '#ff0000');
+        return 0;
+    }
+    
+    // Score based on height in inches
+    let score;
+    if (inches >= 78) score = 10;      // 6'6" or taller
+    else if (inches >= 76) score = 9;  // 6'4" to 6'5"
+    else if (inches >= 74) score = 8;  // 6'2" to 6'3"
+    else if (inches >= 72) score = 7;  // 6'0" to 6'1"
+    else if (inches >= 70) score = 6;  // 5'10" to 5'11"
+    else if (inches >= 68) score = 5;  // 5'8" to 5'9"
+    else if (inches >= 66) score = 4;  // 5'6" to 5'7"
+    else if (inches >= 64) score = 3;  // 5'4" to 5'5"
+    else if (inches >= 62) score = 2;  // 5'2" to 5'3"
+    else if (inches >= 60) score = 1;  // 5'0" to 5'1"
+    else score = 0;                    // Under 5'0"
+    
+    debugLog(`Height ${inches} inches = score ${score}`, '#ffff00');
+    return score;
+}
+
+function calculateWeightScore(weight) {
+    if (weight === null || weight === undefined || weight === '') {
+        debugLog(`Invalid weight value: ${weight}`, '#ff0000');
+        return 0;
+    }
+    
+    // Parse weight as a number
+    const weightNum = parseFloat(weight);
+    if (isNaN(weightNum)) {
+        debugLog(`Could not parse weight: ${weight}`, '#ff0000');
+        return 0;
+    }
+    
+    // Score based on weight in pounds
+    let score;
+    if (weightNum >= 300) score = 10;      // 300+ lbs
+    else if (weightNum >= 275) score = 9;  // 275-299 lbs
+    else if (weightNum >= 250) score = 8;  // 250-274 lbs
+    else if (weightNum >= 225) score = 7;  // 225-249 lbs
+    else if (weightNum >= 200) score = 6;  // 200-224 lbs
+    else if (weightNum >= 185) score = 5;  // 185-199 lbs
+    else if (weightNum >= 170) score = 4;  // 170-184 lbs
+    else if (weightNum >= 155) score = 3;  // 155-169 lbs
+    else if (weightNum >= 140) score = 2;  // 140-154 lbs
+    else if (weightNum >= 125) score = 1;  // 125-139 lbs
+    else score = 0;                        // Under 125 lbs
+    
+    debugLog(`Weight ${weightNum} lbs = score ${score}`, '#ffff00');
+    return score;
+}
+
+// Function to create or update the RAS score display at the top
+function updateTopRASDisplay(score) {
+    debugLog(`Updating top RAS display with score: ${score}`, '#00ffff');
+    
+    // Find the logo-left element which contains "RAS"
+    const logoLeft = document.querySelector('.logo-left');
+    if (!logoLeft) {
+        debugLog('Could not find .logo-left element to add RAS score', '#ff0000');
+        return;
+    }
+    
+    // Check if we already have a RAS score element
+    let rasScoreElement = document.getElementById('top-ras-score');
+    if (!rasScoreElement) {
+        // Create the score element if it doesn't exist
+        rasScoreElement = document.createElement('div');
+        rasScoreElement.id = 'top-ras-score';
+        rasScoreElement.style.display = 'inline-block';
+        rasScoreElement.style.marginLeft = '10px';
+        rasScoreElement.style.fontWeight = 'bold';
+        rasScoreElement.style.fontSize = '24px';
+        rasScoreElement.style.padding = '3px 6px';
+        rasScoreElement.style.borderRadius = '4px';
+        
+        // Insert after the logo-left element
+        logoLeft.insertAdjacentElement('afterend', rasScoreElement);
+    }
+    
+    // Update the score and styling
+    rasScoreElement.textContent = score.toFixed(2);
+    
+    // Set color based on score
+    let bgColor, textColor;
+    if (score < 4) {
+        bgColor = "#ff6b6b";
+        textColor = "white";
+    } else if (score < 5) {
+        bgColor = "#ffa06b";
+        textColor = "white";
+    } else if (score < 7) {
+        bgColor = "#ffc56b";
+        textColor = "black";
+    } else if (score < 9) {
+        bgColor = "#6bd46b";
+        textColor = "white";
+    } else {
+        bgColor = "#53c2f0";
+        textColor = "white";
+    }
+    
+    rasScoreElement.style.backgroundColor = bgColor;
+    rasScoreElement.style.color = textColor;
+}
+
+// Update our composite score calculation to include height and weight
+function calculateCompositeScoresDirect() {
+    try {
+        // Get all scores
+        const fortyScore = getScoreValue('forty-score');
+        const verticalScore = getScoreValue('vertical-score');
+        const broadScore = getScoreValue('broad-score');
+        const benchScore = getScoreValue('bench-score');
+        const coneScore = getScoreValue('cone-score');
+        const shuttleScore = getScoreValue('shuttle-score');
+        
+        // Get height and weight values
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        
+        // Calculate height and weight scores
+        let heightScore = 0;
+        let weightScore = 0;
+        
+        if (heightInput && heightInput.value) {
+            heightScore = calculateHeightScore(heightInput.value);
+            debugLog(`Height input value: ${heightInput.value}, score: ${heightScore}`, '#00ff00');
+        }
+        
+        if (weightInput && weightInput.value) {
+            weightScore = calculateWeightScore(weightInput.value);
+            debugLog(`Weight input value: ${weightInput.value}, score: ${weightScore}`, '#00ff00');
+        }
+        
+        // Calculate composite scores
+        // Speed (40 only for now)
+        const speedScores = [fortyScore].filter(score => !isNaN(score));
+        const speedTotal = speedScores.length > 0 ? 
+            speedScores.reduce((sum, score) => sum + score, 0) / speedScores.length : 0;
+        
+        // Explosion (vertical, broad, bench)
+        const explosiveScores = [verticalScore, broadScore, benchScore].filter(score => !isNaN(score));
+        const explosiveTotal = explosiveScores.length > 0 ? 
+            explosiveScores.reduce((sum, score) => sum + score, 0) / explosiveScores.length : 0;
+        
+        // Agility (cone, shuttle)
+        const agilityScores = [coneScore, shuttleScore].filter(score => !isNaN(score));
+        const agilityTotal = agilityScores.length > 0 ? 
+            agilityScores.reduce((sum, score) => sum + score, 0) / agilityScores.length : 0;
+        
+        // Size (height, weight)
+        const sizeScores = [heightScore, weightScore].filter(score => !isNaN(score));
+        const sizeTotal = sizeScores.length > 0 ? 
+            sizeScores.reduce((sum, score) => sum + score, 0) / sizeScores.length : 0;
+        
+        // Total (all scores, including height and weight)
+        const allScores = [
+            fortyScore, verticalScore, broadScore, 
+            benchScore, coneScore, shuttleScore,
+            heightScore, weightScore
+        ].filter(score => !isNaN(score));
+        
+        const totalScore = allScores.length > 0 ? 
+            allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
+        
+        // Update composite score displays
+        updateCompositeElement('speed-score', speedTotal);
+        updateCompositeElement('explosive-score', explosiveTotal);
+        updateCompositeElement('agility-score', agilityTotal);
+        updateCompositeElement('total-score', totalScore);
+        
+        // Also update the size score if that element exists
+        const sizeScoreElement = document.getElementById('size-score');
+        if (sizeScoreElement) {
+            updateCompositeElement('size-score', sizeTotal);
+        } else {
+            debugLog('Size score element not found, size score: ' + sizeTotal.toFixed(2), '#ffff00');
+        }
+        
+        // Update RAS grade
+        const rasGrade = calculateRASGrade(totalScore);
+        const rasElement = document.getElementById('composite-score');
+        if (rasElement) {
+            rasElement.textContent = rasGrade;
+            rasElement.style.fontWeight = 'bold';
+            rasElement.style.fontSize = '24px';
+        }
+        
+        // Update the RAS score at the top of the page
+        updateTopRASDisplay(totalScore);
+        
+        debugLog(`Speed score: ${speedTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Explosive score: ${explosiveTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Agility score: ${agilityTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Size score: ${sizeTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Total score: ${totalScore.toFixed(2)}`, '#00ff00');
+        debugLog(`RAS Grade: ${rasGrade}`, '#00ff00');
+    } catch (error) {
+        debugLog(`Error calculating composite scores: ${error.message}`, '#ff0000');
+    }
+}
+
+// Make our direct calculation functions available globally
+window.calculateSpeedScoreDirect = calculateSpeedScoreDirect;
+window.calculateJumpScoreDirect = calculateJumpScoreDirect;
+window.calculateStrengthScoreDirect = calculateStrengthScoreDirect;
+window.calculateAgilityScoreDirect = calculateAgilityScoreDirect;
+window.directCalculateAllScores = directCalculateAllScores;
+window.calculateHeightScore = calculateHeightScore;
+window.calculateWeightScore = calculateWeightScore;
+window.calculateCompositeScoresDirect = calculateCompositeScoresDirect;
+window.updateTopRASDisplay = updateTopRASDisplay;

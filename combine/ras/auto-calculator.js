@@ -11,6 +11,12 @@ function runAutoCalculator() {
     if (typeof directCalculateAllScores === 'function') {
         console.log("Found directCalculateAllScores, running it");
         directCalculateAllScores();
+        
+        // Also run the composite calculation
+        if (typeof calculateCompositeScoresDirect === 'function') {
+            console.log("Running composite score calculations");
+            calculateCompositeScoresDirect();
+        }
     } else {
         console.log("directCalculateAllScores function not available");
     }
