@@ -6,100 +6,158 @@ console.log("RAS data fix script loaded");
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM loaded, setting up RAS data fix");
     
-    // Override the saveRASScorestoFirestore function to also save height and weight
+    // Replace the existing saveRASScorestoFirestore function to save in multiple formats
     window.saveRASScorestoFirestore = function() {
-        console.log('Saving RAS scores to Firestore (enhanced version)');
-        // Get existing results from localStorage
-        const rasResults = JSON.parse(localStorage.getItem('rasResults') || '{}');
+        console.log("Saving RAS scores to Firestore...");
         
-        // Only proceed if we have results to save
-        if (Object.keys(rasResults).length === 0) {
-            console.log('No RAS results to save');
+        // Check if user is logged in
+        if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth().currentUser) {
+            console.log("Cannot save - Firebase not available or user not logged in");
             return;
         }
         
-        // Check if user is logged in
-        if (typeof firebase !== 'undefined' && firebase.auth) {
-            const user = firebase.auth().currentUser;
-            if (user) {
-                console.log('User logged in, saving RAS results to Firestore');
-                const db = firebase.firestore();
-                
-                // Get height and weight values to save to the user profile
-                const height = document.getElementById('height').value;
-                const weight = document.getElementById('weight').value;
-                
-                // Also get combine metrics from the form
-                const benchValue = document.getElementById('bench-value').textContent || '';
-                const fortyValue = document.getElementById('forty-value').textContent || '';
-                const verticalValue = document.getElementById('vertical-value').textContent || '';
-                const broadValue = document.getElementById('broad-value').textContent || '';
-                const coneValue = document.getElementById('cone-value').textContent || '';
-                const shuttleValue = document.getElementById('shuttle-value').textContent || '';
-                
-                // Create the data object to save in two formats for compatibility
-                const dataToSave = {
-                    // Save RAS results
-                    games: {
-                        rasResults: rasResults,
-                        // Also save in games.combine structure for compatibility
-                        combine: {
-                            benchPress: benchValue,
-                            fortyYardDash: fortyValue,
-                            verticalJump: verticalValue,
-                            broadJump: broadValue,
-                            coneDrill: coneValue,
-                            shuttleRun: shuttleValue,
-                            lastUpdated: new Date().toISOString()
-                        }
-                    },
-                    // Save metrics at root level for backward compatibility
-                    benchPress: benchValue,
-                    fortyYardDash: fortyValue,
-                    verticalJump: verticalValue,
-                    broadJump: broadValue,
-                    coneDrill: coneValue,
-                    shuttleRun: shuttleValue,
-                    lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
-                };
-                
-                // Add height and weight to the root of the user document if they exist
-                if (height) {
-                    dataToSave.height = parseInt(height, 10) || height;
-                    console.log(`Saving height to user profile: ${height}`);
-                }
-                
-                if (weight) {
-                    dataToSave.weight = parseInt(weight, 10) || weight;
-                    console.log(`Saving weight to user profile: ${weight}`);
-                }
-                
-                // Use set with merge to update only the specified fields
-                db.collection('users').doc(user.uid).set(dataToSave, { merge: true })
-                    .then(() => {
-                        console.log('Successfully saved RAS scores and metrics to Firestore');
-                        
-                        // Show visual feedback
-                        const saveBtn = document.querySelector('.save-btn');
-                        if (saveBtn) {
-                            const originalText = saveBtn.textContent;
-                            saveBtn.textContent = 'Saved!';
-                            setTimeout(() => {
-                                saveBtn.textContent = originalText;
-                            }, 2000);
-                        }
-                    })
-                    .catch((error) => {
-                        console.error('Error saving RAS scores to Firestore:', error);
-                    });
-            } else {
-                console.log('User not logged in, RAS results saved to localStorage only');
-            }
-        } else {
-            console.log('Firebase not available, RAS results saved to localStorage only');
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            console.log("Cannot save - No user is logged in");
+            return;
         }
+        
+        // Get values from the form
+        const playerName = document.getElementById('name').value;
+        const position = document.getElementById('position').value;
+        const school = document.getElementById('school').value;
+        const year = document.getElementById('year').value;
+        const height = document.getElementById('height').value;
+        const weight = document.getElementById('weight').value;
+        
+        // Get displayed values from the RAS card (these are what's actually used in calculations)
+        const fortyYardDash = document.getElementById('forty-value').textContent;
+        const twentyYardDash = document.getElementById('twenty-value').textContent;
+        const tenYardDash = document.getElementById('ten-value').textContent;
+        const verticalJump = document.getElementById('vertical-value').textContent;
+        const broadJump = document.getElementById('broad-value').textContent;
+        const benchPress = document.getElementById('bench-value').textContent;
+        const coneDrill = document.getElementById('cone-value').textContent;
+        const shuttleRun = document.getElementById('shuttle-value').textContent;
+        
+        // Helper function to convert string to number or keep as string if NaN
+        const toNumberOrKeep = (val) => {
+            const num = parseFloat(val);
+            return isNaN(num) ? val : num;
+        };
+        
+        // Helper function to convert height to integer if in inches format
+        const processHeight = (height) => {
+            // Check if it's a simple number format (just inches)
+            if (/^\d+$/.test(height)) {
+                return parseInt(height, 10);
+            } 
+            // Check if it's a decimal format (feet.inches)
+            else if (/^\d+\.\d+$/.test(height)) {
+                return toNumberOrKeep(height);
+            }
+            // Otherwise keep as is
+            return height;
+        };
+        
+        // Helper function to convert weight to integer
+        const processWeight = (weight) => {
+            const num = parseInt(weight, 10);
+            return isNaN(num) ? weight : num;
+        };
+        
+        // Prepare data for Firestore
+        // 1. Root level data (original format)
+        const userData = {
+            // Player info
+            name: playerName,
+            username: playerName,  // Also save as username for compatibility
+            position: position,
+            school: school,
+            year: year,
+            height: processHeight(height),
+            weight: processWeight(weight),
+            
+            // Combine metrics
+            fortyYardDash: toNumberOrKeep(fortyYardDash),
+            twentyYardDash: toNumberOrKeep(twentyYardDash),
+            tenYardDash: toNumberOrKeep(tenYardDash),
+            verticalJump: toNumberOrKeep(verticalJump),
+            broadJump: toNumberOrKeep(broadJump),
+            benchPress: toNumberOrKeep(benchPress),
+            coneDrill: toNumberOrKeep(coneDrill),
+            shuttleRun: toNumberOrKeep(shuttleRun),
+            
+            // Add timestamp
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // 2. Prepare nested format (games.combine)
+        const combineData = {
+            fortyYardDash: toNumberOrKeep(fortyYardDash),
+            twentyYardDash: toNumberOrKeep(twentyYardDash),
+            tenYardDash: toNumberOrKeep(tenYardDash),
+            verticalJump: toNumberOrKeep(verticalJump),
+            broadJump: toNumberOrKeep(broadJump),
+            benchPress: toNumberOrKeep(benchPress),
+            coneDrill: toNumberOrKeep(coneDrill),
+            shuttleRun: toNumberOrKeep(shuttleRun),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        
+        // 3. Create a complete update with dot notation for nested fields
+        const completeUpdate = {
+            ...userData,
+            "games.combine": combineData
+        };
+        
+        // Update Firestore using merge to keep existing data
+        const db = firebase.firestore();
+        db.collection("users").doc(user.uid)
+            .set(completeUpdate, { merge: true })
+            .then(() => {
+                console.log("Successfully saved user data to Firestore!");
+                
+                // Add visual confirmation
+                const feedbackElement = document.createElement('div');
+                feedbackElement.textContent = "Data saved successfully!";
+                feedbackElement.style.backgroundColor = "#4CAF50";
+                feedbackElement.style.color = "white";
+                feedbackElement.style.padding = "10px";
+                feedbackElement.style.borderRadius = "4px";
+                feedbackElement.style.margin = "10px 0";
+                feedbackElement.style.fontWeight = "bold";
+                feedbackElement.style.textAlign = "center";
+                
+                // Find a good place to insert it
+                const form = document.getElementById('player-info-form');
+                if (form) {
+                    form.parentNode.insertBefore(feedbackElement, form.nextSibling);
+                    
+                    // Remove after 3 seconds
+                    setTimeout(() => {
+                        feedbackElement.remove();
+                    }, 3000);
+                }
+                
+                // Also save using the nested structure with set + merge to ensure it works
+                db.collection("users").doc(user.uid).set({
+                    games: {
+                        combine: combineData
+                    }
+                }, { merge: true })
+                .then(() => {
+                    console.log("Also saved in games.combine structure");
+                })
+                .catch((error) => {
+                    console.error("Error saving nested structure:", error);
+                });
+            })
+            .catch((error) => {
+                console.error("Error saving data to Firestore:", error);
+            });
     };
-
+    
     // Add a function to ensure we properly load user data
     window.enhancedGetUserData = function() {
         console.log("Running enhanced user data loader");
@@ -281,50 +339,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (userData.games && userData.games.combine) {
                     console.log("Found games.combine structure:", userData.games.combine);
                     const combineData = userData.games.combine;
+                    let dataLoaded = false;
                     
-                    // Load each value into the corresponding field
-                    if (combineData.benchPress) {
-                        document.getElementById('bench-value').textContent = combineData.benchPress;
-                        console.log("Set bench press from games.combine:", combineData.benchPress);
+                    // Define all possible field name variations
+                    const fieldVariations = {
+                        'bench-value': ['benchPress', 'bench', 'benchpress', 'bench_press', 'bench_reps'],
+                        'forty-value': ['fortyYardDash', 'forty', '40yard', '40-yard', '40yd', '40', 'fortyYard', 'forty_yard_dash'],
+                        'vertical-value': ['verticalJump', 'vertical', 'vert', 'vertical_jump', 'vert_jump'],
+                        'broad-value': ['broadJump', 'broad', 'jump', 'broad_jump'],
+                        'cone-value': ['coneDrill', 'cone', '3cone', 'three_cone', '3-cone', 'threeCone'],
+                        'shuttle-value': ['shuttleRun', 'shuttle', 'shortShuttle', '20shuttle', '20_shuttle', 'short_shuttle', 'shuttle_run'],
+                        'ten-value': ['tenYardDash', 'ten', '10yard', '10-yard', '10yd', '10', 'ten_yard', 'ten_yard_dash', 'ten_split'],
+                        'twenty-value': ['twentyYardDash', 'twenty', '20yard', '20-yard', '20yd', '20', 'twenty_yard', 'twenty_yard_dash', 'twenty_split']
+                    };
+
+                    // Helper function to set value if any of the variations exist
+                    const setValueIfAnyExists = (elementId, fieldList) => {
+                        for (const field of fieldList) {
+                            if (combineData[field] !== undefined && combineData[field] !== null) {
+                                document.getElementById(elementId).textContent = combineData[field];
+                                console.log(`Set ${elementId} from games.combine.${field}: ${combineData[field]}`);
+                                dataLoaded = true;
+                                return true;
+                            }
+                        }
+                        return false;
+                    };
+                    
+                    // Try to set values for each field with all possible variations
+                    for (const [elementId, variations] of Object.entries(fieldVariations)) {
+                        setValueIfAnyExists(elementId, variations);
                     }
                     
-                    if (combineData.fortyYardDash) {
-                        document.getElementById('forty-value').textContent = combineData.fortyYardDash;
-                        console.log("Set forty yard dash from games.combine:", combineData.fortyYardDash);
+                    // Also check for alternate structures in games.combine
+                    if (combineData.metrics) {
+                        console.log("Found games.combine.metrics structure:", combineData.metrics);
+                        const metrics = combineData.metrics;
+                        
+                        // Try to set values from the metrics object
+                        for (const [elementId, variations] of Object.entries(fieldVariations)) {
+                            for (const field of variations) {
+                                if (metrics[field] !== undefined && metrics[field] !== null) {
+                                    document.getElementById(elementId).textContent = metrics[field];
+                                    console.log(`Set ${elementId} from games.combine.metrics.${field}: ${metrics[field]}`);
+                                    dataLoaded = true;
+                                }
+                            }
+                        }
                     }
                     
-                    if (combineData.verticalJump) {
-                        document.getElementById('vertical-value').textContent = combineData.verticalJump;
-                        console.log("Set vertical jump from games.combine:", combineData.verticalJump);
+                    // If we successfully loaded any data, update calculations
+                    if (dataLoaded) {
+                        console.log("Successfully loaded some data from games.combine structure");
+                        
+                        // Update calculation
+                        if (typeof fixAllScores === 'function') {
+                            fixAllScores();
+                        }
+                        
+                        if (typeof calculateRASScores === 'function') {
+                            calculateRASScores();
+                        }
+                        
+                        return true;
+                    } else {
+                        console.log("Found games.combine structure but no matching fields");
+                        return false;
                     }
-                    
-                    if (combineData.broadJump) {
-                        document.getElementById('broad-value').textContent = combineData.broadJump;
-                        console.log("Set broad jump from games.combine:", combineData.broadJump);
-                    }
-                    
-                    if (combineData.coneDrill) {
-                        document.getElementById('cone-value').textContent = combineData.coneDrill;
-                        console.log("Set cone drill from games.combine:", combineData.coneDrill);
-                    }
-                    
-                    if (combineData.shuttleRun) {
-                        document.getElementById('shuttle-value').textContent = combineData.shuttleRun;
-                        console.log("Set shuttle run from games.combine:", combineData.shuttleRun);
-                    }
-                    
-                    console.log("Successfully loaded from games.combine structure");
-                    
-                    // Update calculation
-                    if (typeof fixAllScores === 'function') {
-                        fixAllScores();
-                    }
-                    
-                    if (typeof calculateRASScores === 'function') {
-                        calculateRASScores();
-                    }
-                    
-                    return true;
                 } else {
                     console.log("No games.combine structure found");
                     return false;
@@ -351,6 +432,19 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        // Define all possible field name variations for each RAS metric
+        const fieldMappings = {
+            'bench-value': ['benchPress', 'bench', 'benchpress', 'bench_press', 'bench_reps'],
+            'forty-value': ['fortyYardDash', 'forty', '40yard', '40-yard', '40yd', '40', 'fortyYard', 'forty_yard_dash'],
+            'vertical-value': ['verticalJump', 'vertical', 'vert', 'vertical_jump', 'vert_jump'],
+            'broad-value': ['broadJump', 'broad', 'jump', 'broad_jump'],
+            'cone-value': ['coneDrill', 'cone', '3cone', 'three_cone', '3-cone', 'threeCone'],
+            'shuttle-value': ['shuttleRun', 'shuttle', 'shortShuttle', '20shuttle', '20_shuttle', 'short_shuttle', 'shuttle_run'],
+            'ten-value': ['tenYardDash', 'ten', '10yard', '10-yard', '10yd', '10', 'ten_yard', 'ten_yard_dash', 'ten_split'],
+            'twenty-value': ['twentyYardDash', 'twenty', '20yard', '20-yard', '20yd', '20', 'twenty_yard', 'twenty_yard_dash', 'twenty_split']
+        };
+        
+        // Get user data from Firestore
         const db = firebase.firestore();
         db.collection("users").doc(user.uid).get()
             .then((doc) => {
@@ -359,80 +453,279 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
                 
-                // Output all fields recursively for debugging
-                function dumpObject(obj, path = "") {
-                    for (const key in obj) {
-                        const newKey = path ? `${path}.${key}` : key;
-                        
-                        if (obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])) {
-                            console.log(`${newKey}: (${Array.isArray(obj[key]) ? 'array' : 'object'})`);
-                            dumpObject(obj[key], newKey);
-                        } else {
-                            console.log(`${newKey}: ${obj[key]} (${typeof obj[key]})`);
-                            
-                            // Try to use this value as a fallback for a field
-                            tryUseFallbackValue(key, obj[key]);
-                        }
-                    }
-                }
+                let userData = doc.data();
+                console.log("Full Firestore data:", userData);
+                let dataFound = false;
                 
-                // Try to use a value as a fallback for a field
-                function tryUseFallbackValue(key, value) {
-                    // Skip null/undefined values
-                    if (value === null || value === undefined) return;
+                // Recursively search through the user data for key-value pairs matching RAS metrics
+                function searchObject(obj, path = '') {
+                    if (!obj || typeof obj !== 'object') return;
                     
-                    // Map of Firestore keys to RAS display element IDs
-                    const fieldMap = {
-                        'benchPress': 'bench-value',
-                        'bench': 'bench-value',
-                        'fortyYardDash': 'forty-value',
-                        'forty': 'forty-value',
-                        'verticalJump': 'vertical-value',
-                        'vertical': 'vertical-value',
-                        'broadJump': 'broad-value',
-                        'broad': 'broad-value',
-                        'coneDrill': 'cone-value',
-                        'cone': 'cone-value',
-                        'shuttleRun': 'shuttle-value',
-                        'shuttle': 'shuttle-value',
-                        'height': 'height-value',
-                        'weight': 'weight-value'
-                    };
-                    
-                    const elementId = fieldMap[key];
-                    if (elementId) {
-                        const element = document.getElementById(elementId);
-                        if (element && (!element.textContent || element.textContent === '0')) {
-                            element.textContent = value.toString();
-                            console.log(`FALLBACK: Set ${elementId} to ${value} from key ${key}`);
-                            
-                            // Also update input if available
-                            const inputId = elementId.replace('-value', '');
-                            const inputElement = document.getElementById(inputId);
-                            if (inputElement) {
-                                inputElement.value = value.toString();
+                    Object.entries(obj).forEach(([key, value]) => {
+                        const currentPath = path ? `${path}.${key}` : key;
+                        
+                        if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                            // If it's an object, search recursively
+                            searchObject(value, currentPath);
+                        } else {
+                            // Check if this key matches any of our field mappings
+                            for (const [displayField, possibleNames] of Object.entries(fieldMappings)) {
+                                if (possibleNames.includes(key)) {
+                                    document.getElementById(displayField).textContent = value;
+                                    console.log(`MATCH FOUND! Setting ${displayField} to ${value} from path ${currentPath}`);
+                                    dataFound = true;
+                                }
                             }
                         }
+                    });
+                }
+                
+                // Start the search at the root
+                searchObject(userData);
+                
+                // Check for special "games.combine.latest" format
+                if (userData.games && userData.games.combine && userData.games.combine.latest) {
+                    console.log("Special case: checking games.combine.latest");
+                    searchObject(userData.games.combine.latest, 'games.combine.latest');
+                }
+                
+                // Check for special "combo" format
+                if (userData.combo) {
+                    console.log("Special case: checking combo object");
+                    searchObject(userData.combo, 'combo');
+                }
+                
+                // Also look for ras_metrics structure
+                if (userData.ras_metrics) {
+                    console.log("Special case: checking ras_metrics object");
+                    searchObject(userData.ras_metrics, 'ras_metrics');
+                }
+                
+                // Update calculation if we found anything
+                if (dataFound) {
+                    console.log("Some data was found and populated in the UI!");
+                    
+                    if (typeof fixAllScores === 'function') {
+                        fixAllScores();
                     }
-                }
-                
-                const userData = doc.data();
-                console.log("FALLBACK DATA DUMP:");
-                dumpObject(userData);
-                
-                // After trying all fallbacks, recalculate scores
-                if (typeof fixAllScores === 'function') {
-                    fixAllScores();
-                }
-                
-                if (typeof calculateRASScores === 'function') {
-                    calculateRASScores();
+                    
+                    if (typeof calculateRASScores === 'function') {
+                        calculateRASScores();
+                    }
+                } else {
+                    console.log("No matching data found in any path");
                 }
             })
             .catch((error) => {
-                console.error("Error in fallback data inspection:", error);
+                console.error("Error inspecting Firestore data:", error);
             });
     };
+    
+    // Add the setupExtraFeatures function
+    window.setupExtraFeatures = function() {
+        console.log("Setting up extra features...");
+        
+        // Create a container for our debug tools
+        const container = document.createElement('div');
+        container.id = 'debug-container';
+        container.style.backgroundColor = '#f8f9fa';
+        container.style.border = '1px solid #dee2e6';
+        container.style.borderRadius = '4px';
+        container.style.padding = '10px';
+        container.style.margin = '10px 0';
+        container.style.fontFamily = 'sans-serif';
+        
+        // Add a title
+        const title = document.createElement('h3');
+        title.textContent = 'RAS Data Tools';
+        title.style.margin = '0 0 10px 0';
+        title.style.fontSize = '16px';
+        container.appendChild(title);
+        
+        // Create refresh button
+        const btn = document.createElement('button');
+        btn.id = 'refresh-data-btn';
+        btn.textContent = 'Refresh User Data';
+        btn.className = 'refresh-btn';
+        btn.style.backgroundColor = '#2c3e50';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.style.borderRadius = '4px';
+        btn.style.padding = '8px 12px';
+        btn.style.margin = '5px 0';
+        btn.style.cursor = 'pointer';
+        
+        // Create debug info element
+        const debugInfo = document.createElement('div');
+        debugInfo.id = 'debug-info';
+        debugInfo.style.fontSize = '12px';
+        debugInfo.style.backgroundColor = '#f8f9fa';
+        debugInfo.style.border = '1px solid #ddd';
+        debugInfo.style.padding = '5px';
+        debugInfo.style.borderRadius = '4px';
+        debugInfo.style.marginTop = '5px';
+        debugInfo.style.display = 'none';
+        debugInfo.style.maxHeight = '200px';
+        debugInfo.style.overflowY = 'auto';
+        debugInfo.style.whiteSpace = 'pre-wrap';
+        debugInfo.style.fontFamily = 'monospace';
+        
+        // Create toggle debug button
+        const toggleDebugBtn = document.createElement('button');
+        toggleDebugBtn.textContent = 'Show Debug Info';
+        toggleDebugBtn.className = 'toggle-debug-btn';
+        toggleDebugBtn.style.backgroundColor = '#6c757d';
+        toggleDebugBtn.style.color = 'white';
+        toggleDebugBtn.style.border = 'none';
+        toggleDebugBtn.style.borderRadius = '4px';
+        toggleDebugBtn.style.padding = '5px 8px';
+        toggleDebugBtn.style.margin = '5px 0 5px 5px';
+        toggleDebugBtn.style.cursor = 'pointer';
+        toggleDebugBtn.style.fontSize = '12px';
+        
+        // Add event listeners
+        btn.addEventListener('click', () => {
+            // Update debug info
+            updateDebugInfo();
+            
+            // Try the three methods in sequence with slight delays
+            
+            // Step 1: Try loading from nested structure
+            window.loadFromNestedCombineData();
+            
+            // Step 2: After a delay, try the enhanced loader
+            setTimeout(() => {
+                window.enhancedGetUserData();
+            }, 500);
+            
+            // Step 3: Finally try the fallback method
+            setTimeout(() => {
+                window.inspectAllFirestoreData();
+            }, 1000);
+        });
+        
+        toggleDebugBtn.addEventListener('click', () => {
+            if (debugInfo.style.display === 'none') {
+                debugInfo.style.display = 'block';
+                toggleDebugBtn.textContent = 'Hide Debug Info';
+                updateDebugInfo();
+            } else {
+                debugInfo.style.display = 'none';
+                toggleDebugBtn.textContent = 'Show Debug Info';
+            }
+        });
+        
+        // Add elements to container
+        container.appendChild(btn);
+        container.appendChild(toggleDebugBtn);
+        container.appendChild(debugInfo);
+        
+        // Add to the page
+        const rasCard = document.querySelector('.ras-card');
+        if (rasCard) {
+            rasCard.parentNode.insertBefore(container, rasCard);
+        } else {
+            // Fallback - add to the beginning of the body
+            document.body.insertBefore(container, document.body.firstChild);
+        }
+        
+        console.log("Extra features setup complete");
+    };
+    
+    // Add a function to update debug info
+    function updateDebugInfo() {
+        const debugText = [];
+        
+        // Check if logged in
+        const isLoggedIn = typeof firebase !== 'undefined' && 
+                       firebase.auth && 
+                       firebase.auth().currentUser;
+        
+        debugText.push(`User logged in: ${isLoggedIn ? 'Yes' : 'No'}`);
+        
+        if (isLoggedIn) {
+            const user = firebase.auth().currentUser;
+            debugText.push(`User ID: ${user.uid}`);
+            debugText.push(`User Email: ${user.email}`);
+            debugText.push(`Display Name: ${user.displayName || 'Not set'}`);
+            
+            // Fetch latest Firestore data
+            debugText.push('\nFetching latest Firestore data...');
+            
+            const db = firebase.firestore();
+            db.collection("users").doc(user.uid).get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const userData = doc.data();
+                        
+                        debugText.push('\n=== ROOT LEVEL FIELDS ===');
+                        Object.keys(userData).forEach(key => {
+                            if (typeof userData[key] !== 'object' || userData[key] === null) {
+                                debugText.push(`${key}: ${userData[key]}`);
+                            } else if (userData[key] && userData[key].toDate && typeof userData[key].toDate === 'function') {
+                                debugText.push(`${key}: Timestamp(${userData[key].toDate()})`);
+                            } else {
+                                debugText.push(`${key}: [object]`);
+                            }
+                        });
+                        
+                        // Check for games structure
+                        if (userData.games) {
+                            debugText.push('\n=== GAMES STRUCTURE ===');
+                            Object.keys(userData.games).forEach(key => {
+                                debugText.push(`games.${key}: [object]`);
+                            });
+                            
+                            // Check for combine structure
+                            if (userData.games.combine) {
+                                debugText.push('\n=== GAMES.COMBINE STRUCTURE ===');
+                                Object.keys(userData.games.combine).forEach(key => {
+                                    debugText.push(`games.combine.${key}: ${userData.games.combine[key]}`);
+                                });
+                            }
+                        }
+                        
+                        debugInfo.textContent = debugText.join('\n');
+                    } else {
+                        debugText.push('No user document found in Firestore.');
+                        debugInfo.textContent = debugText.join('\n');
+                    }
+                })
+                .catch(error => {
+                    debugText.push(`Error fetching Firestore data: ${error.message}`);
+                    debugInfo.textContent = debugText.join('\n');
+                });
+        } else {
+            debugText.push('Cannot fetch Firestore data - user not logged in.');
+        }
+        
+        // Check local storage data
+        debugText.push('\n=== LOCAL STORAGE DATA ===');
+        debugText.push(`- benchPress: ${localStorage.getItem('benchPress') || 'Not set'}`);
+        debugText.push(`- fortyYardDash: ${localStorage.getItem('fortyYardDash') || 'Not set'}`);
+        debugText.push(`- verticalJump: ${localStorage.getItem('verticalJump') || 'Not set'}`);
+        debugText.push(`- broadJump: ${localStorage.getItem('broadJump') || 'Not set'}`);
+        debugText.push(`- coneDrill: ${localStorage.getItem('coneDrill') || 'Not set'}`);
+        debugText.push(`- shuttleRun: ${localStorage.getItem('shuttleRun') || 'Not set'}`);
+        
+        // Form data
+        debugText.push('\n=== CURRENT FORM VALUES ===');
+        debugText.push(`- Height: ${document.getElementById('height').value || 'Not set'}`);
+        debugText.push(`- Weight: ${document.getElementById('weight').value || 'Not set'}`);
+        
+        // Display value fields
+        debugText.push('\n=== CURRENT DISPLAY VALUES ===');
+        debugText.push(`- Player: ${document.getElementById('player-name').textContent || 'Not set'}`);
+        debugText.push(`- Forty: ${document.getElementById('forty-value').textContent || 'Not set'}`);
+        debugText.push(`- Vertical: ${document.getElementById('vertical-value').textContent || 'Not set'}`);
+        debugText.push(`- Bench: ${document.getElementById('bench-value').textContent || 'Not set'}`);
+        debugText.push(`- Broad: ${document.getElementById('broad-value').textContent || 'Not set'}`);
+        debugText.push(`- Cone: ${document.getElementById('cone-value').textContent || 'Not set'}`);
+        debugText.push(`- Shuttle: ${document.getElementById('shuttle-value').textContent || 'Not set'}`);
+        
+        // Set initial content
+        debugInfo.textContent = debugText.join('\n');
+    }
     
     // Helper function to flatten nested objects for easier access
     function flattenUserData(userData) {
@@ -555,51 +848,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateDebugInfo();
                 }
             });
-            
-            // Function to update debug info
-            function updateDebugInfo() {
-                const debugText = [];
-                
-                // Check if logged in
-                const isLoggedIn = typeof firebase !== 'undefined' && 
-                                   firebase.auth && 
-                                   firebase.auth().currentUser;
-                
-                debugText.push(`User logged in: ${isLoggedIn ? 'Yes' : 'No'}`);
-                
-                if (isLoggedIn) {
-                    const user = firebase.auth().currentUser;
-                    debugText.push(`User ID: ${user.uid}`);
-                    debugText.push(`User Email: ${user.email}`);
-                    debugText.push(`Display Name: ${user.displayName || 'Not set'}`);
-                }
-                
-                // Check local storage data
-                debugText.push('\nLocal Storage Data:');
-                debugText.push(`- benchPress: ${localStorage.getItem('benchPress') || 'Not set'}`);
-                debugText.push(`- fortyYardDash: ${localStorage.getItem('fortyYardDash') || 'Not set'}`);
-                debugText.push(`- verticalJump: ${localStorage.getItem('verticalJump') || 'Not set'}`);
-                debugText.push(`- broadJump: ${localStorage.getItem('broadJump') || 'Not set'}`);
-                debugText.push(`- coneDrill: ${localStorage.getItem('coneDrill') || 'Not set'}`);
-                debugText.push(`- shuttleRun: ${localStorage.getItem('shuttleRun') || 'Not set'}`);
-                
-                // Form data
-                debugText.push('\nCurrent Form Values:');
-                debugText.push(`- Height: ${document.getElementById('height').value || 'Not set'}`);
-                debugText.push(`- Weight: ${document.getElementById('weight').value || 'Not set'}`);
-                
-                // Display value fields
-                debugText.push('\nCurrent Display Values:');
-                debugText.push(`- Player: ${document.getElementById('player-name').textContent || 'Not set'}`);
-                debugText.push(`- Forty: ${document.getElementById('forty-value').textContent || 'Not set'}`);
-                debugText.push(`- Vertical: ${document.getElementById('vertical-value').textContent || 'Not set'}`);
-                debugText.push(`- Bench: ${document.getElementById('bench-value').textContent || 'Not set'}`);
-                debugText.push(`- Broad: ${document.getElementById('broad-value').textContent || 'Not set'}`);
-                debugText.push(`- Cone: ${document.getElementById('cone-value').textContent || 'Not set'}`);
-                debugText.push(`- Shuttle: ${document.getElementById('shuttle-value').textContent || 'Not set'}`);
-                
-                debugInfo.textContent = debugText.join('\n');
-            }
             
             // Add elements to container
             container.appendChild(btn);

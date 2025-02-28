@@ -186,31 +186,95 @@
     <script src="ras.js"></script>
     <script src="ras-data-fix.js"></script>
     <script>
-        // Load user data using all available methods when the page loads
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("RAS page loaded, attempting to load user data from all sources");
-            
-            // Wait for Firebase to initialize
-            setTimeout(function() {
-                // Try loading from games.combine first
-                if (window.loadFromNestedCombineData) {
+            // Initialize the UI first
+            if (typeof setupExtraFeatures === 'function') {
+                console.log("Setting up extra features...");
+                setupExtraFeatures();
+            } else {
+                console.log("setupExtraFeatures not found, will try to add debug UI another way...");
+                
+                // Fallback debug UI
+                const container = document.createElement('div');
+                container.style.margin = '15px';
+                
+                const btn = document.createElement('button');
+                btn.textContent = 'Refresh User Data';
+                btn.style.padding = '10px';
+                btn.addEventListener('click', function() {
+                    console.log("Manually refreshing data...");
+                    
+                    // Try all methods in sequence
+                    setTimeout(function() {
+                        window.loadFromNestedCombineData();
+                    }, 0);
+                    
+                    setTimeout(function() {
+                        window.enhancedGetUserData();
+                    }, 500);
+                    
+                    setTimeout(function() {
+                        window.inspectAllFirestoreData();
+                    }, 1000);
+                });
+                
+                container.appendChild(btn);
+                document.body.insertBefore(container, document.body.firstChild);
+            }
+        
+            // Wait for Firebase to be ready before loading data
+            const loadAllData = function() {
+                console.log("Starting data load sequence...");
+                
+                // Try nested structure first
+                if (typeof window.loadFromNestedCombineData === 'function') {
+                    console.log("Trying to load from nested data structure...");
                     window.loadFromNestedCombineData();
                 }
                 
-                // Then try enhanced method
+                // After a delay, try enhanced loader
                 setTimeout(function() {
-                    if (window.enhancedGetUserData) {
+                    if (typeof window.enhancedGetUserData === 'function') {
+                        console.log("Trying enhanced user data loader...");
                         window.enhancedGetUserData();
                     }
-                    
-                    // Finally try fallback
-                    setTimeout(function() {
-                        if (window.inspectAllFirestoreData) {
-                            window.inspectAllFirestoreData();
+                }, 1000);
+                
+                // After another delay, try fallback method
+                setTimeout(function() {
+                    if (typeof window.inspectAllFirestoreData === 'function') {
+                        console.log("Trying fallback data inspector...");
+                        window.inspectAllFirestoreData();
+                    }
+                }, 2000);
+            };
+            
+            // Check if we already have Firebase
+            if (typeof firebase !== 'undefined' && firebase.auth) {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        console.log("User already authenticated, loading data...");
+                        loadAllData();
+                    } else {
+                        console.log("User not authenticated, will wait for login");
+                    }
+                });
+            } else {
+                // Wait a bit longer for Firebase to initialize
+                console.log("Firebase not yet available, will wait...");
+                setTimeout(function() {
+                    if (typeof firebase !== 'undefined' && firebase.auth) {
+                        console.log("Firebase now available, checking auth...");
+                        const user = firebase.auth().currentUser;
+                        if (user) {
+                            console.log("User is authenticated, loading data...");
+                            loadAllData();
                         }
-                    }, 500);
-                }, 500);
-            }, 1000);
+                    } else {
+                        console.log("Firebase still not available after delay");
+                    }
+                }, 3000);
+            }
         });
     </script>
     
