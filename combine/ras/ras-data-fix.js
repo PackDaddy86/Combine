@@ -766,25 +766,29 @@ document.addEventListener('DOMContentLoaded', function() {
         // First sync display values to form inputs
         window.syncDisplayWithFormInputs();
         
-        // Force update calculations
-        if (typeof fixAllScores === 'function') {
-            console.log("Running fixAllScores");
-            fixAllScores();
+        // Ensure we have the required functions
+        if (typeof fixAllScores !== 'function' || 
+            typeof calculateRASScores !== 'function') {
+            console.error("Required calculation functions not found");
+            return;
         }
         
-        if (typeof calculateRASScores === 'function') {
-            console.log("Running calculateRASScores");
-            calculateRASScores();
-        }
+        // The sequence matters - we need to fix inputs first
+        fixAllScores();
         
+        // Then do all calculations
+        calculateRASScores();
+        
+        // Update all grades if available
         if (typeof updateAllGrades === 'function') {
-            console.log("Running updateAllGrades");
             updateAllGrades();
         }
         
+        // Update composite scores
         if (typeof calculateAndUpdateCompositeScores === 'function') {
-            console.log("Running calculateAndUpdateCompositeScores");
             calculateAndUpdateCompositeScores();
+        } else if (typeof calculateCompositeScores === 'function') {
+            calculateCompositeScores();
         }
         
         // Fallback if we have a custom function
@@ -1705,7 +1709,7 @@ function updateScoreElementDirect(element, score) {
     debugLog(`Updated ${element.id} element to: ${formattedScore}`, '#00ffff');
 }
 
-// Calculate composite scores
+// Update our composite score calculation to include height and weight
 function calculateCompositeScoresDirect() {
     try {
         // Get all scores
@@ -1715,6 +1719,24 @@ function calculateCompositeScoresDirect() {
         const benchScore = getScoreValue('bench-score');
         const coneScore = getScoreValue('cone-score');
         const shuttleScore = getScoreValue('shuttle-score');
+        
+        // Get height and weight values
+        const heightInput = document.getElementById('height');
+        const weightInput = document.getElementById('weight');
+        
+        // Calculate height and weight scores
+        let heightScore = 0;
+        let weightScore = 0;
+        
+        if (heightInput && heightInput.value) {
+            heightScore = calculateHeightScore(heightInput.value);
+            debugLog(`Height input value: ${heightInput.value}, score: ${heightScore}`, '#00ff00');
+        }
+        
+        if (weightInput && weightInput.value) {
+            weightScore = calculateWeightScore(weightInput.value);
+            debugLog(`Weight input value: ${weightInput.value}, score: ${weightScore}`, '#00ff00');
+        }
         
         // Calculate composite scores
         // Speed (40 only for now)
@@ -1732,8 +1754,18 @@ function calculateCompositeScoresDirect() {
         const agilityTotal = agilityScores.length > 0 ? 
             agilityScores.reduce((sum, score) => sum + score, 0) / agilityScores.length : 0;
         
-        // Total (all scores)
-        const allScores = [fortyScore, verticalScore, broadScore, benchScore, coneScore, shuttleScore].filter(score => !isNaN(score));
+        // Size (height, weight)
+        const sizeScores = [heightScore, weightScore].filter(score => !isNaN(score));
+        const sizeTotal = sizeScores.length > 0 ? 
+            sizeScores.reduce((sum, score) => sum + score, 0) / sizeScores.length : 0;
+        
+        // Total (all scores, including height and weight)
+        const allScores = [
+            fortyScore, verticalScore, broadScore, 
+            benchScore, coneScore, shuttleScore,
+            heightScore, weightScore
+        ].filter(score => !isNaN(score));
+        
         const totalScore = allScores.length > 0 ? 
             allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
         
@@ -1743,20 +1775,22 @@ function calculateCompositeScoresDirect() {
         updateCompositeElement('agility-score', agilityTotal);
         updateCompositeElement('total-score', totalScore);
         
-        // Update RAS grade
-        const rasGrade = calculateRASGrade(totalScore);
-        const rasElement = document.getElementById('composite-score');
-        if (rasElement) {
-            rasElement.textContent = rasGrade;
-            rasElement.style.fontWeight = 'bold';
-            rasElement.style.fontSize = '24px';
+        // Also update the size score if that element exists
+        const sizeScoreElement = document.getElementById('size-score');
+        if (sizeScoreElement) {
+            updateCompositeElement('size-score', sizeTotal);
+        } else {
+            debugLog('Size score element not found, size score: ' + sizeTotal.toFixed(2), '#ffff00');
         }
+        
+        // Update the main RAS score and grade
+        updateTopRASDisplay(totalScore);
         
         debugLog(`Speed score: ${speedTotal.toFixed(2)}`, '#00ff00');
         debugLog(`Explosive score: ${explosiveTotal.toFixed(2)}`, '#00ff00');
         debugLog(`Agility score: ${agilityTotal.toFixed(2)}`, '#00ff00');
+        debugLog(`Size score: ${sizeTotal.toFixed(2)}`, '#00ff00');
         debugLog(`Total score: ${totalScore.toFixed(2)}`, '#00ff00');
-        debugLog(`RAS Grade: ${rasGrade}`, '#00ff00');
     } catch (error) {
         debugLog(`Error calculating composite scores: ${error.message}`, '#ff0000');
     }
@@ -1899,153 +1933,63 @@ function calculateWeightScore(weight) {
 
 // Function to create or update the RAS score display at the top
 function updateTopRASDisplay(score) {
-    debugLog(`Updating top RAS display with score: ${score}`, '#00ffff');
+    debugLog(`Updating RAS display with score: ${score}`, '#00ffff');
     
-    // Find the logo-left element which contains "RAS"
-    const logoLeft = document.querySelector('.logo-left');
-    if (!logoLeft) {
-        debugLog('Could not find .logo-left element to add RAS score', '#ff0000');
+    // Find the existing RAS value and grade elements
+    const rasValueElement = document.getElementById('overall-ras');
+    const rasGradeElement = document.getElementById('overall-ras-grade');
+    
+    if (!rasValueElement) {
+        debugLog('Could not find #overall-ras element to update RAS score', '#ff0000');
         return;
     }
     
-    // Check if we already have a RAS score element
-    let rasScoreElement = document.getElementById('top-ras-score');
-    if (!rasScoreElement) {
-        // Create the score element if it doesn't exist
-        rasScoreElement = document.createElement('div');
-        rasScoreElement.id = 'top-ras-score';
-        rasScoreElement.style.display = 'inline-block';
-        rasScoreElement.style.marginLeft = '10px';
-        rasScoreElement.style.fontWeight = 'bold';
-        rasScoreElement.style.fontSize = '24px';
-        rasScoreElement.style.padding = '3px 6px';
-        rasScoreElement.style.borderRadius = '4px';
-        
-        // Insert after the logo-left element
-        logoLeft.insertAdjacentElement('afterend', rasScoreElement);
-    }
+    // Update the RAS value
+    rasValueElement.textContent = score.toFixed(2);
     
-    // Update the score and styling
-    rasScoreElement.textContent = score.toFixed(2);
-    
-    // Set color based on score
-    let bgColor, textColor;
-    if (score < 4) {
-        bgColor = "#ff6b6b";
-        textColor = "white";
-    } else if (score < 5) {
-        bgColor = "#ffa06b";
-        textColor = "white";
-    } else if (score < 7) {
-        bgColor = "#ffc56b";
-        textColor = "black";
-    } else if (score < 9) {
-        bgColor = "#6bd46b";
-        textColor = "white";
-    } else {
-        bgColor = "#53c2f0";
-        textColor = "white";
-    }
-    
-    rasScoreElement.style.backgroundColor = bgColor;
-    rasScoreElement.style.color = textColor;
-}
-
-// Update our composite score calculation to include height and weight
-function calculateCompositeScoresDirect() {
-    try {
-        // Get all scores
-        const fortyScore = getScoreValue('forty-score');
-        const verticalScore = getScoreValue('vertical-score');
-        const broadScore = getScoreValue('broad-score');
-        const benchScore = getScoreValue('bench-score');
-        const coneScore = getScoreValue('cone-score');
-        const shuttleScore = getScoreValue('shuttle-score');
+    // Update the RAS grade if that element exists
+    if (rasGradeElement) {
+        const rasGrade = calculateRASGrade(score);
+        rasGradeElement.textContent = rasGrade;
         
-        // Get height and weight values
-        const heightInput = document.getElementById('height');
-        const weightInput = document.getElementById('weight');
-        
-        // Calculate height and weight scores
-        let heightScore = 0;
-        let weightScore = 0;
-        
-        if (heightInput && heightInput.value) {
-            heightScore = calculateHeightScore(heightInput.value);
-            debugLog(`Height input value: ${heightInput.value}, score: ${heightScore}`, '#00ff00');
-        }
-        
-        if (weightInput && weightInput.value) {
-            weightScore = calculateWeightScore(weightInput.value);
-            debugLog(`Weight input value: ${weightInput.value}, score: ${weightScore}`, '#00ff00');
-        }
-        
-        // Calculate composite scores
-        // Speed (40 only for now)
-        const speedScores = [fortyScore].filter(score => !isNaN(score));
-        const speedTotal = speedScores.length > 0 ? 
-            speedScores.reduce((sum, score) => sum + score, 0) / speedScores.length : 0;
-        
-        // Explosion (vertical, broad, bench)
-        const explosiveScores = [verticalScore, broadScore, benchScore].filter(score => !isNaN(score));
-        const explosiveTotal = explosiveScores.length > 0 ? 
-            explosiveScores.reduce((sum, score) => sum + score, 0) / explosiveScores.length : 0;
-        
-        // Agility (cone, shuttle)
-        const agilityScores = [coneScore, shuttleScore].filter(score => !isNaN(score));
-        const agilityTotal = agilityScores.length > 0 ? 
-            agilityScores.reduce((sum, score) => sum + score, 0) / agilityScores.length : 0;
-        
-        // Size (height, weight)
-        const sizeScores = [heightScore, weightScore].filter(score => !isNaN(score));
-        const sizeTotal = sizeScores.length > 0 ? 
-            sizeScores.reduce((sum, score) => sum + score, 0) / sizeScores.length : 0;
-        
-        // Total (all scores, including height and weight)
-        const allScores = [
-            fortyScore, verticalScore, broadScore, 
-            benchScore, coneScore, shuttleScore,
-            heightScore, weightScore
-        ].filter(score => !isNaN(score));
-        
-        const totalScore = allScores.length > 0 ? 
-            allScores.reduce((sum, score) => sum + score, 0) / allScores.length : 0;
-        
-        // Update composite score displays
-        updateCompositeElement('speed-score', speedTotal);
-        updateCompositeElement('explosive-score', explosiveTotal);
-        updateCompositeElement('agility-score', agilityTotal);
-        updateCompositeElement('total-score', totalScore);
-        
-        // Also update the size score if that element exists
-        const sizeScoreElement = document.getElementById('size-score');
-        if (sizeScoreElement) {
-            updateCompositeElement('size-score', sizeTotal);
+        // Set color based on grade
+        let gradeColor;
+        if (rasGrade === "A+" || rasGrade === "A" || rasGrade === "A-") {
+            gradeColor = "#53c2f0"; // Blue for A's
+        } else if (rasGrade === "B+" || rasGrade === "B" || rasGrade === "B-") {
+            gradeColor = "#6bd46b"; // Green for B's
+        } else if (rasGrade === "C+" || rasGrade === "C" || rasGrade === "C-") {
+            gradeColor = "#ffc56b"; // Yellow for C's
+        } else if (rasGrade === "D+" || rasGrade === "D" || rasGrade === "D-") {
+            gradeColor = "#ffa06b"; // Orange for D's
         } else {
-            debugLog('Size score element not found, size score: ' + sizeTotal.toFixed(2), '#ffff00');
+            gradeColor = "#ff6b6b"; // Red for F's
         }
         
-        // Update RAS grade
-        const rasGrade = calculateRASGrade(totalScore);
-        const rasElement = document.getElementById('composite-score');
-        if (rasElement) {
-            rasElement.textContent = rasGrade;
-            rasElement.style.fontWeight = 'bold';
-            rasElement.style.fontSize = '24px';
-        }
-        
-        // Update the RAS score at the top of the page
-        updateTopRASDisplay(totalScore);
-        
-        debugLog(`Speed score: ${speedTotal.toFixed(2)}`, '#00ff00');
-        debugLog(`Explosive score: ${explosiveTotal.toFixed(2)}`, '#00ff00');
-        debugLog(`Agility score: ${agilityTotal.toFixed(2)}`, '#00ff00');
-        debugLog(`Size score: ${sizeTotal.toFixed(2)}`, '#00ff00');
-        debugLog(`Total score: ${totalScore.toFixed(2)}`, '#00ff00');
-        debugLog(`RAS Grade: ${rasGrade}`, '#00ff00');
-    } catch (error) {
-        debugLog(`Error calculating composite scores: ${error.message}`, '#ff0000');
+        rasGradeElement.style.color = gradeColor;
     }
+    
+    // Set the container background color based on score to make it visually stand out
+    const rasContainer = rasValueElement.closest('.ras-score-container');
+    if (rasContainer) {
+        // Set color based on score
+        let bgColor;
+        if (score < 4) {
+            bgColor = "rgba(255, 107, 107, 0.1)"; // Light red background
+        } else if (score < 5) {
+            bgColor = "rgba(255, 160, 107, 0.1)"; // Light orange background
+        } else if (score < 7) {
+            bgColor = "rgba(255, 197, 107, 0.1)"; // Light yellow background
+        } else if (score < 9) {
+            bgColor = "rgba(107, 212, 107, 0.1)"; // Light green background
+        } else {
+            bgColor = "rgba(83, 194, 240, 0.1)"; // Light blue background
+        }
+        
+        rasContainer.style.backgroundColor = bgColor;
+    }
+    
+    debugLog(`Updated RAS value to ${score.toFixed(2)}`, '#00ff00');
 }
 
 // Make our direct calculation functions available globally
