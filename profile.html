@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - NFL Draft Grades</title>
+    <link rel="icon" href="assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <link rel="stylesheet" href="assets/css/auth.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <style>
+        .profile-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #ff9900;
+        }
+        
+        .profile-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .profile-section {
+            margin-bottom: 2rem;
+        }
+        
+        .profile-section h2 {
+            color: #ff9900;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #ff9900;
+            box-shadow: 0 0 0 2px rgba(255, 153, 0, 0.25);
+        }
+        
+        .save-button {
+            background-color: #ff9900;
+            color: #002244;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .save-button:hover {
+            background-color: #ffb340;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .stat-card {
+            background-color: rgba(1, 51, 105, 0.6);
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff9900;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+        
+        .danger-zone {
+            background-color: rgba(220, 53, 69, 0.2);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-top: 3rem;
+        }
+        
+        .danger-zone h3 {
+            color: #dc3545;
+        }
+        
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+        
+        #profile-content {
+            display: none;
+        }
+        
+        #login-message {
+            text-align: center;
+            padding: 3rem;
+        }
+        
+        .login-prompt {
+            margin-top: 1.5rem;
+        }
+        
+        .login-prompt a {
+            color: #ff9900;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .login-prompt a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Include header -->
+    <div id="header-placeholder"></div>
+    
+    <main class="container">
+        <div class="profile-container">
+            <!-- Login message shown when not logged in -->
+            <div id="login-message">
+                <h2>Please Log In</h2>
+                <p>You need to be logged in to view and edit your profile.</p>
+                <div class="login-prompt">
+                    <a href="login.html" class="auth-button">Login / Sign Up</a>
+                </div>
+            </div>
+            
+            <!-- Profile content shown when logged in -->
+            <div id="profile-content">
+                <div class="profile-header">
+                    <h1>My Profile</h1>
+                    <p id="user-email">Loading your profile...</p>
+                </div>
+                
+                <div class="profile-section">
+                    <h2>Personal Information</h2>
+                    <form id="profile-form">
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="display-name">Display Name</label>
+                            <input type="text" id="display-name" name="displayName">
+                        </div>
+                        <div class="form-group">
+                            <label for="height">Height (inches)</label>
+                            <input type="number" id="height" name="height" min="48" max="96">
+                        </div>
+                        <div class="form-group">
+                            <label for="weight">Weight (lbs)</label>
+                            <input type="number" id="weight" name="weight" min="120" max="400">
+                        </div>
+                        <button type="submit" class="save-button">Save Changes</button>
+                    </form>
+                </div>
+                
+                <div class="profile-section">
+                    <h2>Combine Statistics</h2>
+                    <div class="stats-grid" id="stats-grid">
+                        <!-- Stats will be loaded dynamically -->
+                        <div class="stat-card">
+                            <div class="stat-value" id="fortyYardDash">-</div>
+                            <div class="stat-label">40 Yard Dash (seconds)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="benchPress">-</div>
+                            <div class="stat-label">Bench Press (reps)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="verticalJump">-</div>
+                            <div class="stat-label">Vertical Jump (inches)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="broadJump">-</div>
+                            <div class="stat-label">Broad Jump (feet)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="threeCone">-</div>
+                            <div class="stat-label">3 Cone Drill (seconds)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="shuttleRun">-</div>
+                            <div class="stat-label">Shuttle Run (seconds)</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="danger-zone">
+                    <h3>Danger Zone</h3>
+                    <p>Be careful with these actions, they cannot be undone.</p>
+                    <button id="delete-account" class="delete-button">Delete My Account</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="/assets/js/firebase-config.js"></script>
+    <script src="/assets/js/user-data.js"></script>
+    
+    <!-- Include.js for header -->
+    <script src="/assets/js/include.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize header
+            if (typeof includeHTML === 'function') {
+                includeHTML();
+            }
+            
+            // References to DOM elements
+            const profileContent = document.getElementById('profile-content');
+            const loginMessage = document.getElementById('login-message');
+            const userEmail = document.getElementById('user-email');
+            const profileForm = document.getElementById('profile-form');
+            const usernameInput = document.getElementById('username');
+            const displayNameInput = document.getElementById('display-name');
+            const heightInput = document.getElementById('height');
+            const weightInput = document.getElementById('weight');
+            const deleteAccountBtn = document.getElementById('delete-account');
+            
+            // Stat fields
+            const fortyYardDash = document.getElementById('fortyYardDash');
+            const benchPress = document.getElementById('benchPress');
+            const verticalJump = document.getElementById('verticalJump');
+            const broadJump = document.getElementById('broadJump');
+            const threeCone = document.getElementById('threeCone');
+            const shuttleRun = document.getElementById('shuttleRun');
+            
+            // Check if the user is logged in
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is signed in
+                    console.log('User signed in:', user.email);
+                    
+                    // Show profile content and hide login message
+                    profileContent.style.display = 'block';
+                    loginMessage.style.display = 'none';
+                    
+                    // Display user email
+                    userEmail.textContent = user.email || 'No email provided';
+                    
+                    // Load user data from Firestore
+                    loadUserProfile(user.uid);
+                    
+                } else {
+                    // User is not signed in
+                    console.log('No user signed in');
+                    
+                    // Show login message and hide profile content
+                    profileContent.style.display = 'none';
+                    loginMessage.style.display = 'block';
+                }
+            });
+            
+            // Load user profile data
+            function loadUserProfile(userId) {
+                const db = firebase.firestore();
+                
+                db.collection('users').doc(userId).get()
+                    .then(doc => {
+                        if (doc.exists) {
+                            const userData = doc.data();
+                            console.log('User data:', userData);
+                            
+                            // Fill form with user data
+                            usernameInput.value = userData.username || '';
+                            displayNameInput.value = userData.displayName || '';
+                            heightInput.value = userData.height || '';
+                            weightInput.value = userData.weight || '';
+                            
+                            // Fill stats
+                            fortyYardDash.textContent = userData.fortyYardDash || '-';
+                            benchPress.textContent = userData.benchPress || '-';
+                            verticalJump.textContent = userData.verticalJump || '-';
+                            broadJump.textContent = userData.broadJump || '-';
+                            threeCone.textContent = userData.threeCone || '-';
+                            shuttleRun.textContent = userData.shuttleRun || '-';
+                            
+                        } else {
+                            console.log('No user document found!');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error getting user document:', error);
+                    });
+            }
+            
+            // Handle form submission
+            profileForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const user = firebase.auth().currentUser;
+                if (!user) {
+                    alert('You must be logged in to save profile changes');
+                    return;
+                }
+                
+                const db = firebase.firestore();
+                
+                // Get form values
+                const username = usernameInput.value.trim();
+                const displayName = displayNameInput.value.trim();
+                const height = heightInput.value ? parseInt(heightInput.value) : null;
+                const weight = weightInput.value ? parseInt(weightInput.value) : null;
+                
+                // Update Firebase Auth display name
+                user.updateProfile({
+                    displayName: displayName || username
+                }).then(() => {
+                    console.log('Auth profile updated');
+                    
+                    // Update Firestore document
+                    return db.collection('users').doc(user.uid).update({
+                        username: username,
+                        displayName: displayName,
+                        height: height,
+                        weight: weight,
+                        lastUpdate: new Date()
+                    });
+                }).then(() => {
+                    alert('Profile saved successfully!');
+                }).catch(error => {
+                    console.error('Error updating profile:', error);
+                    alert('Error saving profile: ' + error.message);
+                });
+            });
+            
+            // Handle account deletion
+            deleteAccountBtn.addEventListener('click', function() {
+                if (confirm('Are you sure you want to delete your account? This cannot be undone!')) {
+                    const user = firebase.auth().currentUser;
+                    if (!user) {
+                        alert('You must be logged in to delete your account');
+                        return;
+                    }
+                    
+                    const db = firebase.firestore();
+                    
+                    // Delete Firestore document first
+                    db.collection('users').doc(user.uid).delete()
+                        .then(() => {
+                            console.log('Firestore user document deleted');
+                            
+                            // Then delete the user
+                            return user.delete();
+                        })
+                        .then(() => {
+                            alert('Your account has been deleted.');
+                            window.location.href = '/index.html';
+                        })
+                        .catch(error => {
+                            console.error('Error deleting account:', error);
+                            
+                            if (error.code === 'auth/requires-recent-login') {
+                                alert('For security reasons, you need to log in again before deleting your account. Please log out and log back in, then try again.');
+                            } else {
+                                alert('Error deleting account: ' + error.message);
+                            }
+                        });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

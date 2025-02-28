@@ -35,6 +35,7 @@ function initNavigation() {
     if (typeof firebase !== 'undefined' && firebase.auth) {
         firebase.auth().onAuthStateChanged(user => {
             const authLink = document.getElementById('auth-link');
+            const profileLink = document.getElementById('profile-link');
             
             if (authLink) {
                 if (user) {
@@ -50,14 +51,24 @@ function initNavigation() {
                             console.error('Sign out error:', error);
                         });
                     });
+                    
+                    // Show profile link when user is signed in
+                    if (profileLink) {
+                        profileLink.style.display = 'block';
+                    }
                 } else {
-                    // User is signed out
+                    // User is not signed in
                     authLink.textContent = 'Login / Sign Up';
                     authLink.href = '/login.html';
                     
-                    // Remove any click listeners
+                    // Remove any previous click listeners by cloning the node
                     const newAuthLink = authLink.cloneNode(true);
                     authLink.parentNode.replaceChild(newAuthLink, authLink);
+                    
+                    // Hide profile link when user is not signed in
+                    if (profileLink) {
+                        profileLink.style.display = 'none';
+                    }
                 }
             }
         });

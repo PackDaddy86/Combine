@@ -13,6 +13,7 @@
             <li><a href="/combine/">Combine</a></li>
             <li><a href="/combine/leaderboard/">Leaderboard</a></li>
             <li><a href="/combine/ras/" id="my-ras-link">My RAS</a></li>
+            <li><a href="/profile.html" id="profile-link" class="profile-link">My Profile</a></li>
             <li><a href="/login.html" id="auth-link" class="auth-button">Login / Sign Up</a></li>
         </ul>
     </div>
@@ -129,37 +130,48 @@
         transform: scale(1.1);
     }
 
+    /* Profile link styling */
+    .profile-link {
+        color: #ff9900;
+        font-weight: 500;
+        transition: color 0.3s;
+    }
+    
+    .profile-link:hover {
+        color: #ffb340;
+    }
+
     /* Responsive design */
     @media (max-width: 768px) {
         .mobile-menu-btn {
             display: block;
         }
-
+        
         .nav-links {
-            display: none;
             position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to bottom, #013369, #002244);
             flex-direction: column;
             width: 100%;
+            top: 70px;
+            left: 0;
+            background: #013369;
+            display: none;
+            padding: 10px 0;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
-
+        
         .nav-links.show {
             display: flex;
         }
-
+        
         .nav-links li {
-            width: 100%;
+            margin: 0;
             text-align: center;
+            width: 100%;
         }
-
+        
         .nav-links a {
-            padding: 1.2rem 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            padding: 15px 20px;
         }
         
         .nav-links a:hover {
