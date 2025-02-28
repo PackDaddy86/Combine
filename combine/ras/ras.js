@@ -319,7 +319,7 @@ function calculateRASScores() {
         const verticalHeight = verticalValue === "--" || verticalValue === "" ? null : parseFloat(verticalValue);
         const benchReps = benchValue === "--" || benchValue === "" ? null : parseFloat(benchValue);
         const coneTime = coneValue === "--" || coneValue === "" ? null : parseFloat(coneValue);
-        const shuttleTime = shuttleValue === "--" || shuttleValue === "" ? null : parseFloat(shuttleValue);
+        const shuttleTime = shuttleValue === "--" || shuttleValue === "" ? null : parseFloat(shuttleTime);
         
         console.log('Parsed Forty Time:', fortyTime); // Debug - Log the parsed 40 time
         
@@ -844,78 +844,134 @@ function updateOverallRAS(score) {
 
 // Get user data from Firebase
 function getUserData(userId) {
-    console.log('Getting user data for userId:', userId);
-    const db = firebase.firestore();
+    if (!userId) return;
     
-    db.collection('users').doc(userId).get()
-        .then((doc) => {
-            if (doc.exists) {
-                const userData = doc.data();
-                console.log('User data retrieved:', userData);
+    console.log('Loading user data from Firebase for user:', userId);
+    
+    const db = firebase.firestore();
+    db.collection('users').doc(userId).get().then(doc => {
+        if (doc.exists) {
+            const userData = doc.data();
+            console.log('Firebase user data loaded:', userData);
+            
+            // Update player info if available
+            if (userData.name) {
+                const position = userData.position || 'NFL PROSPECT';
+                const school = userData.school || 'NFL';
+                const year = userData.year || '2025';
+                updatePlayerName(userData.name, position, school, year);
                 
-                // Set player name
-                const displayName = userData.displayName || firebase.auth().currentUser.email || 'Athlete';
-                
-                // Set player info
-                const playerInfo = {
-                    name: displayName,
-                    position: 'NFL PROSPECT',
-                    school: userData.school || 'NFL',
-                    year: new Date().getFullYear()
-                };
-                
-                // Save to localStorage
-                localStorage.setItem('playerInfo', JSON.stringify(playerInfo));
-                
-                // Update the display
-                updatePlayerInfoDisplay();
-                
-                // First check if we have games.combine data
-                if (userData.games && userData.games.combine) {
-                    console.log('Found games.combine data:', userData.games.combine);
-                    const combineData = userData.games.combine;
-                    
-                    // Map combine data to RAS inputs
-                    if (combineData.fortyYardDash) document.getElementById('forty-value').textContent = combineData.fortyYardDash;
-                    if (combineData.verticalJump) document.getElementById('vertical-value').textContent = combineData.verticalJump;
-                    if (combineData.benchPress) document.getElementById('bench-value').textContent = combineData.benchPress;
-                    if (combineData.broadJump) document.getElementById('broad-value').textContent = combineData.broadJump;
-                    if (combineData.coneDrill) document.getElementById('cone-value').textContent = combineData.coneDrill;
-                    if (combineData.shuttleRun) document.getElementById('shuttle-value').textContent = combineData.shuttleRun;
+                // Update form values too
+                document.getElementById('name').value = userData.name;
+                if (userData.position) document.getElementById('position').value = userData.position;
+                if (userData.school) document.getElementById('school').value = userData.school;
+                if (userData.year) document.getElementById('year').value = userData.year;
+            }
+            
+            // Load combine data from Firebase
+            let dataChanged = false;
+            
+            // Load height and weight
+            if (userData.height) {
+                document.getElementById('height-value').textContent = userData.height;
+                document.getElementById('height').value = userData.height;
+                dataChanged = true;
+            }
+            
+            if (userData.weight) {
+                document.getElementById('weight-value').textContent = userData.weight;
+                document.getElementById('weight').value = userData.weight;
+                dataChanged = true;
+            }
+            
+            // Load event data
+            if (userData.fortyYardDash) {
+                document.getElementById('forty-value').textContent = userData.fortyYardDash;
+                // Calculate splits from forty time
+                document.getElementById('twenty-value').textContent = estimateSplitTime(userData.fortyYardDash, 20);
+                document.getElementById('ten-value').textContent = estimateSplitTime(userData.fortyYardDash, 10);
+                dataChanged = true;
+            }
+            
+            if (userData.verticalJump) {
+                document.getElementById('vertical-value').textContent = userData.verticalJump;
+                dataChanged = true;
+            }
+            
+            if (userData.benchPress) {
+                document.getElementById('bench-value').textContent = userData.benchPress;
+                dataChanged = true;
+            }
+            
+            if (userData.broadJump) {
+                document.getElementById('broad-value').textContent = formatBroadJump(userData.broadJump);
+                dataChanged = true;
+            }
+            
+            if (userData.coneDrill) {
+                document.getElementById('cone-value').textContent = userData.coneDrill;
+                dataChanged = true;
+            }
+            
+            if (userData.shuttleRun) {
+                document.getElementById('shuttle-value').textContent = userData.shuttleRun;
+                dataChanged = true;
+            }
+            
+            // Use combined saved results if individual fields aren't found
+            const combineResults = userData.combineResults;
+            if (combineResults) {
+                if (!userData.fortyYardDash && combineResults.fortyYardDash) {
+                    document.getElementById('forty-value').textContent = combineResults.fortyYardDash;
+                    // Calculate splits from forty time
+                    document.getElementById('twenty-value').textContent = estimateSplitTime(combineResults.fortyYardDash, 20);
+                    document.getElementById('ten-value').textContent = estimateSplitTime(combineResults.fortyYardDash, 10);
+                    dataChanged = true;
                 }
-                // Next check if we have individual event data
-                else {
-                    console.log('Checking individual event data');
-                    
-                    // Map individual event data to RAS inputs
-                    if (userData.fortyYardDash) document.getElementById('forty-value').textContent = userData.fortyYardDash;
-                    if (userData.verticalJump) document.getElementById('vertical-value').textContent = userData.verticalJump;
-                    if (userData.benchPress) document.getElementById('bench-value').textContent = userData.benchPress;
-                    if (userData.broadJump) document.getElementById('broad-value').textContent = userData.broadJump;
-                    if (userData.coneDrill) document.getElementById('cone-value').textContent = userData.coneDrill;
-                    if (userData.shuttleRun) document.getElementById('shuttle-value').textContent = userData.shuttleRun;
+                
+                if (!userData.verticalJump && combineResults.verticalJump) {
+                    document.getElementById('vertical-value').textContent = combineResults.verticalJump;
+                    dataChanged = true;
                 }
                 
-                // Finally, calculate the RAS scores
+                if (!userData.benchPress && combineResults.benchPress) {
+                    document.getElementById('bench-value').textContent = combineResults.benchPress;
+                    dataChanged = true;
+                }
+                
+                if (!userData.broadJump && combineResults.broadJump) {
+                    document.getElementById('broad-value').textContent = formatBroadJump(combineResults.broadJump);
+                    dataChanged = true;
+                }
+                
+                if (!userData.coneDrill && combineResults.coneDrill) {
+                    document.getElementById('cone-value').textContent = combineResults.coneDrill;
+                    dataChanged = true;
+                }
+                
+                if (!userData.shuttleRun && combineResults.shuttleRun) {
+                    document.getElementById('shuttle-value').textContent = combineResults.shuttleRun;
+                    dataChanged = true;
+                }
+            }
+            
+            if (dataChanged) {
+                // Recalculate scores with the new data
                 calculateRASScores();
                 
-                // Also load any saved RAS results
-                if (userData.games && userData.games.rasResults) {
-                    console.log('Loading saved RAS results from Firestore:', userData.games.rasResults);
-                    localStorage.setItem('rasResults', JSON.stringify(userData.games.rasResults));
-                    updateSavedResultsList();
+                // Fix the forty score since it might not calculate correctly
+                if (userData.fortyYardDash || (combineResults && combineResults.fortyYardDash)) {
+                    fixFortyScore();
                 }
-            } else {
-                // User exists but has no data yet
-                console.log('User document exists but has no data');
-                setDefaultValues();
-                document.getElementById('player-name').innerText = "COMPLETE COMBINE EVENTS TO SEE YOUR RAS";
             }
-        })
-        .catch((error) => {
-            console.error("Error getting user data:", error);
-            setDefaultValues();
-        });
+        } else {
+            console.log('No Firebase data found for user, using local storage');
+            loadFromLocalStorage();
+        }
+    }).catch(error => {
+        console.error('Error getting user data:', error);
+        loadFromLocalStorage();
+    });
 }
 
 // Update all displayed values from form inputs
