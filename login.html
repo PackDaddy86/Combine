@@ -93,6 +93,10 @@
                         <input type="email" id="signup-email" required>
                     </div>
                     <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" required>
+                    </div>
+                    <div class="form-group">
                         <label for="signup-password">Password</label>
                         <input type="password" id="signup-password" required>
                     </div>
@@ -169,6 +173,7 @@
             document.getElementById('signup-form').addEventListener('submit', e => {
                 e.preventDefault();
                 const email = document.getElementById('signup-email').value;
+                const username = document.getElementById('signup-username').value;
                 const password = document.getElementById('signup-password').value;
                 const confirm = document.getElementById('signup-confirm').value;
                 
@@ -182,6 +187,7 @@
                         // Create a user profile in Firestore
                         return db.collection('users').doc(userCredential.user.uid).set({
                             email: email,
+                            username: username,
                             createdAt: new Date(),
                             games: {}
                         });
