@@ -973,7 +973,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Step 1: Try loading from nested structure
                 window.loadFromNestedCombineData();
                 
-                // Step 2: Try the enhanced general loader after a small delay
+                // Step 2: After a delay, try the enhanced loader
                 setTimeout(() => {
                     window.enhancedGetUserData();
                     
@@ -1005,7 +1005,7 @@ document.addEventListener('DOMContentLoaded', function() {
             container.appendChild(toggleDebugBtn);
             container.appendChild(debugInfo);
             
-            // Add container to the player form
+            // Add to the page
             const playerForm = document.querySelector('.player-form');
             if (playerForm) {
                 playerForm.prepend(container);
@@ -1148,3 +1148,255 @@ window.forceRecalculateAllScores = function() {
     
     console.log("Recalculation complete");
 };
+
+// Create a direct debug element on the page
+function createVisibleDebugger() {
+    // Create container if it doesn't exist
+    if (!document.getElementById('visible-debug-container')) {
+        const container = document.createElement('div');
+        container.id = 'visible-debug-container';
+        container.style.position = 'fixed';
+        container.style.top = '10px';
+        container.style.left = '10px';
+        container.style.width = '80%';
+        container.style.maxHeight = '80vh';
+        container.style.overflowY = 'auto';
+        container.style.backgroundColor = 'rgba(0,0,0,0.85)';
+        container.style.color = '#00ff00';
+        container.style.fontFamily = 'monospace';
+        container.style.fontSize = '12px';
+        container.style.padding = '10px';
+        container.style.border = '1px solid #00ff00';
+        container.style.zIndex = '9999';
+        container.style.display = 'none';
+        document.body.appendChild(container);
+        
+        // Add a toggle button
+        const toggleBtn = document.createElement('button');
+        toggleBtn.textContent = 'Toggle Debug';
+        toggleBtn.style.position = 'fixed';
+        toggleBtn.style.top = '10px';
+        toggleBtn.style.right = '10px';
+        toggleBtn.style.zIndex = '10000';
+        toggleBtn.style.backgroundColor = '#ff0000';
+        toggleBtn.style.color = 'white';
+        toggleBtn.style.padding = '5px 10px';
+        toggleBtn.style.border = 'none';
+        toggleBtn.style.borderRadius = '4px';
+        toggleBtn.addEventListener('click', () => {
+            const container = document.getElementById('visible-debug-container');
+            if (container) {
+                container.style.display = container.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+        document.body.appendChild(toggleBtn);
+    }
+    
+    return document.getElementById('visible-debug-container');
+}
+
+// Function to log to visible debugger
+function debugLog(message, color = '#00ff00') {
+    const container = createVisibleDebugger();
+    const line = document.createElement('div');
+    line.style.marginBottom = '5px';
+    line.style.color = color;
+    line.textContent = message;
+    container.appendChild(line);
+    
+    // Keep only the most recent 100 lines
+    while (container.children.length > 100) {
+        container.removeChild(container.firstChild);
+    }
+    
+    // Auto-scroll to bottom
+    container.scrollTop = container.scrollHeight;
+}
+
+// Function to directly extract all available calculation functions
+function extractAndDisplayCalculationFunctions() {
+    debugLog('-- CHECKING AVAILABLE CALCULATION FUNCTIONS --', '#ffff00');
+    
+    // Look for key calculation functions
+    const functionNames = [
+        'calculateSpeedScore', 
+        'calculateJumpScore', 
+        'calculateStrengthScore', 
+        'calculateAgilityScore',
+        'updateScoreDisplay',
+        'calculateRASScores',
+        'updateAllGrades',
+        'fixAllScores'
+    ];
+    
+    functionNames.forEach(funcName => {
+        if (typeof window[funcName] === 'function') {
+            debugLog(`✓ Function ${funcName} is available`, '#00ff00');
+            
+            // For critical functions, show their source code
+            if (['calculateSpeedScore', 'updateScoreDisplay'].includes(funcName)) {
+                const funcStr = window[funcName].toString().substring(0, 100) + '...';
+                debugLog(`Function code: ${funcStr}`, '#aaaaaa');
+            }
+        } else {
+            debugLog(`✗ Function ${funcName} is NOT AVAILABLE`, '#ff0000');
+        }
+    });
+}
+
+// Function to verify DOM elements
+function verifyDOMElements() {
+    debugLog('-- CHECKING DOM ELEMENTS --', '#ffff00');
+    
+    // Check display elements
+    const displayElements = [
+        'forty-value', 'vertical-value', 'broad-value', 
+        'bench-value', 'cone-value', 'shuttle-value'
+    ];
+    
+    displayElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            debugLog(`✓ Element ${id} exists with value: "${el.textContent}"`, '#00ff00');
+        } else {
+            debugLog(`✗ Element ${id} NOT FOUND`, '#ff0000');
+        }
+    });
+    
+    // Check score elements
+    const scoreElements = [
+        'forty-score', 'vertical-score', 'broad-score', 
+        'bench-score', 'cone-score', 'shuttle-score'
+    ];
+    
+    scoreElements.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            debugLog(`✓ Score element ${id} exists with value: "${el.textContent}"`, '#00ff00');
+        } else {
+            debugLog(`✗ Score element ${id} NOT FOUND`, '#ff0000');
+        }
+    });
+}
+
+// Manual direct calculation test that doesn't rely on existing functions
+function directCalculationTest() {
+    debugLog('-- DIRECT CALCULATION TEST --', '#ffff00');
+    
+    try {
+        // Get raw values
+        const fortyEl = document.getElementById('forty-value');
+        const fortyValue = fortyEl ? parseFloat(fortyEl.textContent) : null;
+        
+        if (fortyValue) {
+            debugLog(`Found forty time: ${fortyValue}`, '#00ff00');
+            
+            // Calculate forty score directly using our own logic
+            let fortyScore;
+            if (fortyValue <= 4.2) fortyScore = 10;
+            else if (fortyValue <= 4.3) fortyScore = 9;
+            else if (fortyValue <= 4.4) fortyScore = 8;
+            else if (fortyValue <= 4.5) fortyScore = 7;
+            else if (fortyValue <= 4.6) fortyScore = 6;
+            else if (fortyValue <= 4.7) fortyScore = 5;
+            else if (fortyValue <= 4.8) fortyScore = 3;
+            else if (fortyValue <= 4.9) fortyScore = 1;
+            else fortyScore = 0;
+            
+            debugLog(`Calculated forty score directly: ${fortyScore}`, '#ffff00');
+            
+            // Update the score element directly
+            const scoreEl = document.getElementById('forty-score');
+            if (scoreEl) {
+                scoreEl.textContent = fortyScore.toFixed(2);
+                scoreEl.style.backgroundColor = '#53c2f0';
+                scoreEl.style.color = 'white';
+                scoreEl.style.padding = '3px';
+                scoreEl.style.borderRadius = '3px';
+                debugLog(`Updated forty score element to: ${fortyScore.toFixed(2)}`, '#00ff00');
+            }
+        } else {
+            debugLog('No forty time found', '#ff0000');
+        }
+        
+        // Same for vertical
+        const verticalEl = document.getElementById('vertical-value');
+        const verticalValue = verticalEl ? parseFloat(verticalEl.textContent) : null;
+        
+        if (verticalValue) {
+            debugLog(`Found vertical jump: ${verticalValue}`, '#00ff00');
+            
+            // Calculate vertical score directly
+            let verticalScore;
+            if (verticalValue >= 40) verticalScore = 10;
+            else if (verticalValue >= 37) verticalScore = 9;
+            else if (verticalValue >= 35) verticalScore = 8;
+            else if (verticalValue >= 33) verticalScore = 7;
+            else if (verticalValue >= 30) verticalScore = 6;
+            else if (verticalValue >= 28) verticalScore = 5;
+            else if (verticalValue >= 26) verticalScore = 4;
+            else if (verticalValue >= 24) verticalScore = 3;
+            else if (verticalValue >= 22) verticalScore = 2;
+            else if (verticalValue >= 20) verticalScore = 1;
+            else verticalScore = 0;
+            
+            debugLog(`Calculated vertical score directly: ${verticalScore}`, '#ffff00');
+            
+            // Update the score element directly
+            const scoreEl = document.getElementById('vertical-score');
+            if (scoreEl) {
+                scoreEl.textContent = verticalScore.toFixed(2);
+                scoreEl.style.backgroundColor = '#53c2f0';
+                scoreEl.style.color = 'white';
+                scoreEl.style.padding = '3px';
+                scoreEl.style.borderRadius = '3px';
+                debugLog(`Updated vertical score element to: ${verticalScore.toFixed(2)}`, '#00ff00');
+            }
+        } else {
+            debugLog('No vertical jump found', '#ff0000');
+        }
+    } catch (error) {
+        debugLog(`ERROR: ${error.message}`, '#ff0000');
+    }
+}
+
+// Add a test button that uses our own direct calculation
+const addEmergencyFixButton = function() {
+    // Create button
+    const btn = document.createElement('button');
+    btn.id = 'emergency-fix-button';
+    btn.innerText = 'Emergency Fix';
+    btn.style.position = 'fixed';
+    btn.style.bottom = '60px';
+    btn.style.right = '10px';
+    btn.style.padding = '8px 12px';
+    btn.style.backgroundColor = '#FFD700';
+    btn.style.color = 'black';
+    btn.style.border = 'none';
+    btn.style.borderRadius = '4px';
+    btn.style.cursor = 'pointer';
+    btn.style.fontWeight = 'bold';
+    btn.style.zIndex = '9999';
+    
+    // Add click event
+    btn.addEventListener('click', () => {
+        const container = createVisibleDebugger();
+        container.style.display = 'block';
+        debugLog('Starting emergency fix procedure...', '#FFD700');
+        
+        // Check for available functions
+        extractAndDisplayCalculationFunctions();
+        
+        // Verify DOM elements
+        verifyDOMElements();
+        
+        // Run direct calculation
+        directCalculationTest();
+    });
+    
+    // Add to document body
+    document.body.appendChild(btn);
+};
+
+// Add the emergency fix button after a delay to ensure page is loaded
+setTimeout(addEmergencyFixButton, 2000);
