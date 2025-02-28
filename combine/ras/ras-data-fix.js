@@ -296,6 +296,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     
                     console.log("Successfully loaded user data from Firebase");
+                    
+                    // Ensure all calculations are complete
+                    updateRASCalculations();
                 } else {
                     console.log("No user data found in Firestore");
                 }
@@ -392,14 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (dataLoaded) {
                         console.log("Successfully loaded some data from games.combine structure");
                         
-                        // Update calculation
-                        if (typeof fixAllScores === 'function') {
-                            fixAllScores();
-                        }
-                        
-                        if (typeof calculateRASScores === 'function') {
-                            calculateRASScores();
-                        }
+                        // Update calculation with our enhanced method
+                        updateRASCalculations();
                         
                         return true;
                     } else {
@@ -505,18 +502,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (dataFound) {
                     console.log("Some data was found and populated in the UI!");
                     
-                    if (typeof fixAllScores === 'function') {
-                        fixAllScores();
-                    }
-                    
-                    if (typeof calculateRASScores === 'function') {
-                        calculateRASScores();
-                    }
+                    // Update calculations with our enhanced method
+                    updateRASCalculations();
                 } else {
                     console.log("No matching data found in any path");
                 }
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error("Error inspecting Firestore data:", error);
             });
     };
@@ -601,6 +593,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Step 3: Finally try the fallback method
             setTimeout(() => {
                 window.inspectAllFirestoreData();
+                
+                // Run final calculations after all loading attempts
+                setTimeout(() => {
+                    updateRASCalculations();
+                    window.forceRecalculateAllScores();
+                }, 500);
             }, 1000);
         });
         
@@ -727,6 +725,83 @@ document.addEventListener('DOMContentLoaded', function() {
         debugInfo.textContent = debugText.join('\n');
     }
     
+    // Add function to sync display values with form inputs
+    window.syncDisplayWithFormInputs = function() {
+        console.log("Syncing display values with form inputs...");
+        
+        const metricsToSync = [
+            { display: 'forty-value', input: 'forty' },
+            { display: 'twenty-value', input: 'twenty' },
+            { display: 'ten-value', input: 'ten' },
+            { display: 'vertical-value', input: 'vertical' },
+            { display: 'broad-value', input: 'broad' },
+            { display: 'bench-value', input: 'bench' },
+            { display: 'cone-value', input: 'cone' },
+            { display: 'shuttle-value', input: 'shuttle' },
+            { display: 'height-value', input: 'height' },
+            { display: 'weight-value', input: 'weight' }
+        ];
+        
+        metricsToSync.forEach(pair => {
+            const displayElement = document.getElementById(pair.display);
+            const inputElement = document.getElementById(pair.input);
+            
+            if (displayElement && inputElement) {
+                // Get the value from the display element
+                const displayValue = displayElement.textContent;
+                
+                // Only update if we have a value
+                if (displayValue && displayValue !== '0' && displayValue !== '0.00') {
+                    inputElement.value = displayValue;
+                    console.log(`Synced ${pair.input} form input with ${displayValue} from display`);
+                }
+            }
+        });
+    };
+    
+    // Helper function to ensure all grades and calculations update correctly
+    function updateRASCalculations() {
+        console.log("Triggering RAS calculations after data load...");
+        
+        // First sync display values to form inputs
+        window.syncDisplayWithFormInputs();
+        
+        // Force update calculations
+        if (typeof fixAllScores === 'function') {
+            console.log("Running fixAllScores");
+            fixAllScores();
+        }
+        
+        if (typeof calculateRASScores === 'function') {
+            console.log("Running calculateRASScores");
+            calculateRASScores();
+        }
+        
+        if (typeof updateAllGrades === 'function') {
+            console.log("Running updateAllGrades");
+            updateAllGrades();
+        }
+        
+        if (typeof calculateAndUpdateCompositeScores === 'function') {
+            console.log("Running calculateAndUpdateCompositeScores");
+            calculateAndUpdateCompositeScores();
+        }
+        
+        // Fallback if we have a custom function
+        if (typeof calculateCompositeScores === 'function') {
+            console.log("Running calculateCompositeScores");
+            calculateCompositeScores();
+        }
+        
+        // Force a final update
+        setTimeout(() => {
+            console.log("Final calculation update");
+            if (typeof calculateRASScores === 'function') {
+                calculateRASScores();
+            }
+        }, 500);
+    }
+
     // Helper function to flatten nested objects for easier access
     function flattenUserData(userData) {
         const result = {};
@@ -865,3 +940,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add the refresh button
     setTimeout(addDataRefreshButton, 1000);
 });
+
+// Add a function to explicitly recalculate all scores and update the UI
+window.forceRecalculateAllScores = function() {
+    console.log("Forcing complete recalculation of all RAS scores");
+    
+    // First sync display values to inputs
+    window.syncDisplayWithFormInputs();
+    
+    // Ensure we have the required functions
+    if (typeof fixAllScores !== 'function' || 
+        typeof calculateRASScores !== 'function') {
+        console.error("Required calculation functions not found");
+        return;
+    }
+    
+    // The sequence matters - we need to fix inputs first
+    fixAllScores();
+    
+    // Then do all calculations
+    calculateRASScores();
+    
+    // Update all grades if available
+    if (typeof updateAllGrades === 'function') {
+        updateAllGrades();
+    }
+    
+    // Update composite scores
+    if (typeof calculateAndUpdateCompositeScores === 'function') {
+        calculateAndUpdateCompositeScores();
+    } else if (typeof calculateCompositeScores === 'function') {
+        calculateCompositeScores();
+    }
+    
+    console.log("Recalculation complete");
+};

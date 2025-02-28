@@ -246,6 +246,27 @@
                         console.log("Trying fallback data inspector...");
                         window.inspectAllFirestoreData();
                     }
+                    
+                    // Final calculation update after all data loading attempts
+                    setTimeout(function() {
+                        console.log("Final calculation update after all loading attempts");
+                        if (typeof window.forceRecalculateAllScores === 'function') {
+                            window.forceRecalculateAllScores();
+                        } else if (typeof updateRASCalculations === 'function') {
+                            updateRASCalculations();
+                        } else {
+                            // Fallback if function not available
+                            if (typeof calculateRASScores === 'function') {
+                                calculateRASScores();
+                            }
+                            if (typeof fixAllScores === 'function') {
+                                fixAllScores();
+                            }
+                            if (typeof updateAllGrades === 'function') {
+                                updateAllGrades();
+                            }
+                        }
+                    }, 1000);
                 }, 2000);
             };
             
