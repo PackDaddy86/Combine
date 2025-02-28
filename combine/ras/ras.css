@@ -46,6 +46,27 @@
     color: white;
 }
 
+/* Score color classes */
+.score-poor {
+    color: #ff6b6b;
+}
+
+.score-below-average {
+    color: #ffa06b;
+}
+
+.score-average {
+    color: #ffc56b;
+}
+
+.score-good {
+    color: #6bd46b;
+}
+
+.score-excellent {
+    color: #53c2f0;
+}
+
 /* Input field adjustments to accommodate grade labels */
 .ras-input {
     width: calc(100% - 90px);

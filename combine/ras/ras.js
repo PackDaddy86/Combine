@@ -680,24 +680,29 @@ function updateScoreDisplay(elementId, score) {
     const element = document.getElementById(elementId);
     if (!element) return;
     
+    // When the element is found in DOM
+    console.log(`Updating score display for ${elementId} with score: ${score}`);
+    
     if (score === null || score === undefined) {
         element.textContent = "--";
         element.className = "metric-score";
         return;
     }
     
-    element.textContent = score;
-    
-    // Remove any existing color classes
-    element.className = "metric-score";
-    
-    // Add appropriate color class based on score
+    // Convert the score to a number and format it
     const scoreValue = parseFloat(score);
     if (isNaN(scoreValue)) {
         element.textContent = "--";
         return;
     }
     
+    // Set the score text with 2 decimal places
+    element.textContent = scoreValue.toFixed(2);
+    
+    // Remove any existing color classes
+    element.className = "metric-score";
+    
+    // Add appropriate color class based on score
     if (scoreValue < 4) {
         element.classList.add("score-poor");
     } else if (scoreValue < 5) {
@@ -709,28 +714,45 @@ function updateScoreDisplay(elementId, score) {
     } else {
         element.classList.add("score-excellent");
     }
+    
+    // Also update any related grade label
+    updateRelatedGradeLabel(elementId, scoreValue);
 }
 
-function updateAllDisplayedValues() {
-    const fortyScore = document.getElementById('forty-score').value;
-    const verticalScore = document.getElementById('vertical-score').value;
-    const benchScore = document.getElementById('bench-score').value;
-    const broadScore = document.getElementById('broad-score').value;
-    const coneScore = document.getElementById('cone-score').value;
-    const shuttleScore = document.getElementById('shuttle-score').value;
+// Add a new function to ensure grade labels are properly updated
+function updateRelatedGradeLabel(scoreElementId, score) {
+    // Find if there's a related grade label
+    const element = document.getElementById(scoreElementId);
+    if (!element) return;
     
-    // Update displayed values
-    if (fortyScore) {
-        document.getElementById('forty-value').textContent = fortyScore;
-        document.getElementById('twenty-value').textContent = estimateSplitTime(fortyScore, 20);
-        document.getElementById('ten-value').textContent = estimateSplitTime(fortyScore, 10);
+    // Check if a grade label already exists
+    let label = element.nextElementSibling;
+    if (!label || !label.classList.contains('grade-label')) {
+        // Create a new label if it doesn't exist
+        label = document.createElement('span');
+        label.classList.add('grade-label');
+        if (element.parentNode) {
+            element.parentNode.insertBefore(label, element.nextSibling);
+        }
     }
     
-    if (verticalScore) document.getElementById('vertical-value').textContent = verticalScore;
-    if (benchScore) document.getElementById('bench-value').textContent = benchScore;
-    if (broadScore) document.getElementById('broad-value').textContent = formatBroadJump(broadScore);
-    if (coneScore) document.getElementById('cone-value').textContent = coneScore;
-    if (shuttleScore) document.getElementById('shuttle-value').textContent = shuttleScore;
+    // Set the grade text and class
+    const gradeText = getGradeText(score);
+    label.textContent = gradeText;
+    label.className = 'grade-label';
+    
+    // Add appropriate color class
+    if (score < 4) {
+        label.classList.add('grade-poor');
+    } else if (score < 5) {
+        label.classList.add('grade-below-average');
+    } else if (score < 7) {
+        label.classList.add('grade-average');
+    } else if (score < 9) {
+        label.classList.add('grade-good');
+    } else {
+        label.classList.add('grade-excellent');
+    }
 }
 
 // Calculate a composite grade from the given scores
