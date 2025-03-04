@@ -39,6 +39,16 @@
     box-sizing: border-box;
 }
 
+.prospect-form select {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.prospect-form select option {
+    background-color: #013369;
+    color: #fff;
+}
+
 .prospect-form label {
     margin-bottom: 0.3rem;
     font-weight: 500;
