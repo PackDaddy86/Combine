@@ -5,14 +5,21 @@ let prospectForm;
 let prospectsTable;
 let prospectsList = [];
 let dragStartIndex;
+let loadingOverlay;
+let saveIndicator;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Firebase auth listener
-    initFirebaseAuthListener();
-    
-    // Initialize prospect form and table
+    // Initialize DOM elements
     prospectForm = document.getElementById('prospect-form');
     prospectsTable = document.getElementById('prospects-table-body');
+    loadingOverlay = document.getElementById('loading-overlay');
+    saveIndicator = document.getElementById('save-indicator');
+    
+    // Show loading overlay
+    showLoading(true);
+    
+    // Initialize Firebase auth listener
+    initFirebaseAuthListener();
     
     // Only load prospects after authentication is confirmed
     if (typeof firebase !== 'undefined' && firebase.auth) {
@@ -22,17 +29,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadProspectsFromFirestoreOnly();
             } else {
                 console.log('No user logged in, showing empty board');
+                showLoading(false);
                 showLoginMessage();
             }
         });
     } else {
         console.error('Firebase not available');
+        showLoading(false);
         showErrorMessage('Firebase not available. Please try again later.');
     }
     
     // Add event listeners
     setupEventListeners();
 });
+
+// Show or hide loading overlay
+function showLoading(show) {
+    if (loadingOverlay) {
+        loadingOverlay.style.display = show ? 'flex' : 'none';
+    }
+}
+
+// Show save indicator
+function showSaveIndicator() {
+    if (saveIndicator) {
+        saveIndicator.classList.add('show');
+        setTimeout(() => {
+            saveIndicator.classList.remove('show');
+        }, 3000);
+    }
+}
 
 // Show message when not logged in
 function showLoginMessage() {
@@ -109,15 +135,18 @@ function loadProspectsFromFirestoreOnly() {
                 console.log('Prospects found in Firestore:', doc.data().draftProspects);
                 prospectsList = doc.data().draftProspects;
                 renderProspects();
+                showLoading(false);
             } else {
                 console.log('No prospects found in Firestore');
                 prospectsList = [];
                 renderProspects();
+                showLoading(false);
             }
         })
         .catch(error => {
             console.error('Error loading prospects from Firestore:', error);
             showErrorMessage('Error loading prospects: ' + error.message);
+            showLoading(false);
         });
 }
 
@@ -163,6 +192,7 @@ function saveProspects() {
             saveProspectsToFirestoreOnly()
                 .then(() => {
                     console.log('Prospects saved successfully');
+                    showSaveIndicator();
                 })
                 .catch(error => {
                     console.error('Error saving prospects:', error);
@@ -200,6 +230,15 @@ function setupEventListeners() {
 function handleProspectSubmit(e) {
     e.preventDefault();
     
+    // Check if user is logged in
+    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.auth().currentUser) {
+        alert('You must be logged in to add prospects.');
+        return;
+    }
+    
+    // Show loading state
+    showLoading(true);
+    
     // Generate unique ID
     const prospectId = 'prospect_' + Date.now();
     
@@ -234,8 +273,33 @@ function handleProspectSubmit(e) {
     saveProspects();
     renderProspects();
     
+    // Hide loading state
+    showLoading(false);
+    
     // Reset form
     prospectForm.reset();
+}
+
+// Handle deleting a prospect
+function handleDeleteProspect(e, shouldRender = true) {
+    const prospectId = e.currentTarget.getAttribute('data-id');
+    
+    // Show loading state
+    showLoading(true);
+    
+    // Remove from array
+    prospectsList = prospectsList.filter(p => p.id !== prospectId);
+    
+    // Save and render if needed
+    saveProspects();
+    if (shouldRender) {
+        renderProspects();
+    }
+    
+    // Hide loading after a short delay
+    setTimeout(() => {
+        showLoading(false);
+    }, 500);
 }
 
 // Render prospects to the table
@@ -371,20 +435,6 @@ function handleEditProspect(e) {
         
         // Scroll to the form
         document.querySelector('.add-prospect-sidebar').scrollIntoView({ behavior: 'smooth' });
-    }
-}
-
-// Handle deleting a prospect
-function handleDeleteProspect(e, shouldRender = true) {
-    const prospectId = e.currentTarget.getAttribute('data-id');
-    
-    // Remove from array
-    prospectsList = prospectsList.filter(p => p.id !== prospectId);
-    
-    // Save and render if needed
-    saveProspects();
-    if (shouldRender) {
-        renderProspects();
     }
 }
 
