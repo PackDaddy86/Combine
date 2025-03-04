@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Set up direct jQuery click handling for prospect rows
                         setupRowClickHandlers();
+                        
+                        // Set up all event listeners
+                        setupAllEventListeners();
                     })
                     .catch(error => {
                         console.error('Error loading prospects:', error);
@@ -784,6 +787,9 @@ function renderProspects() {
     // Now set up event listeners for the buttons and form elements
     setButtonEventListeners();
     
+    // Setup event handlers for the newly rendered prospects
+    setupAllEventListeners();
+    
     console.log('Prospects rendered successfully');
 }
 
@@ -887,44 +893,55 @@ function setButtonEventListeners() {
     });
 }
 
-// Helper function to update prospect field values in UI
-function updateProspectDetailInSummary(prospectId, fieldKey, value) {
-    const detailsElement = document.getElementById(`details-${prospectId}`);
-    if (!detailsElement) return;
+// Setup event listeners for the details section
+function setupDetailsEventListeners() {
+    console.log('Setting up details event listeners');
     
-    // Try to find the summary value span for this field
-    const summarySpans = detailsElement.querySelectorAll('.prospect-summary-field');
-    for (let span of summarySpans) {
-        const label = span.querySelector('.summary-label');
-        if (label) {
-            const labelText = label.textContent.trim().toLowerCase();
-            // Match the field key to the label (remove ":" and convert to lowercase)
-            const fieldName = labelText.replace(':', '').trim();
-            
-            // Map field keys to their corresponding summary labels
-            const fieldKeyToLabel = {
-                'handSize': 'hand size',
-                'armLength': 'arm length',
-                'fortyYard': '40 yard',
-                'twentyYardSplit': '20 yard split',
-                'tenYardSplit': '10 yard split',
-                'verticalJump': 'vertical jump',
-                'broadJump': 'broad jump',
-                'threeCone': '3 cone',
-                'shuttle': 'shuttle',
-                'benchPress': 'bench press'
-            };
-            
-            // Check if this is the right summary field
-            if (fieldName === fieldKeyToLabel[fieldKey]) {
-                const valueSpan = span.querySelector('.summary-value');
-                if (valueSpan) {
-                    valueSpan.textContent = value || '-';
-                    return;
+    // Set up auto-save for all textareas
+    document.querySelectorAll('.prospect-detail-textarea').forEach(textarea => {
+        const detailsDiv = textarea.closest('.prospect-details');
+        if (detailsDiv) {
+            const prospectId = detailsDiv.id.replace('details-', '');
+            setupTextareaAutoSave(textarea, prospectId);
+        }
+    });
+    
+    // Set up auto-save for all input fields
+    document.querySelectorAll('.prospect-detail-input').forEach(input => {
+        const detailsDiv = input.closest('.prospect-details');
+        if (detailsDiv) {
+            const prospectId = detailsDiv.id.replace('details-', '');
+            setupInputAutoSave(input, prospectId);
+        }
+    });
+
+    // Set up field toggle buttons
+    document.querySelectorAll('.field-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sectionId = toggle.getAttribute('data-section');
+            if (sectionId) {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    toggle.classList.toggle('open');
+                    section.classList.toggle('open');
                 }
             }
-        }
-    }
+        });
+    });
+    
+    // Set up remove field buttons
+    document.querySelectorAll('.remove-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fieldKey = btn.getAttribute('data-field-key');
+            const detailsDiv = btn.closest('.prospect-details');
+            if (fieldKey && detailsDiv) {
+                const prospectId = detailsDiv.id.replace('details-', '');
+                removeCustomField(prospectId, fieldKey);
+            }
+        });
+    });
 }
 
 // Set up auto-save for a textarea
@@ -1215,6 +1232,46 @@ function removeCustomField(prospectId, fieldKey) {
     renderProspects();
 }
 
+// Helper function to update prospect field values in UI
+function updateProspectDetailInSummary(prospectId, fieldKey, value) {
+    const detailsElement = document.getElementById(`details-${prospectId}`);
+    if (!detailsElement) return;
+    
+    // Try to find the summary value span for this field
+    const summarySpans = detailsElement.querySelectorAll('.prospect-summary-field');
+    for (let span of summarySpans) {
+        const label = span.querySelector('.summary-label');
+        if (label) {
+            const labelText = label.textContent.trim().toLowerCase();
+            // Match the field key to the label (remove ":" and convert to lowercase)
+            const fieldName = labelText.replace(':', '').trim();
+            
+            // Map field keys to their corresponding summary labels
+            const fieldKeyToLabel = {
+                'handSize': 'hand size',
+                'armLength': 'arm length',
+                'fortyYard': '40 yard',
+                'twentyYardSplit': '20 yard split',
+                'tenYardSplit': '10 yard split',
+                'verticalJump': 'vertical jump',
+                'broadJump': 'broad jump',
+                'threeCone': '3 cone',
+                'shuttle': 'shuttle',
+                'benchPress': 'bench press'
+            };
+            
+            // Check if this is the right summary field
+            if (fieldName === fieldKeyToLabel[fieldKey]) {
+                const valueSpan = span.querySelector('.summary-value');
+                if (valueSpan) {
+                    valueSpan.textContent = value || '-';
+                    return;
+                }
+            }
+        }
+    }
+}
+
 // Handle dragging functionality for reordering prospects
 function dragStart(e) {
     const row = this.closest('tr');
@@ -1466,7 +1523,23 @@ function showProspectDetails(prospectId) {
         saveProspectDetails(prospectId);
         console.log('Closed details for prospect:', prospectId);
     } else {
-        // If it's closed, open it
+        // If it's closed, refresh the content and open it
+        const prospect = prospectsList.find(p => p.id === prospectId);
+        if (prospect) {
+            // Find the details section
+            const detailsSection = document.getElementById(`details-${prospectId}`);
+            if (detailsSection) {
+                // Update the detail sections with the latest prospect data
+                const detailSections = detailsSection.querySelector('.prospect-detail-sections');
+                if (detailSections) {
+                    detailSections.innerHTML = renderDetailSections(prospect);
+                    
+                    // Reinitialize event listeners
+                    setupDetailsEventListeners();
+                }
+            }
+        }
+        
         detailsRow.classList.add('open');
         console.log('Opened details for prospect:', prospectId);
     }
@@ -1524,4 +1597,92 @@ function getHeightInches(height) {
     }
     
     return '';
+}
+
+// Setup all event listeners
+function setupAllEventListeners() {
+    console.log('Setting up all event listeners');
+    
+    // Set up delete prospect buttons
+    document.querySelectorAll('.delete-prospect').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            if (confirm('Are you sure you want to delete this prospect? This cannot be undone.')) {
+                deleteProspect(id);
+            }
+        });
+    });
+    
+    // Set up prospect rows for drag and drop
+    document.querySelectorAll('.prospect-row').forEach(row => {
+        row.addEventListener('dragstart', handleDragStart);
+        row.addEventListener('dragover', handleDragOver);
+        row.addEventListener('drop', handleDrop);
+        row.addEventListener('dragend', handleDragEnd);
+        
+        // Add click event to show details
+        row.addEventListener('click', () => {
+            const id = row.getAttribute('data-id');
+            toggleProspectDetails(id);
+        });
+    });
+    
+    // Set up add field buttons
+    document.querySelectorAll('.add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            const formId = `add-field-form-${id}`;
+            const form = document.getElementById(formId);
+            if (form) {
+                form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+            }
+        });
+    });
+    
+    // Set up cancel add field buttons
+    document.querySelectorAll('.cancel-add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const formElement = btn.closest('.add-field-form');
+            if (formElement) {
+                formElement.style.display = 'none';
+            }
+        });
+    });
+    
+    // Set up confirm add field buttons
+    document.querySelectorAll('.confirm-add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            const formElement = btn.closest('.add-field-form');
+            if (formElement) {
+                const fieldNameInput = formElement.querySelector('.field-name-input');
+                if (fieldNameInput && fieldNameInput.value.trim()) {
+                    addCustomField(prospectId, fieldNameInput.value.trim());
+                    formElement.style.display = 'none';
+                    fieldNameInput.value = '';
+                }
+            }
+        });
+    });
+    
+    // Set up save details buttons
+    document.querySelectorAll('.save-details-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            if (prospectId) {
+                showSaveIndicator(true);
+                saveProspectDetails(prospectId).then(() => {
+                    showSaveIndicator(false, true);
+                });
+            }
+        });
+    });
+    
+    // Set up the details section event listeners
+    setupDetailsEventListeners();
 }
