@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Draft Prospect Grading | NFL Draft Grades</title>
+    <link rel="icon" href="assets/images/logo.png" type="image/png">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/auth.css">
+    <link rel="stylesheet" href="assets/css/prospects.css">
+</head>
+<body>
+    <!-- Header will be included here -->
+    <div id="header-include"></div>
+    
+    <!-- Page Header -->
+    <header class="draft-header">
+        <h1>NFL Draft Prospect Grading</h1>
+        <p>Build your draft big board by grading and ranking NFL draft prospects</p>
+    </header>
+    
+    <div class="container">
+        <div class="prospects-container">
+            <!-- Left Sidebar - Add Prospects Form -->
+            <div class="add-prospect-sidebar">
+                <h2 class="sidebar-title">Add Prospect</h2>
+                <form id="prospect-form" class="prospect-form">
+                    <div class="input-group">
+                        <label for="prospect-name">Name</label>
+                        <input type="text" id="prospect-name" placeholder="Player Name" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="prospect-position">Position</label>
+                        <select id="prospect-position" required>
+                            <option value="">Select Position</option>
+                            <!-- Offense -->
+                            <option value="QB">Quarterback (QB)</option>
+                            <option value="RB">Running Back (RB)</option>
+                            <option value="FB">Fullback (FB)</option>
+                            <option value="WR">Wide Receiver (WR)</option>
+                            <option value="TE">Tight End (TE)</option>
+                            <option value="OT">Offensive Tackle (OT)</option>
+                            <option value="OG">Offensive Guard (OG)</option>
+                            <option value="C">Center (C)</option>
+                            <!-- Defense -->
+                            <option value="DE">Defensive End (DE)</option>
+                            <option value="DT">Defensive Tackle (DT)</option>
+                            <option value="NT">Nose Tackle (NT)</option>
+                            <option value="OLB">Outside Linebacker (OLB)</option>
+                            <option value="ILB">Inside Linebacker (ILB)</option>
+                            <option value="CB">Cornerback (CB)</option>
+                            <option value="S">Safety (S)</option>
+                            <option value="FS">Free Safety (FS)</option>
+                            <option value="SS">Strong Safety (SS)</option>
+                            <!-- Special Teams -->
+                            <option value="K">Kicker (K)</option>
+                            <option value="P">Punter (P)</option>
+                            <option value="LS">Long Snapper (LS)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="prospect-college">College</label>
+                        <input type="text" id="prospect-college" placeholder="College/University">
+                    </div>
+                    
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label for="prospect-age">Age</label>
+                            <input type="number" id="prospect-age" placeholder="Age" min="18" max="35">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="prospect-height">Height</label>
+                            <input type="text" id="prospect-height" placeholder="e.g. 6'2\"">
+                        </div>
+                        
+                        <div class="input-group">
+                            <label for="prospect-weight">Weight (lbs)</label>
+                            <input type="number" id="prospect-weight" placeholder="Weight">
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="prospect-grade">Grade (1-10)</label>
+                        <input type="number" id="prospect-grade" placeholder="Your grade" min="1" max="10" step="0.1">
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="prospect-notes">Notes</label>
+                        <textarea id="prospect-notes" placeholder="Strengths, weaknesses, and other observations" rows="4"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="prospect-submit-btn">Add to Big Board</button>
+                </form>
+            </div>
+            
+            <!-- Main Content - Big Board -->
+            <div class="big-board-container">
+                <div class="big-board-header">
+                    <h2 class="big-board-title">Your Big Board</h2>
+                    <div class="board-controls">
+                        <button id="export-board-btn" class="board-control-btn">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                        <button id="clear-board-btn" class="board-control-btn">
+                            <i class="fas fa-trash"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Prospects Table -->
+                <table id="prospects-table" class="prospects-table">
+                    <thead>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Name</th>
+                            <th>Position</th>
+                            <th>College</th>
+                            <th>Height</th>
+                            <th>Weight</th>
+                            <th>Grade</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="prospects-table-body">
+                        <!-- Prospects will be loaded here -->
+                    </tbody>
+                </table>
+                
+                <!-- Empty state when no prospects -->
+                <div id="no-prospects" class="no-prospects">
+                    <p>You haven't added any prospects to your big board yet.</p>
+                    <p>Use the form on the left to add your first prospect.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 NFL Draft Grades. All rights reserved.</p>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+    <script src="assets/js/firebase-config.js"></script>
+    <script src="assets/js/user-data.js"></script>
+    <script src="assets/js/auth-check.js"></script>
+    <script src="assets/js/include.js"></script>
+    <script src="assets/js/prospects.js"></script>
+    
+    <script>
+        // Include header
+        if (typeof includeHTML === 'function') {
+            document.getElementById('header-include').setAttribute('include-html', 'assets/includes/header.html');
+            includeHTML();
+        }
+    </script>
+</body>
+</html>
