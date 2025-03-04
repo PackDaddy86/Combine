@@ -60,9 +60,23 @@ function showLoading(show) {
 }
 
 // Show save indicator
-function showSaveIndicator() {
-    if (saveIndicator) {
-        saveIndicator.classList.add('show');
+function showSaveIndicator(saving = false) {
+    const saveIndicator = document.getElementById('save-indicator');
+    if (!saveIndicator) return;
+    
+    // Update text and icon based on saving status
+    if (saving) {
+        saveIndicator.innerHTML = '<i class="fas fa-spinner"></i> Saving changes...';
+        saveIndicator.classList.add('saving');
+    } else {
+        saveIndicator.innerHTML = '<i class="fas fa-check-circle"></i> Changes saved';
+        saveIndicator.classList.remove('saving');
+    }
+    
+    saveIndicator.classList.add('show');
+    
+    // Remove the class after animation completes
+    if (!saving) {
         setTimeout(() => {
             saveIndicator.classList.remove('show');
         }, 3000);
@@ -121,76 +135,87 @@ function initFirebaseAuthListener() {
 
 // Save prospects to Firestore
 function saveProspectsToFirestoreOnly() {
-    // Get current user
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        console.error('No user logged in');
-        return Promise.reject(new Error('You must be logged in to save prospects'));
-    }
+    console.log('Saving prospects to Firestore...');
     
-    // Reference to the user's document
-    const userDocRef = firebase.firestore().collection('users').doc(user.uid);
-    
-    // Data to save
-    const data = {
-        draftProspects: prospectsList,
-        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    
-    // Check if document exists before saving
-    return userDocRef.get()
-        .then(doc => {
-            // If document doesn't exist, create it
-            if (!doc.exists) {
-                return userDocRef.set(data);
-            } else {
-                // Otherwise update it
-                return userDocRef.update(data);
-            }
-        })
+    return new Promise((resolve, reject) => {
+        // Check if Firebase is available
+        if (typeof firebase === 'undefined' || !firebase.auth || !firebase.firestore) {
+            console.error('Firebase not initialized properly');
+            reject(new Error('Firebase not initialized properly'));
+            return;
+        }
+        
+        // Check if user is logged in
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            console.error('No user logged in');
+            reject(new Error('User not logged in'));
+            return;
+        }
+        
+        // Get a reference to the user's prospects document
+        const db = firebase.firestore();
+        const userProspectsRef = db.collection('userProspects').doc(user.uid);
+        
+        // Save data
+        return userProspectsRef.set({
+            prospects: JSON.parse(JSON.stringify(prospectsList)),
+            lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true })
         .then(() => {
-            console.log('Prospects saved to Firestore');
-            return Promise.resolve();
+            console.log('Prospects saved to Firestore successfully');
+            resolve();
         })
         .catch(error => {
-            console.error('Error saving prospects to Firestore:', error);
-            return Promise.reject(error);
+            console.error('Error saving to Firestore:', error);
+            reject(error);
         });
+    });
 }
 
 // Load prospects from Firestore
 function loadProspectsFromFirestoreOnly() {
-    // Get current user
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        console.error('No user logged in');
-        showLoginMessage();
-        return Promise.reject(new Error('You must be logged in to load prospects'));
-    }
+    console.log('Loading prospects from Firestore...');
     
-    // Reference to the user's document
-    const userDocRef = firebase.firestore().collection('users').doc(user.uid);
-    
-    // Get the document
-    return userDocRef.get()
-        .then(doc => {
-            if (doc.exists && doc.data().draftProspects) {
-                console.log('Prospects found in Firestore:', doc.data().draftProspects);
-                prospectsList = doc.data().draftProspects;
-                renderProspects();
-                showLoading(false);
-            } else {
-                console.log('No prospects found in Firestore');
-                prospectsList = [];
-                renderProspects();
-                showLoading(false);
-            }
-        })
-        .catch(error => {
-            console.error('Error loading prospects from Firestore:', error);
-            showErrorMessage('Error loading prospects: ' + error.message);
-            showLoading(false);
-        });
+    return new Promise((resolve, reject) => {
+        // Check if Firebase is available
+        if (typeof firebase === 'undefined' || !firebase.auth || !firebase.firestore) {
+            console.error('Firebase not initialized properly');
+            reject(new Error('Firebase not initialized properly'));
+            return;
+        }
+        
+        // Check if user is logged in
+        const user = firebase.auth().currentUser;
+        if (!user) {
+            console.error('No user logged in');
+            reject(new Error('User not logged in'));
+            return;
+        }
+        
+        // Get a reference to the user's prospects document
+        const db = firebase.firestore();
+        const userProspectsRef = db.collection('userProspects').doc(user.uid);
+        
+        // Load data
+        return userProspectsRef.get()
+            .then(doc => {
+                if (doc.exists && doc.data() && doc.data().prospects) {
+                    // Set the global prospects array
+                    prospectsList = doc.data().prospects;
+                    console.log('Loaded', prospectsList.length, 'prospects from Firestore');
+                    resolve(prospectsList);
+                } else {
+                    console.log('No prospects found in Firestore, starting with empty array');
+                    prospectsList = [];
+                    resolve(prospectsList);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading from Firestore:', error);
+                reject(error);
+            });
+    });
 }
 
 // Simplified save function that only uses Firestore
@@ -198,10 +223,11 @@ function saveProspects() {
     if (typeof firebase !== 'undefined' && firebase.auth) {
         const user = firebase.auth().currentUser;
         if (user) {
+            showSaveIndicator(true);
             saveProspectsToFirestoreOnly()
                 .then(() => {
                     console.log('Prospects saved successfully');
-                    showSaveIndicator();
+                    showSaveIndicator(false);
                 })
                 .catch(error => {
                     console.error('Error saving prospects:', error);
@@ -314,9 +340,6 @@ function handleProspectSubmit(e) {
     
     // Reset form
     prospectForm.reset();
-    
-    // Show save indicator
-    showSaveIndicator();
 }
 
 // Handle deleting a prospect
@@ -455,6 +478,9 @@ function renderProspects() {
             e.stopPropagation(); // Stop event propagation
             handleDeleteProspect(e);
         });
+        
+        // Add auto-save functionality
+        setupAutoSave(prospect.id);
     });
     
     // Add event listeners to detail buttons
@@ -572,27 +598,46 @@ function createDetailSectionHTML(key, label, value, isRemovable) {
 
 // Toggle prospect details
 function toggleProspectDetails(prospectId) {
-    const detailsElement = document.getElementById(`details-${prospectId}`);
+    const detailsRow = document.getElementById(`details-row-${prospectId}`);
+    const detailsCell = document.getElementById(`details-cell-${prospectId}`);
+    const detailsContent = document.getElementById(`details-${prospectId}`);
+    const prospectRow = document.getElementById(`prospect-${prospectId}`);
     
-    // If it's already visible, hide it and deselect
-    if (detailsElement.classList.contains('visible')) {
-        detailsElement.classList.remove('visible');
-        document.querySelector(`tr[data-id="${prospectId}"]`).classList.remove('selected');
-        selectedProspectId = null;
+    if (!detailsRow || !detailsCell || !prospectRow) {
+        console.error('Could not find all required elements');
+        return;
+    }
+    
+    if (detailsRow.classList.contains('open')) {
+        // Closing details - save any changes first
+        saveProspectDetails(prospectId);
+        
+        // Then close
+        detailsRow.classList.remove('open');
+        prospectRow.classList.remove('selected');
+        
+        // Use setTimeout to ensure a smooth transition
+        setTimeout(() => {
+            detailsRow.style.display = 'none';
+        }, 300);
     } else {
-        // Hide any other open details
-        document.querySelectorAll('.prospect-details.visible').forEach(el => {
-            el.classList.remove('visible');
-        });
+        // Opening details
+        detailsRow.style.display = 'table-row';
         
-        document.querySelectorAll('.prospect-row.selected').forEach(el => {
-            el.classList.remove('selected');
-        });
+        // Use setTimeout to ensure the display change has taken effect before adding the open class
+        setTimeout(() => {
+            detailsRow.classList.add('open');
+            prospectRow.classList.add('selected');
+        }, 10);
         
-        // Show this detail
-        detailsElement.classList.add('visible');
-        document.querySelector(`tr[data-id="${prospectId}"]`).classList.add('selected');
-        selectedProspectId = prospectId;
+        // Render the details section if it's empty
+        if (!detailsContent.innerHTML.trim()) {
+            const prospect = prospectsList.find(p => p.id === prospectId);
+            if (prospect) {
+                detailsContent.innerHTML = renderDetailSections(prospect);
+                setupAutoSave(prospectId);
+            }
+        }
     }
 }
 
@@ -670,7 +715,38 @@ function saveProspectDetails(prospectId) {
     
     // Save to Firestore
     saveProspects();
-    showSaveIndicator();
+    showSaveIndicator(false);
+}
+
+// Add auto-save functionality to textareas in details
+function setupAutoSave(prospectId) {
+    const detailsElement = document.getElementById(`details-${prospectId}`);
+    if (!detailsElement) return;
+    
+    // Get all textareas
+    const textareas = detailsElement.querySelectorAll('.prospect-detail-textarea');
+    
+    // Add input event listeners for auto-save
+    textareas.forEach(textarea => {
+        // Use debounce to avoid too many saves
+        textarea.addEventListener('input', debounce(function() {
+            console.log('Auto-saving changes...');
+            saveProspectDetails(prospectId);
+        }, 2000)); // 2 second delay
+    });
+}
+
+// Debounce function to limit how often a function runs
+function debounce(func, wait) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
 }
 
 // Handle dragging functionality for reordering prospects

@@ -513,11 +513,27 @@
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     display: none;
     z-index: 1000;
+    transition: opacity 0.3s ease-in-out;
 }
 
 .save-indicator.show {
-    display: block;
+    display: flex;
+    align-items: center;
     animation: fadeInOut 3s ease-in-out;
+}
+
+.save-indicator i {
+    margin-right: 10px;
+    color: #4CAF50;
+}
+
+.save-indicator.saving {
+    background-color: #01233E;
+}
+
+.save-indicator.saving i {
+    animation: spin 1s infinite linear;
+    color: #F7C625;
 }
 
 @keyframes fadeInOut {
