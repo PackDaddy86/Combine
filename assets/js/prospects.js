@@ -1304,6 +1304,10 @@ function dragDrop(e) {
     renderProspects();
 }
 
+function dragEnd(e) {
+    this.classList.remove('prospect-dragging');
+}
+
 // Swap prospects for drag and drop reordering
 function swapProspects(startIndex, endIndex) {
     if (startIndex === endIndex) return;
@@ -1616,10 +1620,12 @@ function setupAllEventListeners() {
     
     // Set up prospect rows for drag and drop
     document.querySelectorAll('.prospect-row').forEach(row => {
-        row.addEventListener('dragstart', handleDragStart);
-        row.addEventListener('dragover', handleDragOver);
-        row.addEventListener('drop', handleDrop);
-        row.addEventListener('dragend', handleDragEnd);
+        row.addEventListener('dragstart', dragStart);
+        row.addEventListener('dragover', dragOver);
+        row.addEventListener('dragenter', dragEnter);
+        row.addEventListener('dragleave', dragLeave);
+        row.addEventListener('drop', dragDrop);
+        row.addEventListener('dragend', dragEnd);
         
         // Add click event to show details
         row.addEventListener('click', () => {
