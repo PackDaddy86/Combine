@@ -344,6 +344,32 @@ function setupEventListeners() {
         prospectForm.addEventListener('submit', handleProspectSubmit);
     }
     
+    // Add Prospect button - opens modal
+    const addProspectBtn = document.getElementById('add-prospect-btn');
+    const prospectFormModal = document.getElementById('prospect-form-modal');
+    const closeModalBtn = document.querySelector('.close-modal');
+    
+    if (addProspectBtn && prospectFormModal) {
+        // Open modal when Add Prospect button is clicked
+        addProspectBtn.addEventListener('click', function() {
+            prospectFormModal.style.display = 'block';
+        });
+        
+        // Close modal when X is clicked
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', function() {
+                prospectFormModal.style.display = 'none';
+            });
+        }
+        
+        // Close modal when clicking outside of it
+        window.addEventListener('click', function(event) {
+            if (event.target === prospectFormModal) {
+                prospectFormModal.style.display = 'none';
+            }
+        });
+    }
+    
     // Form details toggle
     const toggleDetails = document.getElementById('toggle-details');
     const detailedFields = document.getElementById('detailed-info-fields');
@@ -435,6 +461,12 @@ function handleProspectSubmit(e) {
     
     // Reset form
     prospectForm.reset();
+    
+    // Close modal
+    const prospectFormModal = document.getElementById('prospect-form-modal');
+    if (prospectFormModal) {
+        prospectFormModal.style.display = 'none';
+    }
 }
 
 // Handle deleting a prospect
