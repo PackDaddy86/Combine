@@ -216,19 +216,30 @@ function saveProspects() {
     }
 }
 
-// Add event listeners
+// Initialize UI and event listeners
 function setupEventListeners() {
+    // Add prospect form submission
     if (prospectForm) {
         prospectForm.addEventListener('submit', handleProspectSubmit);
     }
     
-    // Export button
+    // Form details toggle
+    const toggleDetails = document.getElementById('toggle-details');
+    const detailedFields = document.getElementById('detailed-info-fields');
+    
+    if (toggleDetails && detailedFields) {
+        toggleDetails.addEventListener('click', function() {
+            this.classList.toggle('open');
+            detailedFields.classList.toggle('open');
+        });
+    }
+    
+    // Board control buttons
     const exportBtn = document.getElementById('export-board-btn');
     if (exportBtn) {
         exportBtn.addEventListener('click', exportBigBoard);
     }
     
-    // Clear button
     const clearBtn = document.getElementById('clear-board-btn');
     if (clearBtn) {
         clearBtn.addEventListener('click', clearBigBoard);
@@ -261,6 +272,20 @@ function handleProspectSubmit(e) {
     const notes = document.getElementById('prospect-notes').value;
     const grade = document.getElementById('prospect-grade').value;
     
+    // Get detailed information
+    const background = document.getElementById('prospect-background').value;
+    const strengths = document.getElementById('prospect-strengths').value;
+    const weaknesses = document.getElementById('prospect-weaknesses').value;
+    const summary = document.getElementById('prospect-summary').value;
+    
+    // Create details object
+    const details = {
+        background: background || '',
+        strengths: strengths || '',
+        weaknesses: weaknesses || '',
+        summary: summary || ''
+    };
+    
     // Create new prospect object
     const newProspect = {
         id: prospectId,
@@ -272,6 +297,8 @@ function handleProspectSubmit(e) {
         weight,
         notes,
         grade,
+        details: details,
+        customFields: [],
         dateAdded: new Date().toISOString()
     };
     
@@ -287,6 +314,9 @@ function handleProspectSubmit(e) {
     
     // Reset form
     prospectForm.reset();
+    
+    // Show save indicator
+    showSaveIndicator();
 }
 
 // Handle deleting a prospect

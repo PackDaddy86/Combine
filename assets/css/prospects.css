@@ -380,6 +380,41 @@
     max-height: 1000px; /* Large enough to show content */
 }
 
+/* Form Section styles */
+.form-section-heading {
+    margin: 20px 0 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.form-section-heading h3 {
+    font-size: 1rem;
+    color: #F7C625;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.form-section-heading h3 i {
+    transition: transform 0.3s ease;
+}
+
+.form-section-heading h3 i.open {
+    transform: rotate(180deg);
+}
+
+.detailed-fields {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.detailed-fields.open {
+    max-height: 1000px;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 992px) {
     .prospects-container {
