@@ -309,118 +309,63 @@
 }
 
 .prospect-detail-section {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.1);
     border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.prospect-detail-title {
-    background-color: #013369;
+    padding: 15px;
+    margin-bottom: 15px;
     color: white;
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+}
+
+.prospect-detail-section h4 {
+    color: #FF9900;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+}
+
+.prospect-detail-field {
+    margin-bottom: 10px;
+    color: white;
+}
+
+.prospect-detail-field label {
+    display: block;
     font-weight: bold;
+    margin-bottom: 5px;
+    color: #dddddd;
 }
 
-.prospect-detail-title span {
-    display: flex;
-    align-items: center;
-}
-
-.field-toggle {
-    cursor: pointer;
-    margin-left: 10px;
-    transition: transform 0.3s ease;
-}
-
-.field-toggle.open {
-    transform: rotate(180deg);
-}
-
-.field-collapse {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-}
-
-.field-collapse.open {
-    max-height: 300px;
-}
-
-.prospect-detail-content {
-    padding: 10px;
-}
-
-.prospect-detail-textarea {
+.prospect-detail-field input,
+.prospect-detail-field textarea,
+.prospect-detail-field select {
     width: 100%;
-    min-height: 100px;
-    padding: 10px;
-    border: 1px solid #ddd;
+    padding: 8px;
     border-radius: 4px;
-    resize: vertical;
-    font-family: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: rgba(0, 0, 0, 0.2);
+    color: white;
 }
 
-.prospect-detail-textarea:focus {
-    border-color: #013369;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(1, 51, 105, 0.2);
-}
-
+/* Style buttons in details */
 .detail-buttons {
+    margin-top: 20px;
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    justify-content: flex-end;
 }
 
 .detail-button {
-    background-color: #013369;
-    color: white;
+    background-color: #FF9900;
+    color: #013369;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
+    padding: 8px 15px;
+    margin-left: 10px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    transition: background-color 0.3s;
+    font-weight: bold;
 }
 
 .detail-button:hover {
-    background-color: #00295a;
-}
-
-.detail-button i {
-    margin-right: 5px;
-}
-
-.custom-field-row {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-    gap: 10px;
-}
-
-.custom-field-label {
-    flex: 0 0 30%;
-}
-
-.custom-field-input {
-    flex: 1;
-}
-
-.custom-field-actions {
-    flex: 0 0 auto;
-}
-
-.add-field-form {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px dashed rgba(255, 255, 255, 0.2);
+    background-color: #ffb040;
 }
 
 /* Form Section styles */
