@@ -19,6 +19,7 @@
     <header class="draft-header">
         <h1>NFL Draft Prospect Grading</h1>
         <p>Build your draft big board by grading and ranking NFL draft prospects</p>
+        <p class="auth-notice"><i class="fas fa-lock"></i> Login required to save your prospect data</p>
     </header>
     
     <div class="container-fluid" style="padding: 0;">
@@ -133,8 +134,10 @@
                 
                 <!-- Empty state when no prospects -->
                 <div id="no-prospects" class="no-prospects">
-                    <p>You haven't added any prospects to your big board yet.</p>
-                    <p>Use the form on the left to add your first prospect.</p>
+                    <div class="auth-state-message">
+                        <p>You haven't added any prospects to your big board yet.</p>
+                        <p>Use the form on the left to add your first prospect.</p>
+                    </div>
                 </div>
             </div>
         </div>

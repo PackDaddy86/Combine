@@ -14,12 +14,54 @@ document.addEventListener('DOMContentLoaded', function() {
     prospectForm = document.getElementById('prospect-form');
     prospectsTable = document.getElementById('prospects-table-body');
     
-    // Load existing prospects from localStorage or Firestore
-    loadProspects();
+    // Only load prospects after authentication is confirmed
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        firebase.auth().onAuthStateChanged(user => {
+            if (user) {
+                console.log('User authenticated, loading prospects from Firestore');
+                loadProspectsFromFirestoreOnly();
+            } else {
+                console.log('No user logged in, showing empty board');
+                showLoginMessage();
+            }
+        });
+    } else {
+        console.error('Firebase not available');
+        showErrorMessage('Firebase not available. Please try again later.');
+    }
     
     // Add event listeners
     setupEventListeners();
 });
+
+// Show message when not logged in
+function showLoginMessage() {
+    // Clear any existing prospects
+    prospectsList = [];
+    renderProspects();
+    
+    // Show login message instead of empty state
+    const noProspectsDiv = document.getElementById('no-prospects');
+    if (noProspectsDiv) {
+        noProspectsDiv.innerHTML = `
+            <p>You need to be logged in to view and manage your prospect board.</p>
+            <p>Please <a href="/login.html">log in</a> to continue.</p>
+        `;
+    }
+}
+
+// Show error message
+function showErrorMessage(message) {
+    const noProspectsDiv = document.getElementById('no-prospects');
+    if (noProspectsDiv) {
+        noProspectsDiv.innerHTML = `
+            <p>Error: ${message}</p>
+            <p>Please try refreshing the page.</p>
+        `;
+        noProspectsDiv.style.display = 'block';
+        document.getElementById('prospects-table').style.display = 'none';
+    }
+}
 
 // Initialize Firebase auth listener if not in firebase-config.js
 function initFirebaseAuthListener() {
@@ -28,75 +70,110 @@ function initFirebaseAuthListener() {
         firebase.auth().onAuthStateChanged(user => {
             if (user) {
                 console.log('Auth state change: User logged in');
-                // Load user's prospects from Firestore
-                loadProspects();
+                // Enable the form when logged in
+                if (prospectForm) prospectForm.classList.remove('disabled');
+                document.querySelectorAll('.board-control-btn').forEach(btn => btn.disabled = false);
             } else {
                 console.log('Auth state change: User logged out');
-                // Just use localStorage when logged out
-                loadProspects();
+                // Disable the form when logged out
+                if (prospectForm) prospectForm.classList.add('disabled');
+                document.querySelectorAll('.board-control-btn').forEach(btn => btn.disabled = true);
+                showLoginMessage();
             }
         });
     }
 }
 
-// Load prospects from Firestore or localStorage
-function loadProspects() {
-    // Use the new loadProspectsFromFirestore function from user-data.js
-    if (typeof loadProspectsFromFirestore === 'function') {
-        loadProspectsFromFirestore().then(prospects => {
-            if (prospects && prospects.length > 0) {
-                prospectsList = prospects;
+// Load prospects ONLY from Firestore, no localStorage fallback
+function loadProspectsFromFirestoreOnly() {
+    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.firestore) {
+        console.error('Firebase not available');
+        showErrorMessage('Firebase not available');
+        return;
+    }
+    
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        console.log('No user logged in');
+        showLoginMessage();
+        return;
+    }
+    
+    console.log(`Loading prospects from Firestore for user ${user.uid}`);
+    const db = firebase.firestore();
+    
+    // Get user document from Firestore
+    db.collection('users').doc(user.uid).get()
+        .then(doc => {
+            if (doc.exists && doc.data().draftProspects) {
+                console.log('Prospects found in Firestore:', doc.data().draftProspects);
+                prospectsList = doc.data().draftProspects;
                 renderProspects();
             } else {
-                // If no prospects in Firestore, check localStorage as fallback
-                const savedProspects = localStorage.getItem('draftProspects');
-                if (savedProspects) {
-                    prospectsList = JSON.parse(savedProspects);
-                    renderProspects();
-                    
-                    // Save to Firestore if user is logged in
-                    if (typeof firebase !== 'undefined' && firebase.auth) {
-                        const user = firebase.auth().currentUser;
-                        if (user && typeof saveProspectsToFirestore === 'function') {
-                            saveProspectsToFirestore(prospectsList);
-                        }
-                    }
-                } else {
-                    // No prospects found anywhere
-                    prospectsList = [];
-                    renderProspects();
-                }
-            }
-        }).catch(error => {
-            console.error('Error loading prospects:', error);
-            
-            // Fall back to localStorage
-            const savedProspects = localStorage.getItem('draftProspects');
-            if (savedProspects) {
-                prospectsList = JSON.parse(savedProspects);
+                console.log('No prospects found in Firestore');
+                prospectsList = [];
                 renderProspects();
             }
+        })
+        .catch(error => {
+            console.error('Error loading prospects from Firestore:', error);
+            showErrorMessage('Error loading prospects: ' + error.message);
         });
-    } else {
-        // If the Firestore function isn't available, use localStorage
-        const savedProspects = localStorage.getItem('draftProspects');
-        if (savedProspects) {
-            prospectsList = JSON.parse(savedProspects);
-            renderProspects();
-        }
-    }
 }
 
-// Save prospects using the new Firestore function
+// Save prospects ONLY to Firestore
+function saveProspectsToFirestoreOnly() {
+    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.firestore) {
+        console.error('Firebase not available');
+        return Promise.reject(new Error('Firebase not available'));
+    }
+    
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        console.log('No user logged in, cannot save prospects');
+        return Promise.reject(new Error('No user logged in'));
+    }
+    
+    console.log(`Saving prospects to Firestore for user ${user.uid}`);
+    const db = firebase.firestore();
+    
+    return db.collection('users').doc(user.uid).update({
+        'draftProspects': prospectsList,
+        lastUpdate: new Date()
+    }).catch(error => {
+        // If update fails (document might not exist), create it
+        if (error.code === 'not-found') {
+            console.log('Document not found, creating new document');
+            return db.collection('users').doc(user.uid).set({
+                'draftProspects': prospectsList,
+                lastUpdate: new Date(),
+                email: user.email,
+                username: user.displayName || `User${Math.floor(Math.random() * 10000)}`
+            });
+        }
+        return Promise.reject(error);
+    });
+}
+
+// Simplified save function that only uses Firestore
 function saveProspects() {
-    // Use the new saveProspectsToFirestore function
-    if (typeof saveProspectsToFirestore === 'function') {
-        saveProspectsToFirestore(prospectsList).catch(error => {
-            console.error('Error saving prospects to Firestore:', error);
-        });
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            saveProspectsToFirestoreOnly()
+                .then(() => {
+                    console.log('Prospects saved successfully');
+                })
+                .catch(error => {
+                    console.error('Error saving prospects:', error);
+                    alert('There was an error saving your prospects. Please try again.');
+                });
+        } else {
+            console.log('No user logged in, cannot save prospects');
+            alert('You must be logged in to save prospects.');
+        }
     } else {
-        // Fall back to localStorage only
-        localStorage.setItem('draftProspects', JSON.stringify(prospectsList));
+        console.error('Firebase not available');
     }
 }
 
