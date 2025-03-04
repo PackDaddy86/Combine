@@ -653,7 +653,7 @@ function renderProspects() {
         // Always add the actions column with both details and delete buttons
         tableHTML += `
                 <td>
-                    <button class="view-details-btn" onclick="event.stopPropagation(); toggleProspectDetails('${prospect.id}'); return false;" data-id="${prospect.id}">
+                    <button class="view-details-btn" data-id="${prospect.id}">
                         <i class="fas fa-info-circle"></i> Details
                     </button>
                     <button class="delete-prospect" data-id="${prospect.id}">
@@ -1037,21 +1037,23 @@ function toggleProspectDetails(prospectId) {
             const rowId = row.getAttribute('data-details-for');
             const relatedRow = document.getElementById(`prospect-${rowId}`);
             if (relatedRow) relatedRow.classList.remove('selected');
-            console.log('Removed selected class from:', relatedRow.id);
+            console.log('Removed selected class from:', relatedRow?.id);
         }
     });
     
     // Toggle the current row
     if (isOpen) {
         console.log('Closing details row:', detailsRow.id);
-        // Save any changes first
+        // Close immediately then save in the background
+        detailsRow.classList.remove('open');
+        prospectRow.classList.remove('selected');
+        selectedProspectId = null;
+        
+        // Save changes in the background
         showSaveIndicator(true);
         saveProspectDetails(prospectId).then(() => {
-            detailsRow.classList.remove('open');
-            prospectRow.classList.remove('selected');
-            selectedProspectId = null;
             showSaveIndicator(false, true);
-            console.log('Details row closed successfully');
+            console.log('Details row closed and saved successfully');
         });
     } else {
         console.log('Opening details row:', detailsRow.id);
@@ -1072,6 +1074,7 @@ function toggleProspectDetails(prospectId) {
             }
         }
         
+        // Open the row immediately
         detailsRow.classList.add('open');
         prospectRow.classList.add('selected');
         selectedProspectId = prospectId;
@@ -1081,6 +1084,7 @@ function toggleProspectDetails(prospectId) {
     
     // Log the final state
     console.log('Final state - is row open?', detailsRow.classList.contains('open'));
+    return false; // Prevent default behavior
 }
 
 // Render the detail sections for a prospect
@@ -1489,41 +1493,51 @@ function clearBigBoard() {
 
 // Add click event listeners to prospect rows
 function addProspectRowListeners() {
-    // First remove any existing event listeners by cloning and replacing each row
-    document.querySelectorAll('.prospect-row').forEach(row => {
-        const prospectId = row.getAttribute('data-id');
-        row.addEventListener('click', function(event) {
-            // Prevent default and stop propagation
-            event.preventDefault();
-            event.stopPropagation();
-            
-            // Don't trigger if clicking delete button
-            if (event.target.closest('.delete-prospect')) return;
-            
-            console.log('Row clicked via addProspectRowListeners, toggling details for:', prospectId);
-            toggleProspectDetails(prospectId);
-        });
+    console.log('addProspectRowListeners is deprecated, using setupAllEventListeners instead');
+}
+
+// Save prospect details
+function saveProspectDetails(prospectId) {
+    console.log('Saving details for prospect:', prospectId);
+    const detailsRow = document.getElementById(`details-row-${prospectId}`);
+    
+    if (!detailsRow) {
+        console.error('Could not find details row');
+        return Promise.reject('Details row not found');
+    }
+    
+    // Get all textareas/inputs
+    const textareas = detailsRow.querySelectorAll('textarea, input[type="text"]');
+    const prospect = prospectsList.find(p => p.id === prospectId);
+    
+    if (!prospect) {
+        console.error('Could not find prospect with ID:', prospectId);
+        return Promise.reject('Prospect not found');
+    }
+    
+    // Initialize details object if it doesn't exist
+    if (!prospect.details) {
+        prospect.details = {};
+    }
+    
+    // Update prospect with textarea values
+    textareas.forEach(textarea => {
+        const fieldKey = textarea.getAttribute('data-field-key');
+        const value = textarea.value;
+        
+        // Check if the field key is a basic field
+        if (fieldKey === 'name' || fieldKey === 'position' || fieldKey === 'college' || 
+            fieldKey === 'height' || fieldKey === 'weight' || fieldKey === 'handSize' || 
+            fieldKey === 'armLength' || fieldKey === 'fortyYard' || fieldKey === 'twentyYardSplit' || 
+            fieldKey === 'tenYardSplit' || fieldKey === 'verticalJump' || fieldKey === 'broadJump' || 
+            fieldKey === 'threeCone' || fieldKey === 'shuttle' || fieldKey === 'benchPress') {
+            prospect[fieldKey] = value;
+        } else {
+            prospect.details[fieldKey] = value;
+        }
     });
-}
-
-// Debounce function to limit how often a function runs
-function debounce(func, wait) {
-    let timeout;
-    return function() {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            func.apply(context, args);
-        }, wait);
-    };
-}
-
-// Function to directly toggle details row visibility
-function showProspectDetails(prospectId) {
-    console.log('Showing details for prospect:', prospectId);
-    toggleProspectDetails(prospectId);
-    return false; // Prevent default behavior
+    
+    return saveProspects();
 }
 
 // Setup all event listeners
@@ -1675,4 +1689,24 @@ function getHeightInches(height) {
     }
     
     return '';
+}
+
+// Debounce function to limit how often a function runs
+function debounce(func, wait) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
+}
+
+// Function to directly toggle details row visibility
+function showProspectDetails(prospectId) {
+    console.log('Showing details for prospect:', prospectId);
+    toggleProspectDetails(prospectId);
+    return false; // Prevent default behavior
 }
