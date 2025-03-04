@@ -445,10 +445,12 @@ function renderProspects() {
         // Create and append the details row
         const detailsRow = document.createElement('tr');
         detailsRow.setAttribute('data-details-for', prospect.id);
+        detailsRow.id = `details-row-${prospect.id}`;
         detailsRow.classList.add('prospect-details-row');
         
         const detailsCell = document.createElement('td');
         detailsCell.setAttribute('colspan', '9');
+        detailsCell.id = `details-cell-${prospect.id}`;
         detailsCell.innerHTML = `
             <div class="prospect-details" id="details-${prospect.id}">
                 <div class="prospect-detail-sections">
@@ -524,21 +526,15 @@ function renderProspects() {
         });
     });
     
-    document.querySelectorAll('.save-details-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const prospectId = btn.getAttribute('data-id');
-            saveProspectDetails(prospectId);
-        });
-    });
-    
     document.querySelectorAll('.remove-field-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const prospectId = btn.closest('.prospect-details').id.replace('details-', '');
             const fieldKey = btn.getAttribute('data-field-key');
+            const prospectId = btn.closest('.prospect-details').id.replace('details-', '');
             
-            removeCustomField(prospectId, fieldKey);
+            if (fieldKey && prospectId) {
+                removeCustomField(prospectId, fieldKey);
+            }
         });
     });
     
@@ -546,25 +542,32 @@ function renderProspects() {
         toggle.addEventListener('click', (e) => {
             e.stopPropagation();
             const sectionId = toggle.getAttribute('data-section');
-            toggle.classList.toggle('open');
-            document.getElementById(sectionId).classList.toggle('open');
+            const section = document.getElementById(sectionId);
+            
+            if (section) {
+                toggle.classList.toggle('open');
+                section.classList.toggle('open');
+            }
+        });
+    });
+    
+    document.querySelectorAll('.save-details-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            saveProspectDetails(prospectId);
         });
     });
 }
 
 // Render the detail sections for a prospect
 function renderDetailSections(prospect) {
-    // Initialize details object if not exists
+    // Initialize details if not exists
     if (!prospect.details) {
         prospect.details = {};
-        
-        // Initialize default fields
-        defaultDetailFields.forEach(field => {
-            prospect.details[field.key] = '';
-        });
     }
     
-    // If customFields array doesn't exist, create it
+    // Initialize customFields if not exists
     if (!prospect.customFields) {
         prospect.customFields = [];
     }
@@ -588,7 +591,7 @@ function renderDetailSections(prospect) {
 
 // Create HTML for a detail section
 function createDetailSectionHTML(key, label, value, isRemovable) {
-    const sectionId = `section-${key}-${Date.now()}`;
+    const sectionId = `section-${key}`;
     
     return `
         <div class="prospect-detail-section" data-field-key="${key}">

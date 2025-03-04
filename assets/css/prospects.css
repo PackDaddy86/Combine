@@ -265,44 +265,70 @@
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .prospect-detail-section {
-    margin-bottom: 20px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .prospect-detail-title {
+    background-color: #013369;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     font-weight: bold;
-    font-size: 1.1rem;
-    margin-bottom: 5px;
-    color: #F7C625;
+}
+
+.prospect-detail-title span {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+}
+
+.field-toggle {
+    cursor: pointer;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+.field-toggle.open {
+    transform: rotate(180deg);
+}
+
+.field-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.field-collapse.open {
+    max-height: 300px;
 }
 
 .prospect-detail-content {
-    margin-bottom: 15px;
+    padding: 10px;
 }
 
 .prospect-detail-textarea {
     width: 100%;
     min-height: 100px;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
     padding: 10px;
-    font-family: inherit;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     resize: vertical;
-    margin-bottom: 10px;
+    font-family: inherit;
 }
 
 .prospect-detail-textarea:focus {
+    border-color: #013369;
     outline: none;
-    border-color: #F7C625;
+    box-shadow: 0 0 0 2px rgba(1, 51, 105, 0.2);
 }
 
 .detail-buttons {
@@ -359,27 +385,6 @@
     border-top: 1px dashed rgba(255, 255, 255, 0.2);
 }
 
-.field-toggle {
-    margin-left: 5px;
-    cursor: pointer;
-    color: #F7C625;
-    transition: transform 0.3s;
-}
-
-.field-toggle.open {
-    transform: rotate(180deg);
-}
-
-.field-collapse {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-}
-
-.field-collapse.open {
-    max-height: 1000px; /* Large enough to show content */
-}
-
 /* Form Section styles */
 .form-section-heading {
     margin: 20px 0 10px;
@@ -413,6 +418,38 @@
 
 .detailed-fields.open {
     max-height: 1000px;
+}
+
+/* Prospect details row styling */
+.prospect-details-row {
+    display: none;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+    border-top: none !important;
+}
+
+.prospect-details-row.open {
+    display: table-row;
+    max-height: 1000px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.prospect-details-row td {
+    padding: 0 !important;
+    border-top: none !important;
+}
+
+.prospect-details {
+    padding: 15px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.prospect-detail-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
 }
 
 /* Responsive Adjustments */
