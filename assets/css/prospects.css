@@ -20,6 +20,7 @@
     position: sticky;
     top: 100px;
     margin-left: 0;
+    box-sizing: border-box;
 }
 
 .sidebar-title {
@@ -34,24 +35,39 @@
 .prospect-form select,
 .prospect-form textarea {
     margin-bottom: 1rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .prospect-form label {
     margin-bottom: 0.3rem;
     font-weight: 500;
+    display: block;
 }
 
 .input-group {
     margin-bottom: 1rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .input-row {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .input-row .input-group {
     flex: 1;
+    min-width: 0; /* Prevents flex items from overflowing */
+}
+
+.input-row input {
+    width: 100%;
+    min-width: 0;
+    font-size: 0.9rem; /* Slightly smaller font for these fields */
+    padding: 0.7rem;
 }
 
 .prospect-submit-btn {
