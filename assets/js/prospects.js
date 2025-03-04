@@ -72,7 +72,7 @@ function showLoading(show) {
 }
 
 // Show save indicator
-function showSaveIndicator(saving = false) {
+function showSaveIndicator(saving = false, saved = false) {
     const saveIndicator = document.getElementById('save-indicator');
     if (!saveIndicator) return;
     
@@ -81,7 +81,7 @@ function showSaveIndicator(saving = false) {
         saveIndicator.innerHTML = '<i class="fas fa-spinner"></i> Saving changes...';
         saveIndicator.classList.add('saving');
     } else {
-        saveIndicator.innerHTML = '<i class="fas fa-check-circle"></i> Changes saved';
+        saveIndicator.innerHTML = saved ? '<i class="fas fa-check-circle"></i> Changes saved' : '<i class="fas fa-check-circle"></i> All changes saved';
         saveIndicator.classList.remove('saving');
     }
     
@@ -263,7 +263,7 @@ function saveProspects() {
             return saveProspectsToFirestoreOnly()
                 .then(() => {
                     console.log('Prospects saved successfully');
-                    showSaveIndicator(false);
+                    showSaveIndicator(false, true);
                 })
                 .catch(error => {
                     console.error('Error saving prospects:', error);
@@ -669,56 +669,103 @@ function toggleProspectDetails(prospectId) {
             // Then close
             detailsRow.classList.remove('open');
             prospectRow.classList.remove('selected');
-            
-            // Use setTimeout to ensure a smooth transition
-            setTimeout(() => {
-                detailsRow.style.display = 'none';
-            }, 300);
+            showSaveIndicator(false, true); // Show "Changes saved"
         });
     } else {
         // Opening details
         console.log('Opening details for prospect:', prospectId);
+        
+        // Important: First make sure row is already in the DOM and display is set
         detailsRow.style.display = 'table-row';
         
         // Use setTimeout to ensure the display change has taken effect before adding the open class
         setTimeout(() => {
             detailsRow.classList.add('open');
             prospectRow.classList.add('selected');
+            
+            // Add button event listeners for this detail row
+            setupDetailButtons(prospectId);
         }, 10);
-        
-        // Render the details section if it's empty
-        if (!detailsContent.querySelector('.prospect-detail-sections')) {
-            console.log('Details content empty, rendering sections');
-            const prospect = prospectsList.find(p => p.id === prospectId);
-            if (prospect) {
-                detailsContent.innerHTML = `
-                    <div class="prospect-detail-sections">
-                        ${renderDetailSections(prospect)}
-                    </div>
-                    
-                    <div class="detail-buttons">
-                        <button class="detail-button add-field-btn" data-id="${prospect.id}">
-                            <i class="fas fa-plus"></i> Add Field
-                        </button>
-                        <button class="detail-button save-details-btn" data-id="${prospect.id}">
-                            <i class="fas fa-save"></i> Save Changes
-                        </button>
-                    </div>
-                    
-                    <div class="add-field-form" id="add-field-form-${prospect.id}" style="display: none;">
-                        <input type="text" class="form-control field-name-input" placeholder="Field Name">
-                        <button class="detail-button confirm-add-field-btn" data-id="${prospect.id}">
-                            <i class="fas fa-check"></i> Add
-                        </button>
-                        <button class="detail-button cancel-add-field-btn">
-                            <i class="fas fa-times"></i> Cancel
-                        </button>
-                    </div>
-                `;
-                setupAutoSave(prospectId);
-            }
-        }
     }
+}
+
+// Setup detail button event listeners for a specific prospect
+function setupDetailButtons(prospectId) {
+    const detailsContent = document.getElementById(`details-${prospectId}`);
+    if (!detailsContent) return;
+    
+    // Add field button
+    const addFieldBtn = detailsContent.querySelector('.add-field-btn');
+    if (addFieldBtn) {
+        addFieldBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById(`add-field-form-${prospectId}`).style.display = 'flex';
+        });
+    }
+    
+    // Cancel add field button
+    const cancelAddFieldBtn = detailsContent.querySelector('.cancel-add-field-btn');
+    if (cancelAddFieldBtn) {
+        cancelAddFieldBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
+        });
+    }
+    
+    // Confirm add field button
+    const confirmAddFieldBtn = detailsContent.querySelector('.confirm-add-field-btn');
+    if (confirmAddFieldBtn) {
+        confirmAddFieldBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fieldName = detailsContent.querySelector('.field-name-input').value.trim();
+            
+            if (fieldName) {
+                addCustomField(prospectId, fieldName);
+                document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
+            }
+        });
+    }
+    
+    // Save details button
+    const saveDetailsBtn = detailsContent.querySelector('.save-details-btn');
+    if (saveDetailsBtn) {
+        saveDetailsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showSaveIndicator(true);
+            saveProspectDetails(prospectId).then(() => {
+                showSaveIndicator(false, true);
+            });
+        });
+    }
+    
+    // Field toggle buttons
+    detailsContent.querySelectorAll('.field-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sectionId = toggle.getAttribute('data-section');
+            const section = document.getElementById(sectionId);
+            
+            if (section) {
+                toggle.classList.toggle('open');
+                section.classList.toggle('open');
+            }
+        });
+    });
+    
+    // Remove field buttons
+    detailsContent.querySelectorAll('.remove-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const fieldKey = btn.getAttribute('data-field-key');
+            
+            if (fieldKey) {
+                removeCustomField(prospectId, fieldKey);
+            }
+        });
+    });
+    
+    // Setup auto-save
+    setupAutoSave(prospectId);
 }
 
 // Save prospect details from the form
@@ -985,10 +1032,18 @@ function clearBigBoard() {
 
 // Add click event listeners to prospect rows
 function addProspectRowListeners() {
+    // First remove any existing event listeners by cloning and replacing each row
     document.querySelectorAll('.prospect-row').forEach(row => {
-        row.addEventListener('click', function() {
-            const prospectId = this.getAttribute('data-id');
-            console.log('Row clicked, toggling details for:', prospectId);
+        const prospectId = row.getAttribute('data-id');
+        row.addEventListener('click', function(event) {
+            // Prevent default and stop propagation
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // Don't trigger if clicking delete button
+            if (event.target.closest('.delete-prospect')) return;
+            
+            console.log('Row clicked via addProspectRowListeners, toggling details for:', prospectId);
             toggleProspectDetails(prospectId);
         });
     });

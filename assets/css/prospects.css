@@ -428,8 +428,7 @@
 }
 
 .prospect-details-row.open {
-    display: table-row;
-    max-height: 1000px;
+    display: table-row !important;
     animation: fadeIn 0.3s ease-in-out;
 }
 
