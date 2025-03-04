@@ -24,112 +24,14 @@
     
     <div class="container-fluid" style="padding: 0;">
         <div class="prospects-container">
-            <!-- Left Sidebar - Add Prospects Form -->
-            <div class="add-prospect-sidebar">
-                <h2 class="sidebar-title">Add Prospect</h2>
-                <form id="prospect-form" class="prospect-form">
-                    <div class="input-group">
-                        <label for="prospect-name">Name</label>
-                        <input type="text" id="prospect-name" placeholder="Name" required>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="prospect-position">Position</label>
-                        <select id="prospect-position" required>
-                            <option value="">Select Position</option>
-                            <!-- Offense -->
-                            <option value="QB">Quarterback (QB)</option>
-                            <option value="RB">Running Back (RB)</option>
-                            <option value="FB">Fullback (FB)</option>
-                            <option value="WR">Wide Receiver (WR)</option>
-                            <option value="TE">Tight End (TE)</option>
-                            <option value="OT">Offensive Tackle (OT)</option>
-                            <option value="OG">Offensive Guard (OG)</option>
-                            <option value="C">Center (C)</option>
-                            <!-- Defense -->
-                            <option value="DE">Defensive End (DE)</option>
-                            <option value="DT">Defensive Tackle (DT)</option>
-                            <option value="NT">Nose Tackle (NT)</option>
-                            <option value="OLB">Outside Linebacker (OLB)</option>
-                            <option value="ILB">Inside Linebacker (ILB)</option>
-                            <option value="CB">Cornerback (CB)</option>
-                            <option value="S">Safety (S)</option>
-                            <option value="FS">Free Safety (FS)</option>
-                            <option value="SS">Strong Safety (SS)</option>
-                            <!-- Special Teams -->
-                            <option value="K">Kicker (K)</option>
-                            <option value="P">Punter (P)</option>
-                            <option value="LS">Long Snapper (LS)</option>
-                        </select>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="prospect-college">College</label>
-                        <input type="text" id="prospect-college" placeholder="College">
-                    </div>
-                    
-                    <div class="input-row">
-                        <div class="input-group">
-                            <label for="prospect-age">Age</label>
-                            <input type="number" id="prospect-age" placeholder="Age" min="18" max="35">
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="prospect-height">Height</label>
-                            <input type="text" id="prospect-height" placeholder="e.g. 6'2">
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="prospect-weight">Weight</label>
-                            <input type="number" id="prospect-weight" placeholder="lbs">
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="prospect-grade">Grade (1-10)</label>
-                        <input type="number" id="prospect-grade" placeholder="Grade" min="1" max="10" step="0.1">
-                    </div>
-                    
-                    <div class="form-section-heading">
-                        <h3>Detailed Information <i class="fas fa-chevron-down" id="toggle-details"></i></h3>
-                    </div>
-                    
-                    <div id="detailed-info-fields" class="detailed-fields">
-                        <div class="input-group">
-                            <label for="prospect-background">Background</label>
-                            <textarea id="prospect-background" placeholder="Player background information" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="prospect-strengths">Strengths</label>
-                            <textarea id="prospect-strengths" placeholder="Player strengths" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="prospect-weaknesses">Weaknesses</label>
-                            <textarea id="prospect-weaknesses" placeholder="Player weaknesses" rows="3"></textarea>
-                        </div>
-                        
-                        <div class="input-group">
-                            <label for="prospect-summary">Summary</label>
-                            <textarea id="prospect-summary" placeholder="Overall summary" rows="3"></textarea>
-                        </div>
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="prospect-notes">Notes</label>
-                        <textarea id="prospect-notes" placeholder="Notes" rows="4"></textarea>
-                    </div>
-                    
-                    <button type="submit" class="prospect-submit-btn">Add to Big Board</button>
-                </form>
-            </div>
-            
             <!-- Main Content - Big Board -->
-            <div class="big-board-container">
+            <div class="big-board-container full-width">
                 <div class="big-board-header">
                     <h2 class="big-board-title">Your Big Board</h2>
                     <div class="board-controls">
+                        <button id="add-prospect-btn" class="board-control-btn add-prospect-btn">
+                            <i class="fas fa-plus"></i> Add Prospect
+                        </button>
                         <button id="export-board-btn" class="board-control-btn">
                             <i class="fas fa-download"></i> Export
                         </button>
@@ -162,7 +64,7 @@
                 <div id="no-prospects" class="no-prospects">
                     <div class="auth-state-message">
                         <p>You haven't added any prospects to your big board yet.</p>
-                        <p>Use the form on the left to add your first prospect.</p>
+                        <p>Click the "Add Prospect" button to get started.</p>
                     </div>
                 </div>
                 
