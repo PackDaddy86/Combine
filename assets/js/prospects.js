@@ -35,7 +35,19 @@ document.addEventListener('DOMContentLoaded', function() {
         firebase.auth().onAuthStateChanged(user => {
             if (user) {
                 console.log('User authenticated, loading prospects from Firestore');
-                loadProspectsFromFirestoreOnly();
+                loadProspectsFromFirestoreOnly()
+                    .then(prospects => {
+                        // Render prospects to the UI
+                        renderProspects();
+                        // Hide loading overlay
+                        showLoading(false);
+                        console.log('Prospects loaded and rendered successfully');
+                    })
+                    .catch(error => {
+                        console.error('Error loading prospects:', error);
+                        showErrorMessage('Error loading prospects: ' + error.message);
+                        showLoading(false);
+                    });
             } else {
                 console.log('No user logged in, showing empty board');
                 showLoading(false);
