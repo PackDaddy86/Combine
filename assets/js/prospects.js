@@ -653,7 +653,7 @@ function renderProspects() {
         // Always add the actions column with both details and delete buttons
         tableHTML += `
                 <td>
-                    <button class="view-details-btn" onclick="event.stopPropagation(); showProspectDetails('${prospect.id}'); return false;" data-id="${prospect.id}">
+                    <button class="view-details-btn" onclick="event.stopPropagation(); toggleProspectDetails('${prospect.id}'); return false;" data-id="${prospect.id}">
                         <i class="fas fa-info-circle"></i> Details
                     </button>
                     <button class="delete-prospect" data-id="${prospect.id}">
@@ -1055,6 +1055,23 @@ function toggleProspectDetails(prospectId) {
         });
     } else {
         console.log('Opening details row:', detailsRow.id);
+        // Get the prospect data
+        const prospect = prospectsList.find(p => p.id === prospectId);
+        if (prospect) {
+            // Find the details section
+            const detailsSection = document.getElementById(`details-${prospectId}`);
+            if (detailsSection) {
+                // Update the detail sections with the latest prospect data
+                const detailSections = detailsSection.querySelector('.prospect-detail-sections');
+                if (detailSections) {
+                    detailSections.innerHTML = renderDetailSections(prospect);
+                    
+                    // Reinitialize event listeners
+                    setupDetailsEventListeners();
+                }
+            }
+        }
+        
         detailsRow.classList.add('open');
         prospectRow.classList.add('selected');
         selectedProspectId = prospectId;
@@ -1505,102 +1522,8 @@ function debounce(func, wait) {
 // Function to directly toggle details row visibility
 function showProspectDetails(prospectId) {
     console.log('Showing details for prospect:', prospectId);
-    
-    // Get the details row
-    const detailsRow = document.getElementById(`details-row-${prospectId}`);
-    if (!detailsRow) {
-        console.error(`Cannot find details row for prospect: ${prospectId}`);
-        return;
-    }
-    
-    // Close any already open rows
-    document.querySelectorAll('.prospect-details-row.open').forEach(row => {
-        if (row.id !== `details-row-${prospectId}`) {
-            row.classList.remove('open');
-        }
-    });
-    
-    // Check if the row is already open
-    if (detailsRow.classList.contains('open')) {
-        // If it's open, close it and save changes
-        detailsRow.classList.remove('open');
-        saveProspectDetails(prospectId);
-        console.log('Closed details for prospect:', prospectId);
-    } else {
-        // If it's closed, refresh the content and open it
-        const prospect = prospectsList.find(p => p.id === prospectId);
-        if (prospect) {
-            // Find the details section
-            const detailsSection = document.getElementById(`details-${prospectId}`);
-            if (detailsSection) {
-                // Update the detail sections with the latest prospect data
-                const detailSections = detailsSection.querySelector('.prospect-detail-sections');
-                if (detailSections) {
-                    detailSections.innerHTML = renderDetailSections(prospect);
-                    
-                    // Reinitialize event listeners
-                    setupDetailsEventListeners();
-                }
-            }
-        }
-        
-        detailsRow.classList.add('open');
-        console.log('Opened details for prospect:', prospectId);
-    }
-    
+    toggleProspectDetails(prospectId);
     return false; // Prevent default behavior
-}
-
-// Sanitize a string for safe display in HTML
-function sanitize(str) {
-    return str.replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-// Helper functions for formatting height
-function getHeightFeet(height) {
-    if (!height) return '';
-    
-    // Check if height is in format like "6'2"
-    if (height.includes("'")) {
-        return height.split("'")[0];
-    }
-    
-    // Check if height is in format like "6-2"
-    if (height.includes("-")) {
-        return height.split("-")[0];
-    }
-    
-    // Check if height is in format like "6 2"
-    if (height.includes(" ")) {
-        return height.split(" ")[0];
-    }
-    
-    return '';
-}
-
-function getHeightInches(height) {
-    if (!height) return '';
-    
-    // Check if height is in format like "6'2"
-    if (height.includes("'")) {
-        return height.split("'")[1].replace('"', '');
-    }
-    
-    // Check if height is in format like "6-2"
-    if (height.includes("-")) {
-        return height.split("-")[1];
-    }
-    
-    // Check if height is in format like "6 2"
-    if (height.includes(" ")) {
-        return height.split(" ")[1];
-    }
-    
-    return '';
 }
 
 // Setup all event listeners
@@ -1615,6 +1538,15 @@ function setupAllEventListeners() {
             if (confirm('Are you sure you want to delete this prospect? This cannot be undone.')) {
                 deleteProspect(id);
             }
+        });
+    });
+    
+    // Set up view details buttons
+    document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const id = btn.getAttribute('data-id');
+            toggleProspectDetails(id);
         });
     });
     
@@ -1691,4 +1623,56 @@ function setupAllEventListeners() {
     
     // Set up the details section event listeners
     setupDetailsEventListeners();
+}
+
+// Sanitize a string for safe display in HTML
+function sanitize(str) {
+    return str.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+// Helper functions for formatting height
+function getHeightFeet(height) {
+    if (!height) return '';
+    
+    // Check if height is in format like "6'2"
+    if (height.includes("'")) {
+        return height.split("'")[0];
+    }
+    
+    // Check if height is in format like "6-2"
+    if (height.includes("-")) {
+        return height.split("-")[0];
+    }
+    
+    // Check if height is in format like "6 2"
+    if (height.includes(" ")) {
+        return height.split(" ")[0];
+    }
+    
+    return '';
+}
+
+function getHeightInches(height) {
+    if (!height) return '';
+    
+    // Check if height is in format like "6'2"
+    if (height.includes("'")) {
+        return height.split("'")[1].replace('"', '');
+    }
+    
+    // Check if height is in format like "6-2"
+    if (height.includes("-")) {
+        return height.split("-")[1];
+    }
+    
+    // Check if height is in format like "6 2"
+    if (height.includes(" ")) {
+        return height.split(" ")[1];
+    }
+    
+    return '';
 }
