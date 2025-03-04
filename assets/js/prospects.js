@@ -474,11 +474,14 @@ function renderProspects() {
         const detailsRow = document.createElement('tr');
         detailsRow.setAttribute('data-details-for', prospect.id);
         detailsRow.id = `details-row-${prospect.id}`;
-        detailsRow.classList.add('prospect-details-row');
+        detailsRow.className = 'prospect-details-row';
         
+        // Add details cell
         const detailsCell = document.createElement('td');
-        detailsCell.setAttribute('colspan', '9');
+        detailsCell.setAttribute('colspan', '9'); // Span all columns
         detailsCell.id = `details-cell-${prospect.id}`;
+        
+        // Populate the details cell
         detailsCell.innerHTML = `
             <div class="prospect-details" id="details-${prospect.id}">
                 <div class="prospect-detail-sections">
@@ -506,26 +509,29 @@ function renderProspects() {
             </div>
         `;
         
+        // Append the details cell to the row
         detailsRow.appendChild(detailsCell);
+        
+        // Append the details row to the table
         prospectsTable.appendChild(detailsRow);
         
-        // Show details if this is the selected prospect
+        // Mark detail row as already attached
+        detailsRow.dataset.attached = 'true';
+        
+        // Initialize the detail row as open if this is the selected prospect
         if (prospect.id === selectedProspectId) {
-            document.getElementById(`details-${prospect.id}`).classList.add('visible');
+            detailsRow.classList.add('open');
+            tr.classList.add('selected');
         }
-        
-        // Add delete button event listener
-        const deleteButton = tr.querySelector('.delete-prospect');
-        deleteButton.addEventListener('click', (e) => {
-            e.stopPropagation(); // Stop event propagation
-            handleDeleteProspect(e);
-        });
-        
-        // Add auto-save functionality
-        setupAutoSave(prospect.id);
     });
     
-    // Add event listeners to detail buttons
+    // Add event listeners for the detail sections
+    setupAllDetailButtons();
+}
+
+// Set up event listeners for all detail buttons
+function setupAllDetailButtons() {
+    // Set up add field buttons
     document.querySelectorAll('.add-field-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -534,61 +540,145 @@ function renderProspects() {
         });
     });
     
+    // Set up cancel add field buttons
     document.querySelectorAll('.cancel-add-field-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
-            const prospectId = btn.closest('.add-field-form').id.replace('add-field-form-', '');
-            document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
-        });
-    });
-    
-    document.querySelectorAll('.confirm-add-field-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const prospectId = btn.getAttribute('data-id');
-            const fieldName = btn.closest('.add-field-form').querySelector('.field-name-input').value.trim();
-            
-            if (fieldName) {
-                addCustomField(prospectId, fieldName);
+            const formElement = btn.closest('.add-field-form');
+            if (formElement) {
+                formElement.style.display = 'none';
             }
         });
     });
     
+    // Set up confirm add field buttons
+    document.querySelectorAll('.confirm-add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            const formElement = btn.closest('.add-field-form');
+            if (formElement) {
+                const fieldNameInput = formElement.querySelector('.field-name-input');
+                if (fieldNameInput && fieldNameInput.value.trim()) {
+                    addCustomField(prospectId, fieldNameInput.value.trim());
+                    formElement.style.display = 'none';
+                    fieldNameInput.value = '';
+                }
+            }
+        });
+    });
+    
+    // Set up save details buttons
+    document.querySelectorAll('.save-details-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            if (prospectId) {
+                showSaveIndicator(true);
+                saveProspectDetails(prospectId).then(() => {
+                    showSaveIndicator(false, true);
+                });
+            }
+        });
+    });
+    
+    // Set up field toggle buttons
+    document.querySelectorAll('.field-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sectionId = toggle.getAttribute('data-section');
+            if (sectionId) {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    toggle.classList.toggle('open');
+                    section.classList.toggle('open');
+                }
+            }
+        });
+    });
+    
+    // Set up remove field buttons
     document.querySelectorAll('.remove-field-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             const fieldKey = btn.getAttribute('data-field-key');
-            const prospectId = btn.closest('.prospect-details').id.replace('details-', '');
-            
-            if (fieldKey && prospectId) {
+            const detailsDiv = btn.closest('.prospect-details');
+            if (fieldKey && detailsDiv) {
+                const prospectId = detailsDiv.id.replace('details-', '');
                 removeCustomField(prospectId, fieldKey);
             }
         });
     });
     
-    document.querySelectorAll('.field-toggle').forEach(toggle => {
-        toggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const sectionId = toggle.getAttribute('data-section');
-            const section = document.getElementById(sectionId);
+    // Set up auto-save for all textareas
+    document.querySelectorAll('.prospect-detail-textarea').forEach(textarea => {
+        const detailsDiv = textarea.closest('.prospect-details');
+        if (detailsDiv) {
+            const prospectId = detailsDiv.id.replace('details-', '');
+            setupTextareaAutoSave(textarea, prospectId);
+        }
+    });
+}
+
+// Set up auto-save for a textarea
+function setupTextareaAutoSave(textarea, prospectId) {
+    let saveTimeout;
+    
+    textarea.addEventListener('input', () => {
+        // Show saving indicator
+        showSaveIndicator(true);
+        
+        // Clear previous timeout
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
+        
+        // Set new timeout for debounced save
+        saveTimeout = setTimeout(() => {
+            const fieldKey = textarea.getAttribute('data-field-key');
+            const prospect = prospectsList.find(p => p.id === prospectId);
             
-            if (section) {
-                toggle.classList.toggle('open');
-                section.classList.toggle('open');
+            if (prospect && fieldKey) {
+                if (!prospect.details) {
+                    prospect.details = {};
+                }
+                
+                prospect.details[fieldKey] = textarea.value;
+                saveProspects().then(() => {
+                    console.log(`Auto-saved ${fieldKey} for prospect ${prospectId}`);
+                });
             }
-        });
+        }, 1000); // 1 second debounce
     });
+}
+
+// Toggle prospect details
+function toggleProspectDetails(prospectId) {
+    console.log('Toggling details for prospect:', prospectId);
     
-    document.querySelectorAll('.save-details-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const prospectId = btn.getAttribute('data-id');
-            saveProspectDetails(prospectId);
+    const detailsRow = document.getElementById(`details-row-${prospectId}`);
+    const prospectRow = document.getElementById(`prospect-${prospectId}`);
+    
+    if (!detailsRow || !prospectRow) {
+        console.error('Could not find details row or prospect row');
+        return;
+    }
+    
+    // Toggle open class on details row
+    if (detailsRow.classList.contains('open')) {
+        // Closing - save any changes first
+        showSaveIndicator(true);
+        saveProspectDetails(prospectId).then(() => {
+            detailsRow.classList.remove('open');
+            prospectRow.classList.remove('selected');
+            showSaveIndicator(false, true);
         });
-    });
-    
-    // Add click event listeners to prospect rows
-    addProspectRowListeners();
+    } else {
+        // Opening
+        detailsRow.classList.add('open');
+        prospectRow.classList.add('selected');
+        selectedProspectId = prospectId;
+    }
 }
 
 // Render the detail sections for a prospect
@@ -640,132 +730,6 @@ function createDetailSectionHTML(key, label, value, isRemovable) {
             </div>
         </div>
     `;
-}
-
-// Toggle prospect details
-function toggleProspectDetails(prospectId) {
-    console.log('Toggling details for prospect:', prospectId);
-    
-    const detailsRow = document.getElementById(`details-row-${prospectId}`);
-    const detailsCell = document.getElementById(`details-cell-${prospectId}`);
-    const detailsContent = document.getElementById(`details-${prospectId}`);
-    const prospectRow = document.getElementById(`prospect-${prospectId}`);
-    
-    // Log if elements were found
-    console.log('Details row found:', !!detailsRow);
-    console.log('Details cell found:', !!detailsCell);
-    console.log('Prospect row found:', !!prospectRow);
-    
-    if (!detailsRow || !detailsCell || !prospectRow) {
-        console.error('Could not find all required elements');
-        return;
-    }
-    
-    if (detailsRow.classList.contains('open')) {
-        // Closing details - save any changes first
-        console.log('Closing details for prospect:', prospectId);
-        showSaveIndicator(true);
-        saveProspectDetails(prospectId).then(() => {
-            // Then close
-            detailsRow.classList.remove('open');
-            prospectRow.classList.remove('selected');
-            showSaveIndicator(false, true); // Show "Changes saved"
-        });
-    } else {
-        // Opening details
-        console.log('Opening details for prospect:', prospectId);
-        
-        // Important: First make sure row is already in the DOM and display is set
-        detailsRow.style.display = 'table-row';
-        
-        // Use setTimeout to ensure the display change has taken effect before adding the open class
-        setTimeout(() => {
-            detailsRow.classList.add('open');
-            prospectRow.classList.add('selected');
-            
-            // Add button event listeners for this detail row
-            setupDetailButtons(prospectId);
-        }, 10);
-    }
-}
-
-// Setup detail button event listeners for a specific prospect
-function setupDetailButtons(prospectId) {
-    const detailsContent = document.getElementById(`details-${prospectId}`);
-    if (!detailsContent) return;
-    
-    // Add field button
-    const addFieldBtn = detailsContent.querySelector('.add-field-btn');
-    if (addFieldBtn) {
-        addFieldBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById(`add-field-form-${prospectId}`).style.display = 'flex';
-        });
-    }
-    
-    // Cancel add field button
-    const cancelAddFieldBtn = detailsContent.querySelector('.cancel-add-field-btn');
-    if (cancelAddFieldBtn) {
-        cancelAddFieldBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
-        });
-    }
-    
-    // Confirm add field button
-    const confirmAddFieldBtn = detailsContent.querySelector('.confirm-add-field-btn');
-    if (confirmAddFieldBtn) {
-        confirmAddFieldBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const fieldName = detailsContent.querySelector('.field-name-input').value.trim();
-            
-            if (fieldName) {
-                addCustomField(prospectId, fieldName);
-                document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
-            }
-        });
-    }
-    
-    // Save details button
-    const saveDetailsBtn = detailsContent.querySelector('.save-details-btn');
-    if (saveDetailsBtn) {
-        saveDetailsBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showSaveIndicator(true);
-            saveProspectDetails(prospectId).then(() => {
-                showSaveIndicator(false, true);
-            });
-        });
-    }
-    
-    // Field toggle buttons
-    detailsContent.querySelectorAll('.field-toggle').forEach(toggle => {
-        toggle.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const sectionId = toggle.getAttribute('data-section');
-            const section = document.getElementById(sectionId);
-            
-            if (section) {
-                toggle.classList.toggle('open');
-                section.classList.toggle('open');
-            }
-        });
-    });
-    
-    // Remove field buttons
-    detailsContent.querySelectorAll('.remove-field-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const fieldKey = btn.getAttribute('data-field-key');
-            
-            if (fieldKey) {
-                removeCustomField(prospectId, fieldKey);
-            }
-        });
-    });
-    
-    // Setup auto-save
-    setupAutoSave(prospectId);
 }
 
 // Save prospect details from the form
@@ -845,37 +809,6 @@ function removeCustomField(prospectId, fieldKey) {
     // Save and rerender
     saveProspects();
     renderProspects();
-}
-
-// Add auto-save functionality to textareas in details
-function setupAutoSave(prospectId) {
-    const detailsElement = document.getElementById(`details-${prospectId}`);
-    if (!detailsElement) return;
-    
-    // Get all textareas
-    const textareas = detailsElement.querySelectorAll('.prospect-detail-textarea');
-    
-    // Add input event listeners for auto-save
-    textareas.forEach(textarea => {
-        // Use debounce to avoid too many saves
-        textarea.addEventListener('input', debounce(function() {
-            console.log('Auto-saving changes...');
-            saveProspectDetails(prospectId);
-        }, 2000)); // 2 second delay
-    });
-}
-
-// Debounce function to limit how often a function runs
-function debounce(func, wait) {
-    let timeout;
-    return function() {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => {
-            func.apply(context, args);
-        }, wait);
-    };
 }
 
 // Handle dragging functionality for reordering prospects
@@ -1047,4 +980,17 @@ function addProspectRowListeners() {
             toggleProspectDetails(prospectId);
         });
     });
+}
+
+// Debounce function to limit how often a function runs
+function debounce(func, wait) {
+    let timeout;
+    return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+            func.apply(context, args);
+        }, wait);
+    };
 }

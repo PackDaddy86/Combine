@@ -340,8 +340,7 @@
     background-color: #013369;
     color: white;
     border: none;
-    padding: 8px 15px;
-    border-radius: 4px;
+    border-radius: 5px;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -422,8 +421,7 @@
 /* Prospect details row styling */
 .prospect-details-row {
     display: none;
-    background-color: #f8f9fa;
-    transition: all 0.3s ease;
+    background-color: #f9f9f9;
     border-top: none !important;
 }
 
@@ -440,7 +438,6 @@
 .prospect-details {
     padding: 15px;
     overflow: hidden;
-    transition: max-height 0.3s ease;
 }
 
 .prospect-detail-sections {
@@ -448,6 +445,118 @@
     flex-direction: column;
     gap: 15px;
     margin-bottom: 15px;
+}
+
+.prospect-detail-section {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.prospect-detail-title {
+    background-color: #013369;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.prospect-detail-title span {
+    display: flex;
+    align-items: center;
+}
+
+.field-toggle {
+    cursor: pointer;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+.field-toggle.open {
+    transform: rotate(180deg);
+}
+
+.field-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.field-collapse.open {
+    max-height: 300px;
+}
+
+.prospect-detail-content {
+    padding: 10px;
+}
+
+.prospect-detail-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.prospect-detail-textarea:focus {
+    border-color: #013369;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(1, 51, 105, 0.2);
+}
+
+.detail-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.detail-button {
+    padding: 8px 15px;
+    background-color: #013369;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.3s;
+}
+
+.detail-button:hover {
+    background-color: #00285e;
+}
+
+.detail-button i {
+    font-size: 12px;
+}
+
+.add-field-form {
+    display: none;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+.field-name-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Animation for the dropdown details */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Responsive Adjustments */
