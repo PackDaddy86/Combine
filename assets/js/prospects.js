@@ -426,6 +426,7 @@ function renderProspects() {
     prospectsList.forEach((prospect, index) => {
         // Create table row for the prospect
         const tr = document.createElement('tr');
+        tr.id = `prospect-${prospect.id}`;
         tr.setAttribute('data-id', prospect.id);
         tr.classList.add('prospect-row');
         tr.draggable = true;
@@ -585,6 +586,9 @@ function renderProspects() {
             saveProspectDetails(prospectId);
         });
     });
+    
+    // Add click event listeners to prospect rows
+    addProspectRowListeners();
 }
 
 // Render the detail sections for a prospect
@@ -640,10 +644,17 @@ function createDetailSectionHTML(key, label, value, isRemovable) {
 
 // Toggle prospect details
 function toggleProspectDetails(prospectId) {
+    console.log('Toggling details for prospect:', prospectId);
+    
     const detailsRow = document.getElementById(`details-row-${prospectId}`);
     const detailsCell = document.getElementById(`details-cell-${prospectId}`);
     const detailsContent = document.getElementById(`details-${prospectId}`);
     const prospectRow = document.getElementById(`prospect-${prospectId}`);
+    
+    // Log if elements were found
+    console.log('Details row found:', !!detailsRow);
+    console.log('Details cell found:', !!detailsCell);
+    console.log('Prospect row found:', !!prospectRow);
     
     if (!detailsRow || !detailsCell || !prospectRow) {
         console.error('Could not find all required elements');
@@ -652,6 +663,7 @@ function toggleProspectDetails(prospectId) {
     
     if (detailsRow.classList.contains('open')) {
         // Closing details - save any changes first
+        console.log('Closing details for prospect:', prospectId);
         showSaveIndicator(true);
         saveProspectDetails(prospectId).then(() => {
             // Then close
@@ -665,6 +677,7 @@ function toggleProspectDetails(prospectId) {
         });
     } else {
         // Opening details
+        console.log('Opening details for prospect:', prospectId);
         detailsRow.style.display = 'table-row';
         
         // Use setTimeout to ensure the display change has taken effect before adding the open class
@@ -674,10 +687,34 @@ function toggleProspectDetails(prospectId) {
         }, 10);
         
         // Render the details section if it's empty
-        if (!detailsContent.innerHTML.trim()) {
+        if (!detailsContent.querySelector('.prospect-detail-sections')) {
+            console.log('Details content empty, rendering sections');
             const prospect = prospectsList.find(p => p.id === prospectId);
             if (prospect) {
-                detailsContent.innerHTML = renderDetailSections(prospect);
+                detailsContent.innerHTML = `
+                    <div class="prospect-detail-sections">
+                        ${renderDetailSections(prospect)}
+                    </div>
+                    
+                    <div class="detail-buttons">
+                        <button class="detail-button add-field-btn" data-id="${prospect.id}">
+                            <i class="fas fa-plus"></i> Add Field
+                        </button>
+                        <button class="detail-button save-details-btn" data-id="${prospect.id}">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                    
+                    <div class="add-field-form" id="add-field-form-${prospect.id}" style="display: none;">
+                        <input type="text" class="form-control field-name-input" placeholder="Field Name">
+                        <button class="detail-button confirm-add-field-btn" data-id="${prospect.id}">
+                            <i class="fas fa-check"></i> Add
+                        </button>
+                        <button class="detail-button cancel-add-field-btn">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                    </div>
+                `;
                 setupAutoSave(prospectId);
             }
         }
@@ -944,4 +981,15 @@ function clearBigBoard() {
         saveProspects();
         renderProspects();
     }
+}
+
+// Add click event listeners to prospect rows
+function addProspectRowListeners() {
+    document.querySelectorAll('.prospect-row').forEach(row => {
+        row.addEventListener('click', function() {
+            const prospectId = this.getAttribute('data-id');
+            console.log('Row clicked, toggling details for:', prospectId);
+            toggleProspectDetails(prospectId);
+        });
+    });
 }

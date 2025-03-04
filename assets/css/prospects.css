@@ -239,16 +239,15 @@
 /* Expandable row styles */
 .prospect-row {
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s ease;
 }
 
 .prospect-row:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(1, 51, 105, 0.1);
 }
 
 .prospect-row.selected {
-    background-color: rgba(247, 198, 37, 0.1);
-    border-bottom: none;
+    background-color: rgba(1, 51, 105, 0.2);
 }
 
 .prospect-details {
