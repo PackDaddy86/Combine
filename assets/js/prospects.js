@@ -1,12 +1,21 @@
 // NFL Draft Prospects Grading Page JavaScript
 
-// DOM Elements
+// Global variables for prospect data
 let prospectForm;
 let prospectsTable;
 let prospectsList = [];
 let dragStartIndex;
 let loadingOverlay;
 let saveIndicator;
+let selectedProspectId = null;
+
+// Default detail fields that every prospect will have
+const defaultDetailFields = [
+    { key: 'background', label: 'Background', type: 'textarea' },
+    { key: 'strengths', label: 'Strengths', type: 'textarea' },
+    { key: 'weaknesses', label: 'Weaknesses', type: 'textarea' },
+    { key: 'summary', label: 'Summary', type: 'textarea' }
+];
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DOM elements
@@ -110,26 +119,60 @@ function initFirebaseAuthListener() {
     }
 }
 
-// Load prospects ONLY from Firestore, no localStorage fallback
-function loadProspectsFromFirestoreOnly() {
-    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.firestore) {
-        console.error('Firebase not available');
-        showErrorMessage('Firebase not available');
-        return;
-    }
-    
+// Save prospects to Firestore
+function saveProspectsToFirestoreOnly() {
+    // Get current user
     const user = firebase.auth().currentUser;
     if (!user) {
-        console.log('No user logged in');
-        showLoginMessage();
-        return;
+        console.error('No user logged in');
+        return Promise.reject(new Error('You must be logged in to save prospects'));
     }
     
-    console.log(`Loading prospects from Firestore for user ${user.uid}`);
-    const db = firebase.firestore();
+    // Reference to the user's document
+    const userDocRef = firebase.firestore().collection('users').doc(user.uid);
     
-    // Get user document from Firestore
-    db.collection('users').doc(user.uid).get()
+    // Data to save
+    const data = {
+        draftProspects: prospectsList,
+        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    
+    // Check if document exists before saving
+    return userDocRef.get()
+        .then(doc => {
+            // If document doesn't exist, create it
+            if (!doc.exists) {
+                return userDocRef.set(data);
+            } else {
+                // Otherwise update it
+                return userDocRef.update(data);
+            }
+        })
+        .then(() => {
+            console.log('Prospects saved to Firestore');
+            return Promise.resolve();
+        })
+        .catch(error => {
+            console.error('Error saving prospects to Firestore:', error);
+            return Promise.reject(error);
+        });
+}
+
+// Load prospects from Firestore
+function loadProspectsFromFirestoreOnly() {
+    // Get current user
+    const user = firebase.auth().currentUser;
+    if (!user) {
+        console.error('No user logged in');
+        showLoginMessage();
+        return Promise.reject(new Error('You must be logged in to load prospects'));
+    }
+    
+    // Reference to the user's document
+    const userDocRef = firebase.firestore().collection('users').doc(user.uid);
+    
+    // Get the document
+    return userDocRef.get()
         .then(doc => {
             if (doc.exists && doc.data().draftProspects) {
                 console.log('Prospects found in Firestore:', doc.data().draftProspects);
@@ -148,40 +191,6 @@ function loadProspectsFromFirestoreOnly() {
             showErrorMessage('Error loading prospects: ' + error.message);
             showLoading(false);
         });
-}
-
-// Save prospects ONLY to Firestore
-function saveProspectsToFirestoreOnly() {
-    if (typeof firebase === 'undefined' || !firebase.auth || !firebase.firestore) {
-        console.error('Firebase not available');
-        return Promise.reject(new Error('Firebase not available'));
-    }
-    
-    const user = firebase.auth().currentUser;
-    if (!user) {
-        console.log('No user logged in, cannot save prospects');
-        return Promise.reject(new Error('No user logged in'));
-    }
-    
-    console.log(`Saving prospects to Firestore for user ${user.uid}`);
-    const db = firebase.firestore();
-    
-    return db.collection('users').doc(user.uid).update({
-        'draftProspects': prospectsList,
-        lastUpdate: new Date()
-    }).catch(error => {
-        // If update fails (document might not exist), create it
-        if (error.code === 'not-found') {
-            console.log('Document not found, creating new document');
-            return db.collection('users').doc(user.uid).set({
-                'draftProspects': prospectsList,
-                lastUpdate: new Date(),
-                email: user.email,
-                username: user.displayName || `User${Math.floor(Math.random() * 10000)}`
-            });
-        }
-        return Promise.reject(error);
-    });
 }
 
 // Simplified save function that only uses Firestore
@@ -306,112 +315,378 @@ function handleDeleteProspect(e, shouldRender = true) {
 function renderProspects() {
     if (!prospectsTable) return;
     
+    // Sort prospects by grade (highest to lowest)
+    prospectsList.sort((a, b) => b.grade - a.grade);
+    
     // Clear existing table rows
     prospectsTable.innerHTML = '';
     
-    // Check if we have prospects
-    if (prospectsList.length === 0) {
-        document.getElementById('no-prospects').style.display = 'block';
-        document.getElementById('prospects-table').style.display = 'none';
-        return;
+    // Show or hide the no prospects message
+    const noProspectsElement = document.getElementById('no-prospects');
+    if (noProspectsElement) {
+        noProspectsElement.style.display = prospectsList.length === 0 ? 'flex' : 'none';
     }
     
-    // Show table, hide empty message
-    document.getElementById('no-prospects').style.display = 'none';
-    document.getElementById('prospects-table').style.display = 'table';
-    
-    // Sort by grade (if available)
-    prospectsList.sort((a, b) => {
-        // Sort by the numeric value of grade (higher grade first)
-        return parseFloat(b.grade || 0) - parseFloat(a.grade || 0);
-    });
+    // If there are no prospects, return early
+    if (prospectsList.length === 0) return;
     
     // Add each prospect to the table
     prospectsList.forEach((prospect, index) => {
+        // Create table row for the prospect
         const tr = document.createElement('tr');
-        tr.draggable = true;
-        tr.setAttribute('data-index', index);
         tr.setAttribute('data-id', prospect.id);
+        tr.classList.add('prospect-row');
+        tr.draggable = true;
         
-        // Add dragstart and dragover event listeners
-        tr.addEventListener('dragstart', handleDragStart);
-        tr.addEventListener('dragover', handleDragOver);
-        tr.addEventListener('drop', handleDrop);
-        tr.addEventListener('dragenter', handleDragEnter);
-        tr.addEventListener('dragleave', handleDragLeave);
+        // Add class to the selected row
+        if (prospect.id === selectedProspectId) {
+            tr.classList.add('selected');
+        }
         
+        // Basic prospect info
         tr.innerHTML = `
             <td>${index + 1}</td>
             <td>${prospect.name}</td>
             <td>${prospect.position}</td>
             <td>${prospect.college}</td>
-            <td>${prospect.height}</td>
-            <td>${prospect.weight}</td>
+            <td>${prospect.age || '-'}</td>
+            <td>${prospect.height || '-'}</td>
+            <td>${prospect.weight || '-'}</td>
             <td>${prospect.grade || '-'}</td>
-            <td>
-                <div class="prospect-actions">
-                    <button class="prospect-action-btn edit-prospect-btn" data-id="${prospect.id}">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="prospect-action-btn delete-prospect-btn" data-id="${prospect.id}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+            <td class="action-cell">
+                <button class="delete-prospect" data-id="${prospect.id}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
             </td>
         `;
         
+        // Add drag and drop event listeners
+        tr.addEventListener('dragstart', dragStart);
+        tr.addEventListener('dragover', dragOver);
+        tr.addEventListener('drop', dragDrop);
+        tr.addEventListener('dragenter', dragEnter);
+        tr.addEventListener('dragleave', dragLeave);
+        
+        // Add click event to expand/collapse details
+        tr.addEventListener('click', function(e) {
+            // Don't trigger row click when clicking delete button
+            if (e.target.closest('.delete-prospect')) return;
+            
+            toggleProspectDetails(prospect.id);
+        });
+        
         prospectsTable.appendChild(tr);
+        
+        // Create and append the details row
+        const detailsRow = document.createElement('tr');
+        detailsRow.setAttribute('data-details-for', prospect.id);
+        detailsRow.classList.add('prospect-details-row');
+        
+        const detailsCell = document.createElement('td');
+        detailsCell.setAttribute('colspan', '9');
+        detailsCell.innerHTML = `
+            <div class="prospect-details" id="details-${prospect.id}">
+                <div class="prospect-detail-sections">
+                    ${renderDetailSections(prospect)}
+                </div>
+                
+                <div class="detail-buttons">
+                    <button class="detail-button add-field-btn" data-id="${prospect.id}">
+                        <i class="fas fa-plus"></i> Add Field
+                    </button>
+                    <button class="detail-button save-details-btn" data-id="${prospect.id}">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                </div>
+                
+                <div class="add-field-form" id="add-field-form-${prospect.id}" style="display: none;">
+                    <input type="text" class="form-control field-name-input" placeholder="Field Name">
+                    <button class="detail-button confirm-add-field-btn" data-id="${prospect.id}">
+                        <i class="fas fa-check"></i> Add
+                    </button>
+                    <button class="detail-button cancel-add-field-btn">
+                        <i class="fas fa-times"></i> Cancel
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        detailsRow.appendChild(detailsCell);
+        prospectsTable.appendChild(detailsRow);
+        
+        // Show details if this is the selected prospect
+        if (prospect.id === selectedProspectId) {
+            document.getElementById(`details-${prospect.id}`).classList.add('visible');
+        }
+        
+        // Add delete button event listener
+        const deleteButton = tr.querySelector('.delete-prospect');
+        deleteButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Stop event propagation
+            handleDeleteProspect(e);
+        });
     });
     
-    // Add event listeners to edit and delete buttons
-    document.querySelectorAll('.edit-prospect-btn').forEach(btn => {
-        btn.addEventListener('click', handleEditProspect);
+    // Add event listeners to detail buttons
+    document.querySelectorAll('.add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            document.getElementById(`add-field-form-${prospectId}`).style.display = 'flex';
+        });
     });
     
-    document.querySelectorAll('.delete-prospect-btn').forEach(btn => {
-        btn.addEventListener('click', handleDeleteProspect);
+    document.querySelectorAll('.cancel-add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.closest('.add-field-form').id.replace('add-field-form-', '');
+            document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
+        });
     });
+    
+    document.querySelectorAll('.confirm-add-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            const fieldName = btn.closest('.add-field-form').querySelector('.field-name-input').value.trim();
+            
+            if (fieldName) {
+                addCustomField(prospectId, fieldName);
+            }
+        });
+    });
+    
+    document.querySelectorAll('.save-details-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.getAttribute('data-id');
+            saveProspectDetails(prospectId);
+        });
+    });
+    
+    document.querySelectorAll('.remove-field-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const prospectId = btn.closest('.prospect-details').id.replace('details-', '');
+            const fieldKey = btn.getAttribute('data-field-key');
+            
+            removeCustomField(prospectId, fieldKey);
+        });
+    });
+    
+    document.querySelectorAll('.field-toggle').forEach(toggle => {
+        toggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const sectionId = toggle.getAttribute('data-section');
+            toggle.classList.toggle('open');
+            document.getElementById(sectionId).classList.toggle('open');
+        });
+    });
+}
+
+// Render the detail sections for a prospect
+function renderDetailSections(prospect) {
+    // Initialize details object if not exists
+    if (!prospect.details) {
+        prospect.details = {};
+        
+        // Initialize default fields
+        defaultDetailFields.forEach(field => {
+            prospect.details[field.key] = '';
+        });
+    }
+    
+    // If customFields array doesn't exist, create it
+    if (!prospect.customFields) {
+        prospect.customFields = [];
+    }
+    
+    let sectionsHTML = '';
+    
+    // Render default fields
+    defaultDetailFields.forEach(field => {
+        const value = prospect.details[field.key] || '';
+        sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false);
+    });
+    
+    // Render custom fields
+    prospect.customFields.forEach(field => {
+        const value = prospect.details[field.key] || '';
+        sectionsHTML += createDetailSectionHTML(field.key, field.label, value, true);
+    });
+    
+    return sectionsHTML;
+}
+
+// Create HTML for a detail section
+function createDetailSectionHTML(key, label, value, isRemovable) {
+    const sectionId = `section-${key}-${Date.now()}`;
+    
+    return `
+        <div class="prospect-detail-section" data-field-key="${key}">
+            <div class="prospect-detail-title">
+                ${label} 
+                <span>
+                    ${isRemovable ? `<button class="remove-field-btn" data-field-key="${key}"><i class="fas fa-times"></i></button>` : ''}
+                    <i class="fas fa-chevron-down field-toggle" data-section="${sectionId}"></i>
+                </span>
+            </div>
+            <div id="${sectionId}" class="field-collapse open">
+                <div class="prospect-detail-content">
+                    <textarea class="prospect-detail-textarea" data-field-key="${key}">${value}</textarea>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Toggle prospect details
+function toggleProspectDetails(prospectId) {
+    const detailsElement = document.getElementById(`details-${prospectId}`);
+    
+    // If it's already visible, hide it and deselect
+    if (detailsElement.classList.contains('visible')) {
+        detailsElement.classList.remove('visible');
+        document.querySelector(`tr[data-id="${prospectId}"]`).classList.remove('selected');
+        selectedProspectId = null;
+    } else {
+        // Hide any other open details
+        document.querySelectorAll('.prospect-details.visible').forEach(el => {
+            el.classList.remove('visible');
+        });
+        
+        document.querySelectorAll('.prospect-row.selected').forEach(el => {
+            el.classList.remove('selected');
+        });
+        
+        // Show this detail
+        detailsElement.classList.add('visible');
+        document.querySelector(`tr[data-id="${prospectId}"]`).classList.add('selected');
+        selectedProspectId = prospectId;
+    }
+}
+
+// Add custom field to a prospect
+function addCustomField(prospectId, fieldName) {
+    // Find the prospect
+    const prospect = prospectsList.find(p => p.id === prospectId);
+    if (!prospect) return;
+    
+    // Create a unique key for the field
+    const fieldKey = 'custom_' + fieldName.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now();
+    
+    // Add to customFields array if not already there
+    if (!prospect.customFields) {
+        prospect.customFields = [];
+    }
+    
+    prospect.customFields.push({
+        key: fieldKey,
+        label: fieldName,
+        type: 'textarea'
+    });
+    
+    // Initialize the value
+    if (!prospect.details) {
+        prospect.details = {};
+    }
+    prospect.details[fieldKey] = '';
+    
+    // Hide the add field form
+    document.getElementById(`add-field-form-${prospectId}`).style.display = 'none';
+    document.getElementById(`add-field-form-${prospectId}`).querySelector('.field-name-input').value = '';
+    
+    // Save and rerender
+    saveProspects();
+    renderProspects();
+}
+
+// Remove custom field from a prospect
+function removeCustomField(prospectId, fieldKey) {
+    // Find the prospect
+    const prospect = prospectsList.find(p => p.id === prospectId);
+    if (!prospect || !prospect.customFields) return;
+    
+    // Remove from customFields array
+    prospect.customFields = prospect.customFields.filter(field => field.key !== fieldKey);
+    
+    // Remove the value
+    if (prospect.details) {
+        delete prospect.details[fieldKey];
+    }
+    
+    // Save and rerender
+    saveProspects();
+    renderProspects();
+}
+
+// Save prospect details from the form
+function saveProspectDetails(prospectId) {
+    // Find the prospect
+    const prospect = prospectsList.find(p => p.id === prospectId);
+    if (!prospect) return;
+    
+    // Initialize details object if not exists
+    if (!prospect.details) {
+        prospect.details = {};
+    }
+    
+    // Get all textarea values
+    const detailsElement = document.getElementById(`details-${prospectId}`);
+    detailsElement.querySelectorAll('.prospect-detail-textarea').forEach(textarea => {
+        const fieldKey = textarea.getAttribute('data-field-key');
+        prospect.details[fieldKey] = textarea.value;
+    });
+    
+    // Save to Firestore
+    saveProspects();
+    showSaveIndicator();
 }
 
 // Handle dragging functionality for reordering prospects
-function handleDragStart(e) {
-    dragStartIndex = +this.closest('tr').getAttribute('data-index');
+function dragStart(e) {
+    const row = this.closest('tr');
+    dragStartIndex = Array.from(prospectsTable.querySelectorAll('tr.prospect-row')).indexOf(row);
     this.classList.add('prospect-dragging');
 }
 
-function handleDragOver(e) {
+function dragOver(e) {
     e.preventDefault();
 }
 
-function handleDragEnter(e) {
+function dragEnter(e) {
     this.classList.add('prospect-drag-over');
 }
 
-function handleDragLeave(e) {
+function dragLeave(e) {
     this.classList.remove('prospect-drag-over');
 }
 
-function handleDrop(e) {
-    e.preventDefault();
-    const dragEndIndex = +this.getAttribute('data-index');
+function dragDrop(e) {
+    const row = this.closest('tr');
+    const dragEndIndex = Array.from(prospectsTable.querySelectorAll('tr.prospect-row')).indexOf(row);
+    
+    this.classList.remove('prospect-drag-over');
+    
     swapProspects(dragStartIndex, dragEndIndex);
-    this.classList.remove('prospect-drag-over');
-}
-
-// Swap prospects in the array and update order
-function swapProspects(fromIndex, toIndex) {
-    // Get prospect to move
-    const prospectToMove = prospectsList[fromIndex];
     
-    // Remove from original position
-    prospectsList.splice(fromIndex, 1);
-    
-    // Insert at new position
-    prospectsList.splice(toIndex, 0, prospectToMove);
-    
-    // Save and render
+    // Save the new order
     saveProspects();
     renderProspects();
+}
+
+// Swap prospects for drag and drop reordering
+function swapProspects(startIndex, endIndex) {
+    if (startIndex === endIndex) return;
+    
+    // Get the prospect we're moving
+    const movedProspect = prospectsList[startIndex];
+    
+    // Remove from original position
+    prospectsList.splice(startIndex, 1);
+    
+    // Insert at new position
+    prospectsList.splice(endIndex, 0, movedProspect);
 }
 
 // Handle editing a prospect
@@ -441,35 +716,74 @@ function handleEditProspect(e) {
 // Export big board to CSV
 function exportBigBoard() {
     if (prospectsList.length === 0) {
-        alert('No prospects to export!');
+        alert('No prospects to export');
         return;
     }
     
-    // Create CSV content
-    let csvContent = 'Rank,Name,Position,College,Height,Weight,Grade,Notes\n';
+    // Create CSV header row with columns and detailed fields
+    let csvContent = 'Rank,Name,Position,College,Age,Height,Weight,Grade';
     
+    // Add default detail fields to header
+    defaultDetailFields.forEach(field => {
+        csvContent += `,${field.label}`;
+    });
+    
+    // Get all unique custom fields across all prospects
+    const allCustomFields = new Set();
+    prospectsList.forEach(prospect => {
+        if (prospect.customFields) {
+            prospect.customFields.forEach(field => {
+                allCustomFields.add(JSON.stringify(field));
+            });
+        }
+    });
+    
+    // Add custom fields to header
+    Array.from(allCustomFields).forEach(fieldJson => {
+        const field = JSON.parse(fieldJson);
+        csvContent += `,${field.label}`;
+    });
+    
+    csvContent += '\n';
+    
+    // Add each prospect as a row
     prospectsList.forEach((prospect, index) => {
-        const row = [
-            index + 1,
-            prospect.name,
-            prospect.position,
-            prospect.college,
-            prospect.height,
-            prospect.weight,
-            prospect.grade,
-            prospect.notes
-        ].map(value => `"${value || ''}"`).join(',');
+        const rank = index + 1;
+        csvContent += `${rank},${prospect.name},${prospect.position},${prospect.college},${prospect.age || ''},${prospect.height || ''},${prospect.weight || ''},${prospect.grade || ''}`;
         
-        csvContent += row + '\n';
+        // Add default detail fields
+        defaultDetailFields.forEach(field => {
+            // Escape any commas in the text
+            const value = prospect.details && prospect.details[field.key] 
+                ? `"${prospect.details[field.key].replace(/"/g, '""')}"`
+                : '';
+            csvContent += `,${value}`;
+        });
+        
+        // Add custom fields
+        Array.from(allCustomFields).forEach(fieldJson => {
+            const field = JSON.parse(fieldJson);
+            const value = prospect.details && prospect.details[field.key]
+                ? `"${prospect.details[field.key].replace(/"/g, '""')}"`
+                : '';
+            csvContent += `,${value}`;
+        });
+        
+        csvContent += '\n';
     });
     
     // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'draft_prospects.csv');
-    a.click();
+    const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'draft_big_board.csv');
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    
+    // Clean up
+    document.body.removeChild(link);
 }
 
 // Clear the big board
