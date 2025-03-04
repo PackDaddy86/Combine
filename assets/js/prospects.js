@@ -887,6 +887,46 @@ function setButtonEventListeners() {
     });
 }
 
+// Helper function to update prospect field values in UI
+function updateProspectDetailInSummary(prospectId, fieldKey, value) {
+    const detailsElement = document.getElementById(`details-${prospectId}`);
+    if (!detailsElement) return;
+    
+    // Try to find the summary value span for this field
+    const summarySpans = detailsElement.querySelectorAll('.prospect-summary-field');
+    for (let span of summarySpans) {
+        const label = span.querySelector('.summary-label');
+        if (label) {
+            const labelText = label.textContent.trim().toLowerCase();
+            // Match the field key to the label (remove ":" and convert to lowercase)
+            const fieldName = labelText.replace(':', '').trim();
+            
+            // Map field keys to their corresponding summary labels
+            const fieldKeyToLabel = {
+                'handSize': 'hand size',
+                'armLength': 'arm length',
+                'fortyYard': '40 yard',
+                'twentyYardSplit': '20 yard split',
+                'tenYardSplit': '10 yard split',
+                'verticalJump': 'vertical jump',
+                'broadJump': 'broad jump',
+                'threeCone': '3 cone',
+                'shuttle': 'shuttle',
+                'benchPress': 'bench press'
+            };
+            
+            // Check if this is the right summary field
+            if (fieldName === fieldKeyToLabel[fieldKey]) {
+                const valueSpan = span.querySelector('.summary-value');
+                if (valueSpan) {
+                    valueSpan.textContent = value || '-';
+                    return;
+                }
+            }
+        }
+    }
+}
+
 // Set up auto-save for a textarea
 function setupTextareaAutoSave(textarea, prospectId) {
     let saveTimeout;
@@ -938,9 +978,15 @@ function setupInputAutoSave(input, prospectId) {
             const prospect = prospectsList.find(p => p.id === prospectId);
             
             if (prospect && fieldKey) {
-                prospect[fieldKey] = input.value;
+                const newValue = input.value;
+                prospect[fieldKey] = newValue;
+                
+                // Also update the summary display
+                updateProspectDetailInSummary(prospectId, fieldKey, newValue);
+                
                 saveProspects().then(() => {
                     console.log(`Auto-saved ${fieldKey} for prospect ${prospectId}`);
+                    showSaveIndicator(false, true);
                 });
             }
         }, 1000); // 1 second debounce
@@ -1038,16 +1084,12 @@ function renderDetailSections(prospect) {
     ];
     
     // Add a combine data section header
-    if (Object.values(combineDataFields).some(field => prospect[field.key])) {
-        sectionsHTML += `<div class="prospect-detail-section-header">Combine Data</div>`;
-    }
+    sectionsHTML += `<div class="prospect-detail-section-header">Combine Data</div>`;
     
     // Render combine data fields
     combineDataFields.forEach(field => {
         const value = prospect[field.key] || '';
-        if (value || !prospect[field.key]) {
-            sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false, true);
-        }
+        sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false, true);
     });
     
     // Render custom fields
