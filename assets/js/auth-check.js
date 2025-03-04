@@ -2,8 +2,10 @@
 // This should be included in all pages that require authentication
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if we're on a combine page that requires auth
-    const isProtectedPage = window.location.pathname.includes('/combine/');
+    // Check if we're on a page that requires auth
+    const isProtectedCombinePage = window.location.pathname.includes('/combine/');
+    const isProspectsPage = window.location.pathname.includes('/prospects.html');
+    const isProtectedPage = isProtectedCombinePage || isProspectsPage;
     
     // Skip the check if we're on the login page to avoid redirect loops
     const isLoginPage = window.location.pathname.includes('/login.html');

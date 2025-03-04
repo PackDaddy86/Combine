@@ -358,3 +358,198 @@ function syncUserData(userId) {
             console.error(`🔴 Debug [syncUserData] Error syncing user data from Firestore:`, error);
         });
 }
+
+// Add functions for managing prospect data
+
+/**
+ * Saves the user's draft prospects to Firestore
+ * @param {Array} prospects - The array of prospect objects
+ * @returns {Promise} - A promise that resolves when the save is complete
+ */
+function saveProspectsToFirestore(prospects) {
+    console.log('Saving prospects to Firestore:', prospects);
+    
+    // Always save to localStorage first
+    localStorage.setItem('draftProspects', JSON.stringify(prospects));
+    
+    // Get the firebase user
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log(`User logged in as ${user.uid}, saving prospects to Firestore`);
+            
+            // Get Firestore reference
+            const db = firebase.firestore();
+            
+            // Return a proper promise for this operation
+            return new Promise((resolve, reject) => {
+                // Get the current document
+                db.collection('users').doc(user.uid).get().then(doc => {
+                    let updateData = {};
+                    
+                    if (doc.exists) {
+                        // Update existing document with prospects data
+                        updateData = {
+                            'draftProspects': prospects,
+                            lastUpdate: new Date()
+                        };
+                        
+                        db.collection('users').doc(user.uid).update(updateData)
+                        .then(() => {
+                            console.log('Successfully saved prospects to Firestore via update');
+                            resolve();
+                        })
+                        .catch(error => {
+                            console.error('Error updating prospects in Firestore:', error);
+                            reject(error);
+                        });
+                    } else {
+                        // Document doesn't exist, create it
+                        let username = "";
+                        if (user.displayName) {
+                            username = user.displayName;
+                        } else {
+                            // Generate a fallback username if none exists
+                            username = `User${Math.floor(Math.random() * 10000)}`;
+                            // Also update the Auth displayName
+                            user.updateProfile({
+                                displayName: username
+                            }).catch(err => {
+                                console.error("Error updating Auth displayName:", err);
+                            });
+                        }
+                        
+                        updateData = {
+                            'draftProspects': prospects,
+                            lastUpdate: new Date(),
+                            email: user.email,
+                            username: username
+                        };
+                        
+                        db.collection('users').doc(user.uid).set(updateData, { merge: true })
+                        .then(() => {
+                            console.log('Successfully created document with prospects');
+                            resolve();
+                        })
+                        .catch(error => {
+                            console.error('Error creating document with prospects:', error);
+                            reject(error);
+                        });
+                    }
+                }).catch(error => {
+                    console.error('Error checking for existing document:', error);
+                    reject(error);
+                });
+            });
+        } else {
+            console.log('No user logged in, saved to localStorage only');
+            return Promise.resolve();
+        }
+    } else {
+        console.log('Firebase not available, saved to localStorage only');
+        return Promise.resolve();
+    }
+}
+
+/**
+ * Loads the user's draft prospects from Firestore
+ * @returns {Promise} - A promise that resolves with the prospects array or null if not found
+ */
+function loadProspectsFromFirestore() {
+    console.log('Loading prospects from Firestore');
+    
+    // Get the firebase user
+    if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
+        const user = firebase.auth().currentUser;
+        if (user) {
+            console.log(`User logged in as ${user.uid}, loading prospects from Firestore`);
+            
+            // Get Firestore reference
+            const db = firebase.firestore();
+            
+            // Return a promise that resolves with the prospects or null
+            return new Promise((resolve, reject) => {
+                db.collection('users').doc(user.uid).get()
+                .then(doc => {
+                    if (doc.exists && doc.data().draftProspects) {
+                        console.log('Prospects found in Firestore:', doc.data().draftProspects);
+                        
+                        // Save to localStorage for offline use
+                        localStorage.setItem('draftProspects', JSON.stringify(doc.data().draftProspects));
+                        
+                        resolve(doc.data().draftProspects);
+                    } else {
+                        console.log('No prospects found in Firestore, checking localStorage');
+                        
+                        // Check localStorage as fallback
+                        const localProspects = localStorage.getItem('draftProspects');
+                        if (localProspects) {
+                            try {
+                                const parsedProspects = JSON.parse(localProspects);
+                                console.log('Prospects found in localStorage:', parsedProspects);
+                                
+                                // Save to Firestore for future use
+                                saveProspectsToFirestore(parsedProspects);
+                                
+                                resolve(parsedProspects);
+                            } catch (error) {
+                                console.error('Error parsing prospects from localStorage:', error);
+                                resolve([]);
+                            }
+                        } else {
+                            console.log('No prospects found in localStorage either');
+                            resolve([]);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading prospects from Firestore:', error);
+                    
+                    // Fall back to localStorage
+                    const localProspects = localStorage.getItem('draftProspects');
+                    if (localProspects) {
+                        try {
+                            resolve(JSON.parse(localProspects));
+                        } catch (error) {
+                            resolve([]);
+                        }
+                    } else {
+                        resolve([]);
+                    }
+                });
+            });
+        } else {
+            console.log('No user logged in, checking localStorage only');
+            
+            // Return a promise that resolves with localStorage prospects or null
+            return new Promise(resolve => {
+                const localProspects = localStorage.getItem('draftProspects');
+                if (localProspects) {
+                    try {
+                        resolve(JSON.parse(localProspects));
+                    } catch (error) {
+                        resolve([]);
+                    }
+                } else {
+                    resolve([]);
+                }
+            });
+        }
+    } else {
+        console.log('Firebase not available, checking localStorage only');
+        
+        // Return a promise that resolves with localStorage prospects or null
+        return new Promise(resolve => {
+            const localProspects = localStorage.getItem('draftProspects');
+            if (localProspects) {
+                try {
+                    resolve(JSON.parse(localProspects));
+                } catch (error) {
+                    resolve([]);
+                }
+            } else {
+                resolve([]);
+            }
+        });
+    }
+}

@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     prospectForm = document.getElementById('prospect-form');
     prospectsTable = document.getElementById('prospects-table-body');
     
-    // Load existing prospects from localStorage
+    // Load existing prospects from localStorage or Firestore
     loadProspects();
     
     // Add event listeners
@@ -29,7 +29,7 @@ function initFirebaseAuthListener() {
             if (user) {
                 console.log('Auth state change: User logged in');
                 // Load user's prospects from Firestore
-                loadUserProspects(user.uid);
+                loadProspects();
             } else {
                 console.log('Auth state change: User logged out');
                 // Just use localStorage when logged out
@@ -39,84 +39,64 @@ function initFirebaseAuthListener() {
     }
 }
 
-// Load prospects from localStorage
+// Load prospects from Firestore or localStorage
 function loadProspects() {
-    const savedProspects = localStorage.getItem('draftProspects');
-    if (savedProspects) {
-        prospectsList = JSON.parse(savedProspects);
-        renderProspects();
-    }
-}
-
-// Load user's prospects from Firestore if available
-function loadUserProspects(userId) {
-    if (typeof firebase !== 'undefined' && firebase.firestore) {
-        firebase.firestore().collection('users').doc(userId)
-            .collection('draftProspects').get()
-            .then((snapshot) => {
-                if (!snapshot.empty) {
-                    prospectsList = [];
-                    snapshot.forEach(doc => {
-                        prospectsList.push({
-                            id: doc.id,
-                            ...doc.data()
-                        });
-                    });
-                    
-                    // Save to localStorage as well
-                    localStorage.setItem('draftProspects', JSON.stringify(prospectsList));
-                    
-                    // Render the prospects
+    // Use the new loadProspectsFromFirestore function from user-data.js
+    if (typeof loadProspectsFromFirestore === 'function') {
+        loadProspectsFromFirestore().then(prospects => {
+            if (prospects && prospects.length > 0) {
+                prospectsList = prospects;
+                renderProspects();
+            } else {
+                // If no prospects in Firestore, check localStorage as fallback
+                const savedProspects = localStorage.getItem('draftProspects');
+                if (savedProspects) {
+                    prospectsList = JSON.parse(savedProspects);
                     renderProspects();
+                    
+                    // Save to Firestore if user is logged in
+                    if (typeof firebase !== 'undefined' && firebase.auth) {
+                        const user = firebase.auth().currentUser;
+                        if (user && typeof saveProspectsToFirestore === 'function') {
+                            saveProspectsToFirestore(prospectsList);
+                        }
+                    }
                 } else {
-                    // If no Firestore data, fall back to localStorage
-                    loadProspects();
+                    // No prospects found anywhere
+                    prospectsList = [];
+                    renderProspects();
                 }
-            })
-            .catch(error => {
-                console.error('Error loading prospects from Firestore:', error);
-                // Fall back to localStorage
-                loadProspects();
-            });
+            }
+        }).catch(error => {
+            console.error('Error loading prospects:', error);
+            
+            // Fall back to localStorage
+            const savedProspects = localStorage.getItem('draftProspects');
+            if (savedProspects) {
+                prospectsList = JSON.parse(savedProspects);
+                renderProspects();
+            }
+        });
     } else {
-        // If Firestore not available, use localStorage
-        loadProspects();
+        // If the Firestore function isn't available, use localStorage
+        const savedProspects = localStorage.getItem('draftProspects');
+        if (savedProspects) {
+            prospectsList = JSON.parse(savedProspects);
+            renderProspects();
+        }
     }
 }
 
-// Save prospects to localStorage and Firestore if available
+// Save prospects using the new Firestore function
 function saveProspects() {
-    // Save to localStorage
-    localStorage.setItem('draftProspects', JSON.stringify(prospectsList));
-    
-    // Save to Firestore if user is logged in
-    if (typeof firebase !== 'undefined' && firebase.auth && firebase.firestore) {
-        const user = firebase.auth().currentUser;
-        if (user) {
-            const batch = firebase.firestore().batch();
-            const prospectsRef = firebase.firestore().collection('users').doc(user.uid)
-                .collection('draftProspects');
-            
-            // Clear existing prospects
-            prospectsRef.get().then(snapshot => {
-                // Delete existing documents
-                snapshot.forEach(doc => {
-                    batch.delete(doc.ref);
-                });
-                
-                // Add new prospects
-                prospectsList.forEach((prospect, index) => {
-                    const newProspectRef = prospectsRef.doc();
-                    prospect.order = index;
-                    batch.set(newProspectRef, prospect);
-                });
-                
-                // Commit the batch
-                batch.commit().catch(error => {
-                    console.error('Error saving prospects to Firestore:', error);
-                });
-            });
-        }
+    // Use the new saveProspectsToFirestore function
+    if (typeof saveProspectsToFirestore === 'function') {
+        saveProspectsToFirestore(prospectsList).catch(error => {
+            console.error('Error saving prospects to Firestore:', error);
+        });
+    } else {
+        // Fall back to localStorage only
+        localStorage.setItem('draftProspects', JSON.stringify(prospectsList));
     }
 }
 
