@@ -205,22 +205,46 @@ function loadProspectsFromFirestoreOnly() {
             return;
         }
         
-        // Get a reference to the user's prospects document
+        // Try to get data from the new collection first
         const db = firebase.firestore();
         const userProspectsRef = db.collection('userProspects').doc(user.uid);
         
-        // Load data
         return userProspectsRef.get()
             .then(doc => {
                 if (doc.exists && doc.data() && doc.data().prospects) {
-                    // Set the global prospects array
+                    // Found data in new collection
                     prospectsList = doc.data().prospects;
-                    console.log('Loaded', prospectsList.length, 'prospects from Firestore');
+                    console.log('Loaded', prospectsList.length, 'prospects from userProspects collection');
                     resolve(prospectsList);
                 } else {
-                    console.log('No prospects found in Firestore, starting with empty array');
-                    prospectsList = [];
-                    resolve(prospectsList);
+                    // Check the old collection as a fallback
+                    console.log('No data in userProspects, checking users collection...');
+                    const oldUserDocRef = db.collection('users').doc(user.uid);
+                    
+                    return oldUserDocRef.get()
+                        .then(oldDoc => {
+                            if (oldDoc.exists && oldDoc.data() && oldDoc.data().draftProspects) {
+                                // Found data in old collection, migrate it
+                                console.log('Found prospects in users collection, migrating...');
+                                prospectsList = oldDoc.data().draftProspects;
+                                
+                                // Save to new collection
+                                saveProspectsToFirestoreOnly()
+                                    .then(() => {
+                                        console.log('Successfully migrated data to new collection');
+                                    })
+                                    .catch(err => {
+                                        console.error('Error migrating data:', err);
+                                    });
+                                
+                                resolve(prospectsList);
+                            } else {
+                                // No data found in either collection
+                                console.log('No prospects found in any collection, starting with empty array');
+                                prospectsList = [];
+                                resolve(prospectsList);
+                            }
+                        });
                 }
             })
             .catch(error => {
@@ -236,7 +260,7 @@ function saveProspects() {
         const user = firebase.auth().currentUser;
         if (user) {
             showSaveIndicator(true);
-            saveProspectsToFirestoreOnly()
+            return saveProspectsToFirestoreOnly()
                 .then(() => {
                     console.log('Prospects saved successfully');
                     showSaveIndicator(false);
@@ -244,13 +268,16 @@ function saveProspects() {
                 .catch(error => {
                     console.error('Error saving prospects:', error);
                     alert('There was an error saving your prospects. Please try again.');
+                    showSaveIndicator(false);
                 });
         } else {
             console.log('No user logged in, cannot save prospects');
             alert('You must be logged in to save prospects.');
+            return Promise.reject(new Error('No user logged in'));
         }
     } else {
         console.error('Firebase not available');
+        return Promise.reject(new Error('Firebase not initialized'));
     }
 }
 
@@ -625,16 +652,17 @@ function toggleProspectDetails(prospectId) {
     
     if (detailsRow.classList.contains('open')) {
         // Closing details - save any changes first
-        saveProspectDetails(prospectId);
-        
-        // Then close
-        detailsRow.classList.remove('open');
-        prospectRow.classList.remove('selected');
-        
-        // Use setTimeout to ensure a smooth transition
-        setTimeout(() => {
-            detailsRow.style.display = 'none';
-        }, 300);
+        showSaveIndicator(true);
+        saveProspectDetails(prospectId).then(() => {
+            // Then close
+            detailsRow.classList.remove('open');
+            prospectRow.classList.remove('selected');
+            
+            // Use setTimeout to ensure a smooth transition
+            setTimeout(() => {
+                detailsRow.style.display = 'none';
+            }, 300);
+        });
     } else {
         // Opening details
         detailsRow.style.display = 'table-row';
@@ -654,6 +682,31 @@ function toggleProspectDetails(prospectId) {
             }
         }
     }
+}
+
+// Save prospect details from the form
+function saveProspectDetails(prospectId) {
+    // Find the prospect
+    const prospect = prospectsList.find(p => p.id === prospectId);
+    if (!prospect) return Promise.resolve();
+    
+    // Initialize details object if not exists
+    if (!prospect.details) {
+        prospect.details = {};
+    }
+    
+    // Get all textarea values
+    const detailsElement = document.getElementById(`details-${prospectId}`);
+    if (!detailsElement) return Promise.resolve();
+    
+    detailsElement.querySelectorAll('.prospect-detail-textarea').forEach(textarea => {
+        const fieldKey = textarea.getAttribute('data-field-key');
+        prospect.details[fieldKey] = textarea.value;
+    });
+    
+    // Save to Firestore and return the promise
+    console.log('Saving prospect details for', prospectId);
+    return saveProspects();
 }
 
 // Add custom field to a prospect
@@ -708,29 +761,6 @@ function removeCustomField(prospectId, fieldKey) {
     // Save and rerender
     saveProspects();
     renderProspects();
-}
-
-// Save prospect details from the form
-function saveProspectDetails(prospectId) {
-    // Find the prospect
-    const prospect = prospectsList.find(p => p.id === prospectId);
-    if (!prospect) return;
-    
-    // Initialize details object if not exists
-    if (!prospect.details) {
-        prospect.details = {};
-    }
-    
-    // Get all textarea values
-    const detailsElement = document.getElementById(`details-${prospectId}`);
-    detailsElement.querySelectorAll('.prospect-detail-textarea').forEach(textarea => {
-        const fieldKey = textarea.getAttribute('data-field-key');
-        prospect.details[fieldKey] = textarea.value;
-    });
-    
-    // Save to Firestore
-    saveProspects();
-    showSaveIndicator(false);
 }
 
 // Add auto-save functionality to textareas in details
