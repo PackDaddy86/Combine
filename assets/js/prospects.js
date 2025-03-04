@@ -17,12 +17,66 @@ const defaultDetailFields = [
     { key: 'summary', label: 'Summary', type: 'textarea' }
 ];
 
+// Function to initialize the modal interactions
+function initializeModal() {
+    const modal = document.getElementById('prospect-form-modal');
+    const closeBtn = document.querySelector('.close-modal');
+    const addProspectBtn = document.getElementById('add-prospect-btn');
+    const detailsToggle = document.getElementById('toggle-details');
+    const detailsFields = document.getElementById('detailed-info-fields');
+    
+    // Open modal when clicking Add Prospect button
+    if (addProspectBtn) {
+        addProspectBtn.addEventListener('click', () => {
+            // Reset form
+            document.getElementById('prospect-form').reset();
+            document.getElementById('prospect-form').removeAttribute('data-edit-id');
+            document.querySelector('.modal-header h2').textContent = 'Add New Prospect';
+            document.querySelector('.prospect-submit-btn').innerHTML = '<i class="fas fa-save"></i> Add Prospect';
+            
+            // Show modal
+            modal.style.display = 'block';
+        });
+    }
+    
+    // Close the modal when clicking the X
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+    
+    // Close modal when clicking outside the content
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+    
+    // Toggle detailed info section
+    if (detailsToggle) {
+        detailsToggle.addEventListener('click', () => {
+            detailsToggle.classList.toggle('open');
+            detailsFields.classList.toggle('open');
+        });
+    }
+    
+    // Handle form submission
+    const form = document.getElementById('prospect-form');
+    if (form) {
+        form.addEventListener('submit', handleProspectSubmit);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize DOM elements
     prospectForm = document.getElementById('prospect-form');
     prospectsTable = document.getElementById('prospects-table-body');
     loadingOverlay = document.getElementById('loading-overlay');
     saveIndicator = document.getElementById('save-indicator');
+    
+    // Initialize modal interactions
+    initializeModal();
     
     // Show loading overlay
     showLoading(true);
@@ -414,10 +468,27 @@ function handleProspectSubmit(e) {
     const position = document.getElementById('prospect-position').value;
     const college = document.getElementById('prospect-college').value;
     const age = document.getElementById('prospect-age').value;
-    const height = document.getElementById('prospect-height').value;
+    
+    // Handle height in feet and inches
+    const heightFeet = document.getElementById('prospect-height-feet')?.value || '';
+    const heightInches = document.getElementById('prospect-height-inches')?.value || '';
+    const height = (heightFeet && heightInches) ? `${heightFeet}'${heightInches}"` : '';
+    
     const weight = document.getElementById('prospect-weight').value;
     const notes = document.getElementById('prospect-notes').value;
     const grade = document.getElementById('prospect-grade').value;
+    
+    // Get combine data
+    const handSize = document.getElementById('prospect-hand-size')?.value || '';
+    const armLength = document.getElementById('prospect-arm-length')?.value || '';
+    const fortyYard = document.getElementById('prospect-forty-yard')?.value || '';
+    const twentyYardSplit = document.getElementById('prospect-twenty-yard-split')?.value || '';
+    const tenYardSplit = document.getElementById('prospect-ten-yard-split')?.value || '';
+    const verticalJump = document.getElementById('prospect-vertical-jump')?.value || '';
+    const broadJump = document.getElementById('prospect-broad-jump')?.value || '';
+    const threeCone = document.getElementById('prospect-three-cone')?.value || '';
+    const shuttle = document.getElementById('prospect-shuttle')?.value || '';
+    const benchPress = document.getElementById('prospect-bench-press')?.value || '';
     
     // Get detailed information
     const background = document.getElementById('prospect-background').value;
@@ -446,7 +517,18 @@ function handleProspectSubmit(e) {
         grade,
         details: details,
         customFields: [],
-        dateAdded: new Date().toISOString()
+        dateAdded: new Date().toISOString(),
+        // Add combine data fields
+        handSize,
+        armLength,
+        fortyYard,
+        twentyYardSplit,
+        tenYardSplit,
+        verticalJump,
+        broadJump,
+        threeCone,
+        shuttle,
+        benchPress
     };
     
     // Add to prospects array
@@ -580,6 +662,94 @@ function renderProspects() {
                 <td colspan="8">
                     <div class="prospect-details" id="details-${prospect.id}">
                         <h3>Prospect Details</h3>
+                        
+                        <div class="prospect-summary-data">
+                            <div class="prospect-summary-row">
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Name:</span>
+                                    <span class="summary-value">${sanitize(prospect.name || '')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Position:</span>
+                                    <span class="summary-value">${sanitize(prospect.position || '')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">College:</span>
+                                    <span class="summary-value">${sanitize(prospect.college || '')}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prospect-summary-row">
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Height:</span>
+                                    <span class="summary-value">
+                                        ${getHeightFeet(prospect.height) || '-'} ft 
+                                        ${getHeightInches(prospect.height) || '-'} in
+                                    </span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Weight:</span>
+                                    <span class="summary-value">${sanitize(prospect.weight || '-')} lbs</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Grade:</span>
+                                    <span class="summary-value">${sanitize(prospect.grade || '-')}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prospect-summary-row">
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Hand Size:</span>
+                                    <span class="summary-value">${sanitize(prospect.handSize || '-')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Arm Length:</span>
+                                    <span class="summary-value">${sanitize(prospect.armLength || '-')}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prospect-summary-row">
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">40 Yard:</span>
+                                    <span class="summary-value">${sanitize(prospect.fortyYard || '-')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">20 Yard Split:</span>
+                                    <span class="summary-value">${sanitize(prospect.twentyYardSplit || '-')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">10 Yard Split:</span>
+                                    <span class="summary-value">${sanitize(prospect.tenYardSplit || '-')}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prospect-summary-row">
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Vertical Jump:</span>
+                                    <span class="summary-value">${sanitize(prospect.verticalJump || '-')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Broad Jump:</span>
+                                    <span class="summary-value">${sanitize(prospect.broadJump || '-')}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="prospect-summary-row">
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">3 Cone:</span>
+                                    <span class="summary-value">${sanitize(prospect.threeCone || '-')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Shuttle:</span>
+                                    <span class="summary-value">${sanitize(prospect.shuttle || '-')}</span>
+                                </div>
+                                <div class="prospect-summary-field">
+                                    <span class="summary-label">Bench Press:</span>
+                                    <span class="summary-value">${sanitize(prospect.benchPress || '-')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="prospect-detail-sections">
                             ${renderDetailSections(prospect)}
                         </div>
@@ -816,6 +986,33 @@ function renderDetailSections(prospect) {
         sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false);
     });
     
+    // Render combine data fields
+    const combineDataFields = [
+        { key: 'handSize', label: 'Hand Size' },
+        { key: 'armLength', label: 'Arm Length' },
+        { key: 'fortyYard', label: '40 Yard Dash' },
+        { key: 'twentyYardSplit', label: '20 Yard Split' },
+        { key: 'tenYardSplit', label: '10 Yard Split' },
+        { key: 'verticalJump', label: 'Vertical Jump' },
+        { key: 'broadJump', label: 'Broad Jump' },
+        { key: 'threeCone', label: '3 Cone Drill' },
+        { key: 'shuttle', label: 'Shuttle' },
+        { key: 'benchPress', label: 'Bench Press' }
+    ];
+    
+    // Add a combine data section header
+    if (Object.values(combineDataFields).some(field => prospect[field.key])) {
+        sectionsHTML += `<div class="prospect-detail-section-header">Combine Data</div>`;
+    }
+    
+    // Render combine data fields
+    combineDataFields.forEach(field => {
+        const value = prospect[field.key] || '';
+        if (value) {
+            sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false);
+        }
+    });
+    
     // Render custom fields
     prospect.customFields.forEach(field => {
         const value = prospect.details[field.key] || '';
@@ -978,21 +1175,52 @@ function handleEditProspect(e) {
     const prospect = prospectsList.find(p => p.id === prospectId);
     
     if (prospect) {
+        // Show the modal
+        document.getElementById('prospect-form-modal').style.display = 'block';
+        
         // Populate form with prospect data
         document.getElementById('prospect-name').value = prospect.name;
         document.getElementById('prospect-position').value = prospect.position;
         document.getElementById('prospect-college').value = prospect.college;
         document.getElementById('prospect-age').value = prospect.age;
-        document.getElementById('prospect-height').value = prospect.height;
+        
+        // Handle height (split into feet and inches)
+        if (prospect.height) {
+            const heightMatch = prospect.height.match(/(\d+)'(\d+)"/);
+            if (heightMatch) {
+                document.getElementById('prospect-height-feet').value = heightMatch[1];
+                document.getElementById('prospect-height-inches').value = heightMatch[2];
+            }
+        }
+        
         document.getElementById('prospect-weight').value = prospect.weight;
         document.getElementById('prospect-notes').value = prospect.notes;
         document.getElementById('prospect-grade').value = prospect.grade;
         
-        // Remove old prospect
-        handleDeleteProspect(e, false); // false = don't re-render yet
+        // Populate combine data fields
+        document.getElementById('prospect-hand-size').value = prospect.handSize || '';
+        document.getElementById('prospect-arm-length').value = prospect.armLength || '';
+        document.getElementById('prospect-forty-yard').value = prospect.fortyYard || '';
+        document.getElementById('prospect-twenty-yard-split').value = prospect.twentyYardSplit || '';
+        document.getElementById('prospect-ten-yard-split').value = prospect.tenYardSplit || '';
+        document.getElementById('prospect-vertical-jump').value = prospect.verticalJump || '';
+        document.getElementById('prospect-broad-jump').value = prospect.broadJump || '';
+        document.getElementById('prospect-three-cone').value = prospect.threeCone || '';
+        document.getElementById('prospect-shuttle').value = prospect.shuttle || '';
+        document.getElementById('prospect-bench-press').value = prospect.benchPress || '';
         
-        // Scroll to the form
-        document.querySelector('.add-prospect-sidebar').scrollIntoView({ behavior: 'smooth' });
+        // Populate detailed info fields if available
+        if (prospect.details) {
+            document.getElementById('prospect-background').value = prospect.details.background || '';
+            document.getElementById('prospect-strengths').value = prospect.details.strengths || '';
+            document.getElementById('prospect-weaknesses').value = prospect.details.weaknesses || '';
+            document.getElementById('prospect-summary').value = prospect.details.summary || '';
+        }
+        
+        // Set form to edit mode (we'll delete the old prospect on submit)
+        document.getElementById('prospect-form').setAttribute('data-edit-id', prospectId);
+        document.querySelector('.modal-header h2').textContent = 'Edit Prospect';
+        document.querySelector('.prospect-submit-btn').innerHTML = '<i class="fas fa-save"></i> Update Prospect';
     }
 }
 
@@ -1003,7 +1231,6 @@ function exportBigBoard() {
         return;
     }
     
-    // Create CSV header row with columns and detailed fields
     let csvContent = 'Rank,Name,Position,College,Age,Height,Weight,Grade';
     
     // Add default detail fields to header
@@ -1011,7 +1238,10 @@ function exportBigBoard() {
         csvContent += `,${field.label}`;
     });
     
-    // Get all unique custom fields across all prospects
+    // Add combine data fields to header
+    csvContent += ',Hand Size,Arm Length,40 Yard,20 Yard Split,10 Yard Split,Vertical Jump,Broad Jump,3 Cone,Shuttle,Bench Press';
+    
+    // Add custom fields to header
     const allCustomFields = new Set();
     prospectsList.forEach(prospect => {
         if (prospect.customFields) {
@@ -1021,7 +1251,6 @@ function exportBigBoard() {
         }
     });
     
-    // Add custom fields to header
     Array.from(allCustomFields).forEach(fieldJson => {
         const field = JSON.parse(fieldJson);
         csvContent += `,${field.label}`;
@@ -1043,6 +1272,18 @@ function exportBigBoard() {
             csvContent += `,${value}`;
         });
         
+        // Add combine data fields
+        csvContent += `,${prospect.handSize || ''}`;
+        csvContent += `,${prospect.armLength || ''}`;
+        csvContent += `,${prospect.fortyYard || ''}`;
+        csvContent += `,${prospect.twentyYardSplit || ''}`;
+        csvContent += `,${prospect.tenYardSplit || ''}`;
+        csvContent += `,${prospect.verticalJump || ''}`;
+        csvContent += `,${prospect.broadJump || ''}`;
+        csvContent += `,${prospect.threeCone || ''}`;
+        csvContent += `,${prospect.shuttle || ''}`;
+        csvContent += `,${prospect.benchPress || ''}`;
+        
         // Add custom fields
         Array.from(allCustomFields).forEach(fieldJson => {
             const field = JSON.parse(fieldJson);
@@ -1055,17 +1296,15 @@ function exportBigBoard() {
         csvContent += '\n';
     });
     
-    // Create download link
-    const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+    // Create a blob and download it
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'draft_big_board.csv');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'big_board.csv');
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
-    
-    // Trigger download
     link.click();
-    
-    // Clean up
     document.body.removeChild(link);
 }
 
@@ -1150,4 +1389,47 @@ function sanitize(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+// Helper functions for formatting height
+function getHeightFeet(height) {
+    if (!height) return '';
+    
+    // Check if height is in format like "6'2"
+    if (height.includes("'")) {
+        return height.split("'")[0];
+    }
+    
+    // Check if height is in format like "6-2"
+    if (height.includes("-")) {
+        return height.split("-")[0];
+    }
+    
+    // Check if height is in format like "6 2"
+    if (height.includes(" ")) {
+        return height.split(" ")[0];
+    }
+    
+    return '';
+}
+
+function getHeightInches(height) {
+    if (!height) return '';
+    
+    // Check if height is in format like "6'2"
+    if (height.includes("'")) {
+        return height.split("'")[1].replace('"', '');
+    }
+    
+    // Check if height is in format like "6-2"
+    if (height.includes("-")) {
+        return height.split("-")[1];
+    }
+    
+    // Check if height is in format like "6 2"
+    if (height.includes(" ")) {
+        return height.split(" ")[1];
+    }
+    
+    return '';
 }
