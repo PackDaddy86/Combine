@@ -876,6 +876,15 @@ function setButtonEventListeners() {
             setupTextareaAutoSave(textarea, prospectId);
         }
     });
+    
+    // Set up auto-save for all input fields
+    document.querySelectorAll('.prospect-detail-input').forEach(input => {
+        const detailsDiv = input.closest('.prospect-details');
+        if (detailsDiv) {
+            const prospectId = detailsDiv.id.replace('details-', '');
+            setupInputAutoSave(input, prospectId);
+        }
+    });
 }
 
 // Set up auto-save for a textarea
@@ -902,6 +911,34 @@ function setupTextareaAutoSave(textarea, prospectId) {
                 }
                 
                 prospect.details[fieldKey] = textarea.value;
+                saveProspects().then(() => {
+                    console.log(`Auto-saved ${fieldKey} for prospect ${prospectId}`);
+                });
+            }
+        }, 1000); // 1 second debounce
+    });
+}
+
+// Set up auto-save for an input field
+function setupInputAutoSave(input, prospectId) {
+    let saveTimeout;
+    
+    input.addEventListener('input', () => {
+        // Show saving indicator
+        showSaveIndicator(true);
+        
+        // Clear previous timeout
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
+        
+        // Set new timeout for debounced save
+        saveTimeout = setTimeout(() => {
+            const fieldKey = input.getAttribute('data-field-key');
+            const prospect = prospectsList.find(p => p.id === prospectId);
+            
+            if (prospect && fieldKey) {
+                prospect[fieldKey] = input.value;
                 saveProspects().then(() => {
                     console.log(`Auto-saved ${fieldKey} for prospect ${prospectId}`);
                 });
@@ -1008,8 +1045,8 @@ function renderDetailSections(prospect) {
     // Render combine data fields
     combineDataFields.forEach(field => {
         const value = prospect[field.key] || '';
-        if (value) {
-            sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false);
+        if (value || !prospect[field.key]) {
+            sectionsHTML += createDetailSectionHTML(field.key, field.label, value, false, true);
         }
     });
     
@@ -1023,8 +1060,15 @@ function renderDetailSections(prospect) {
 }
 
 // Create HTML for a detail section
-function createDetailSectionHTML(key, label, value, isRemovable) {
+function createDetailSectionHTML(key, label, value, isRemovable, isInputField = false) {
     const sectionId = `section-${key}`;
+    
+    let contentHTML;
+    if (isInputField) {
+        contentHTML = `<input type="text" class="prospect-detail-input" data-field-key="${key}" value="${value}">`;
+    } else {
+        contentHTML = `<textarea class="prospect-detail-textarea" data-field-key="${key}">${value}</textarea>`;
+    }
     
     return `
         <div class="prospect-detail-section" data-field-key="${key}">
@@ -1037,7 +1081,7 @@ function createDetailSectionHTML(key, label, value, isRemovable) {
             </div>
             <div id="${sectionId}" class="field-collapse open">
                 <div class="prospect-detail-content">
-                    <textarea class="prospect-detail-textarea" data-field-key="${key}">${value}</textarea>
+                    ${contentHTML}
                 </div>
             </div>
         </div>
@@ -1062,6 +1106,12 @@ function saveProspectDetails(prospectId) {
     detailsElement.querySelectorAll('.prospect-detail-textarea').forEach(textarea => {
         const fieldKey = textarea.getAttribute('data-field-key');
         prospect.details[fieldKey] = textarea.value;
+    });
+    
+    // Get all input values
+    detailsElement.querySelectorAll('.prospect-detail-input').forEach(input => {
+        const fieldKey = input.getAttribute('data-field-key');
+        prospect[fieldKey] = input.value;
     });
     
     // Save to Firestore and return the promise

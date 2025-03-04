@@ -960,3 +960,86 @@
     from { opacity: 0; transform: translateY(-30px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* Style for the combine data input fields */
+.prospect-detail-input {
+    width: 100%;
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: rgba(255, 255, 255, 0.9);
+    height: 32px;
+}
+
+.prospect-detail-input:focus {
+    border-color: #0056b3;
+    box-shadow: 0 0 0 2px rgba(0, 86, 179, 0.1);
+    outline: none;
+}
+
+/* Specific styling for the prospect detail sections with input fields */
+.prospect-detail-section[data-field-key="handSize"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="armLength"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="fortyYard"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="twentyYardSplit"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="tenYardSplit"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="verticalJump"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="broadJump"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="threeCone"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="shuttle"] .prospect-detail-content,
+.prospect-detail-section[data-field-key="benchPress"] .prospect-detail-content {
+    padding: 5px;
+    min-height: 32px;
+}
+
+/* Add a section header for combine data */
+.prospect-detail-section-header {
+    background-color: #013369;
+    color: white;
+    padding: 8px 12px;
+    font-weight: bold;
+    margin: 12px 0 8px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.prospect-detail-section-header:before {
+    content: "\f4cb"; /* FontAwesome ruler icon */
+    font-family: "Font Awesome 5 Free";
+    margin-right: 8px;
+    font-weight: 900;
+}
+
+/* Make the combine data sections more compact */
+.prospect-detail-section[data-field-key="handSize"],
+.prospect-detail-section[data-field-key="armLength"],
+.prospect-detail-section[data-field-key="fortyYard"],
+.prospect-detail-section[data-field-key="twentyYardSplit"],
+.prospect-detail-section[data-field-key="tenYardSplit"],
+.prospect-detail-section[data-field-key="verticalJump"],
+.prospect-detail-section[data-field-key="broadJump"],
+.prospect-detail-section[data-field-key="threeCone"],
+.prospect-detail-section[data-field-key="shuttle"],
+.prospect-detail-section[data-field-key="benchPress"] {
+    margin-bottom: 6px;
+    padding: 6px;
+}
+
+/* Adjust the title size for combine data fields */
+.prospect-detail-section[data-field-key^="handSize"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="armLength"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="fortyYard"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="twentyYardSplit"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="tenYardSplit"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="verticalJump"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="broadJump"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="threeCone"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="shuttle"] .prospect-detail-title,
+.prospect-detail-section[data-field-key^="benchPress"] .prospect-detail-title {
+    font-size: 0.9rem;
+    padding: 5px 8px;
+}
