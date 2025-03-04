@@ -240,6 +240,22 @@
 .prospect-row {
     cursor: pointer;
     transition: background-color 0.3s ease;
+    position: relative;
+}
+
+.prospect-row:after {
+    content: '\f078';  /* FontAwesome chevron-down */
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 15px;
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+}
+
+.prospect-row.selected:after {
+    transform: rotate(180deg);
+    color: rgba(255, 255, 255, 0.8);
 }
 
 .prospect-row:hover {
@@ -247,25 +263,49 @@
 }
 
 .prospect-row.selected {
-    background-color: rgba(1, 51, 105, 0.2);
+    background-color: rgba(255, 153, 0, 0.15) !important;
+    border-bottom: none !important;
+}
+
+.prospect-row.selected:hover {
+    background-color: rgba(255, 153, 0, 0.25) !important;
+}
+
+/* Details row display - EXTREMELY obvious styling */
+.prospect-details-row {
+    display: none;
+}
+
+.prospect-details-row.open {
+    display: table-row !important;
+    background-color: #003b7d !important;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
+    position: relative;
+    z-index: 100;
+}
+
+.prospect-details-row.open td {
+    padding: 20px !important;
 }
 
 .prospect-details {
-    display: none;
-    background-color: rgba(1, 51, 105, 0.5);
+    background-color: #013369;
     padding: 20px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    border: 2px solid #FF9900;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.3);
+    color: white;
 }
 
-.prospect-details.visible {
-    display: block;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
+.prospect-details h3 {
+    color: #FF9900;
+    font-size: 1.5rem;
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    border-bottom: 2px solid #FF9900;
+    padding-bottom: 10px;
 }
 
 .prospect-detail-section {
@@ -418,28 +458,6 @@
     max-height: 1000px;
 }
 
-/* Prospect details row styling */
-.prospect-details-row {
-    display: none;
-    background-color: #f9f9f9;
-    border-top: none !important;
-}
-
-.prospect-details-row.open {
-    display: table-row !important;
-    animation: fadeIn 0.3s ease-in-out;
-}
-
-.prospect-details-row td {
-    padding: 0 !important;
-    border-top: none !important;
-}
-
-.prospect-details {
-    padding: 15px;
-    overflow: hidden;
-}
-
 .prospect-detail-sections {
     display: flex;
     flex-direction: column;
@@ -551,6 +569,36 @@
     padding: 8px;
     border: 1px solid #ddd;
     border-radius: 4px;
+}
+
+/* View details button */
+.view-details-btn {
+    background-color: #013369;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 12px;
+    margin-right: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.view-details-btn:hover {
+    background-color: #FF9900;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.view-details-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.view-details-btn i {
+    margin-right: 5px;
 }
 
 /* Animation for the dropdown details */

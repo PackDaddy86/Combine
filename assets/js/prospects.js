@@ -42,6 +42,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Hide loading overlay
                         showLoading(false);
                         console.log('Prospects loaded and rendered successfully');
+                        
+                        // Set up direct jQuery click handling for prospect rows
+                        setupRowClickHandlers();
                     })
                     .catch(error => {
                         console.error('Error loading prospects:', error);
@@ -63,6 +66,59 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add event listeners
     setupEventListeners();
 });
+
+// Setup direct jQuery click handlers for rows
+function setupRowClickHandlers() {
+    // Make sure jQuery is available
+    if (typeof $ === 'undefined') {
+        console.error('jQuery not available for row click handlers');
+        return;
+    }
+    
+    console.log('Setting up jQuery row click handlers');
+    
+    // Remove any existing click handlers first
+    $(document).off('click', '.prospect-row');
+    
+    // Add new click handler
+    $(document).on('click', '.prospect-row', function(e) {
+        // Don't trigger if clicking delete button
+        if ($(e.target).closest('.delete-prospect').length) {
+            return;
+        }
+        
+        const prospectId = $(this).data('id');
+        console.log('jQuery row click handler triggered for prospect:', prospectId);
+        
+        // Toggle details row visibility directly
+        const detailsRowId = `#details-row-${prospectId}`;
+        const detailsRow = $(detailsRowId);
+        
+        if (detailsRow.length) {
+            console.log('Found details row:', detailsRowId);
+            
+            // First hide any open rows
+            $('.prospect-details-row.open').not(detailsRowId).removeClass('open');
+            $('.prospect-row.selected').not(this).removeClass('selected');
+            
+            // Toggle this row
+            $(this).toggleClass('selected');
+            detailsRow.toggleClass('open');
+            
+            if (detailsRow.hasClass('open')) {
+                console.log('Row is now open');
+            } else {
+                console.log('Row is now closed');
+                // Save changes if closing
+                saveProspectDetails(prospectId);
+            }
+        } else {
+            console.error('Could not find details row:', detailsRowId);
+        }
+    });
+    
+    console.log('jQuery row click handlers set up successfully');
+}
 
 // Show or hide loading overlay
 function showLoading(show) {
@@ -405,132 +461,132 @@ function handleDeleteProspect(e, shouldRender = true) {
 
 // Render prospects to the table
 function renderProspects() {
-    if (!prospectsTable) return;
+    console.log('Rendering prospects');
     
-    // Sort prospects by grade (highest to lowest)
-    prospectsList.sort((a, b) => b.grade - a.grade);
-    
-    // Clear existing table rows
+    // Clear the prospects table first
     prospectsTable.innerHTML = '';
     
-    // Show or hide the no prospects message
-    const noProspectsElement = document.getElementById('no-prospects');
-    if (noProspectsElement) {
-        noProspectsElement.style.display = prospectsList.length === 0 ? 'flex' : 'none';
+    // Check if we have prospects to display
+    if (!prospectsList || !Array.isArray(prospectsList) || prospectsList.length === 0) {
+        const noDataRow = document.createElement('tr');
+        const noDataCell = document.createElement('td');
+        noDataCell.colSpan = 6;
+        noDataCell.className = 'text-center';
+        noDataCell.textContent = 'No prospects available. Add your first prospect above.';
+        noDataRow.appendChild(noDataCell);
+        prospectsTable.appendChild(noDataRow);
+        console.log('No prospects to display');
+        return;
     }
     
-    // If there are no prospects, return early
-    if (prospectsList.length === 0) return;
+    // Create a fully manual HTML structure for the prospects
+    let tableHTML = '';
     
-    // Add each prospect to the table
-    prospectsList.forEach((prospect, index) => {
-        // Create table row for the prospect
-        const tr = document.createElement('tr');
-        tr.id = `prospect-${prospect.id}`;
-        tr.setAttribute('data-id', prospect.id);
-        tr.classList.add('prospect-row');
-        tr.draggable = true;
-        
-        // Add class to the selected row
-        if (prospect.id === selectedProspectId) {
-            tr.classList.add('selected');
-        }
-        
-        // Basic prospect info
-        tr.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${prospect.name}</td>
-            <td>${prospect.position}</td>
-            <td>${prospect.college}</td>
-            <td>${prospect.age || '-'}</td>
-            <td>${prospect.height || '-'}</td>
-            <td>${prospect.weight || '-'}</td>
-            <td>${prospect.grade || '-'}</td>
-            <td class="action-cell">
-                <button class="delete-prospect" data-id="${prospect.id}">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-            </td>
-        `;
-        
-        // Add drag and drop event listeners
-        tr.addEventListener('dragstart', dragStart);
-        tr.addEventListener('dragover', dragOver);
-        tr.addEventListener('drop', dragDrop);
-        tr.addEventListener('dragenter', dragEnter);
-        tr.addEventListener('dragleave', dragLeave);
-        
-        // Add click event to expand/collapse details
-        tr.addEventListener('click', function(e) {
-            // Don't trigger row click when clicking delete button
-            if (e.target.closest('.delete-prospect')) return;
-            
-            toggleProspectDetails(prospect.id);
+    // Sort by position if available
+    let sortedProspects = [];
+    if (Array.isArray(prospectsList)) {
+        sortedProspects = [...prospectsList];
+        // Sort by grade first (highest to lowest)
+        sortedProspects.sort((a, b) => {
+            const gradeA = parseFloat(a.grade) || 0;
+            const gradeB = parseFloat(b.grade) || 0;
+            return gradeB - gradeA;
         });
+    } else if (typeof prospectsList === 'object') {
+        // Convert object to array
+        sortedProspects = Object.values(prospectsList);
+    } else {
+        console.error('Invalid prospects data format:', typeof prospectsList);
+        return;
+    }
+    
+    // Get the table headers to ensure we use the right columns
+    const tableHeaders = [];
+    const tableHeadersRow = document.querySelector('#prospects-table thead tr');
+    if (tableHeadersRow) {
+        tableHeadersRow.querySelectorAll('th').forEach(th => {
+            const headerText = th.textContent.trim().toLowerCase();
+            if (headerText && headerText !== 'actions') {
+                tableHeaders.push(headerText);
+            }
+        });
+        console.log('Found table headers:', tableHeaders);
+    }
+    
+    // Add rank counter
+    let rank = 1;
+    
+    sortedProspects.forEach(prospect => {
+        // Log each prospect
+        console.log('Rendering prospect:', prospect.id, prospect);
         
-        prospectsTable.appendChild(tr);
+        // Generate HTML for the main row with only the columns that exist
+        tableHTML += `
+            <tr id="prospect-${prospect.id}" class="prospect-row" data-id="${prospect.id}" draggable="true">`;
         
-        // Create and append the details row
-        const detailsRow = document.createElement('tr');
-        detailsRow.setAttribute('data-details-for', prospect.id);
-        detailsRow.id = `details-row-${prospect.id}`;
-        detailsRow.className = 'prospect-details-row';
+        // Add each column based on the table headers
+        if (tableHeaders.includes('rank')) tableHTML += `<td>${rank++}</td>`;
+        if (tableHeaders.includes('name')) tableHTML += `<td>${sanitize(prospect.name || '')}</td>`;
+        if (tableHeaders.includes('position')) tableHTML += `<td>${sanitize(prospect.position || '')}</td>`;
+        if (tableHeaders.includes('college')) tableHTML += `<td>${sanitize(prospect.college || '')}</td>`;
+        if (tableHeaders.includes('height')) tableHTML += `<td>${sanitize(prospect.height || '')}</td>`;
+        if (tableHeaders.includes('weight')) tableHTML += `<td>${sanitize(prospect.weight || '')}</td>`;
+        if (tableHeaders.includes('grade')) tableHTML += `<td>${sanitize(prospect.grade || '')}</td>`;
         
-        // Add details cell
-        const detailsCell = document.createElement('td');
-        detailsCell.setAttribute('colspan', '9'); // Span all columns
-        detailsCell.id = `details-cell-${prospect.id}`;
-        
-        // Populate the details cell
-        detailsCell.innerHTML = `
-            <div class="prospect-details" id="details-${prospect.id}">
-                <div class="prospect-detail-sections">
-                    ${renderDetailSections(prospect)}
-                </div>
-                
-                <div class="detail-buttons">
-                    <button class="detail-button add-field-btn" data-id="${prospect.id}">
-                        <i class="fas fa-plus"></i> Add Field
+        // Always add the actions column with both details and delete buttons
+        tableHTML += `
+                <td>
+                    <button class="view-details-btn" onclick="event.stopPropagation(); showProspectDetails('${prospect.id}'); return false;" data-id="${prospect.id}">
+                        <i class="fas fa-info-circle"></i> Details
                     </button>
-                    <button class="detail-button save-details-btn" data-id="${prospect.id}">
-                        <i class="fas fa-save"></i> Save Changes
+                    <button class="delete-prospect" data-id="${prospect.id}">
+                        <i class="fas fa-trash"></i>
                     </button>
-                </div>
-                
-                <div class="add-field-form" id="add-field-form-${prospect.id}" style="display: none;">
-                    <input type="text" class="form-control field-name-input" placeholder="Field Name">
-                    <button class="detail-button confirm-add-field-btn" data-id="${prospect.id}">
-                        <i class="fas fa-check"></i> Add
-                    </button>
-                    <button class="detail-button cancel-add-field-btn">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                </div>
-            </div>
+                </td>
+            </tr>
+            <tr id="details-row-${prospect.id}" class="prospect-details-row" data-details-for="${prospect.id}">
+                <td colspan="8">
+                    <div class="prospect-details" id="details-${prospect.id}">
+                        <h3>Prospect Details</h3>
+                        <div class="prospect-detail-sections">
+                            ${renderDetailSections(prospect)}
+                        </div>
+                        
+                        <div class="detail-buttons">
+                            <button class="detail-button add-field-btn" data-id="${prospect.id}">
+                                <i class="fas fa-plus"></i> Add Field
+                            </button>
+                            <button class="detail-button save-details-btn" data-id="${prospect.id}">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </div>
+                        
+                        <div class="add-field-form" id="add-field-form-${prospect.id}" style="display: none;">
+                            <input type="text" class="form-control field-name-input" placeholder="Field Name">
+                            <button class="detail-button confirm-add-field-btn" data-id="${prospect.id}">
+                                <i class="fas fa-check"></i> Add
+                            </button>
+                            <button class="detail-button cancel-add-field-btn">
+                                <i class="fas fa-times"></i> Cancel
+                            </button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
         `;
-        
-        // Append the details cell to the row
-        detailsRow.appendChild(detailsCell);
-        
-        // Append the details row to the table
-        prospectsTable.appendChild(detailsRow);
-        
-        // Mark detail row as already attached
-        detailsRow.dataset.attached = 'true';
-        
-        // Initialize the detail row as open if this is the selected prospect
-        if (prospect.id === selectedProspectId) {
-            detailsRow.classList.add('open');
-            tr.classList.add('selected');
-        }
     });
     
-    // Add event listeners for the detail sections
-    setupAllDetailButtons();
+    // Set the HTML directly
+    prospectsTable.innerHTML = tableHTML;
+    
+    // Now set up event listeners for the buttons and form elements
+    setButtonEventListeners();
+    
+    console.log('Prospects rendered successfully');
 }
 
 // Set up event listeners for all detail buttons
-function setupAllDetailButtons() {
+function setButtonEventListeners() {
     // Set up add field buttons
     document.querySelectorAll('.add-field-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
@@ -659,26 +715,53 @@ function toggleProspectDetails(prospectId) {
     const detailsRow = document.getElementById(`details-row-${prospectId}`);
     const prospectRow = document.getElementById(`prospect-${prospectId}`);
     
+    console.log('Details row found:', !!detailsRow);
+    console.log('Prospect row found:', !!prospectRow);
+    
     if (!detailsRow || !prospectRow) {
         console.error('Could not find details row or prospect row');
         return;
     }
     
     // Toggle open class on details row
-    if (detailsRow.classList.contains('open')) {
-        // Closing - save any changes first
+    const isOpen = detailsRow.classList.contains('open');
+    console.log('Details row is currently open?', isOpen);
+    
+    // Always close any previously open rows first
+    document.querySelectorAll('.prospect-details-row.open').forEach(row => {
+        if (row.id !== `details-row-${prospectId}`) {
+            console.log('Closing already open row:', row.id);
+            row.classList.remove('open');
+            const rowId = row.getAttribute('data-details-for');
+            const relatedRow = document.getElementById(`prospect-${rowId}`);
+            if (relatedRow) relatedRow.classList.remove('selected');
+            console.log('Removed selected class from:', relatedRow.id);
+        }
+    });
+    
+    // Toggle the current row
+    if (isOpen) {
+        console.log('Closing details row:', detailsRow.id);
+        // Save any changes first
         showSaveIndicator(true);
         saveProspectDetails(prospectId).then(() => {
             detailsRow.classList.remove('open');
             prospectRow.classList.remove('selected');
+            selectedProspectId = null;
             showSaveIndicator(false, true);
+            console.log('Details row closed successfully');
         });
     } else {
-        // Opening
+        console.log('Opening details row:', detailsRow.id);
         detailsRow.classList.add('open');
         prospectRow.classList.add('selected');
         selectedProspectId = prospectId;
+        console.log('Details row opened successfully');
+        console.log('Current details row classes:', detailsRow.className);
     }
+    
+    // Log the final state
+    console.log('Final state - is row open?', detailsRow.classList.contains('open'));
 }
 
 // Render the detail sections for a prospect
@@ -993,4 +1076,46 @@ function debounce(func, wait) {
             func.apply(context, args);
         }, wait);
     };
+}
+
+// Function to directly toggle details row visibility
+function showProspectDetails(prospectId) {
+    console.log('Showing details for prospect:', prospectId);
+    
+    // Get the details row
+    const detailsRow = document.getElementById(`details-row-${prospectId}`);
+    if (!detailsRow) {
+        console.error(`Cannot find details row for prospect: ${prospectId}`);
+        return;
+    }
+    
+    // Close any already open rows
+    document.querySelectorAll('.prospect-details-row.open').forEach(row => {
+        if (row.id !== `details-row-${prospectId}`) {
+            row.classList.remove('open');
+        }
+    });
+    
+    // Check if the row is already open
+    if (detailsRow.classList.contains('open')) {
+        // If it's open, close it and save changes
+        detailsRow.classList.remove('open');
+        saveProspectDetails(prospectId);
+        console.log('Closed details for prospect:', prospectId);
+    } else {
+        // If it's closed, open it
+        detailsRow.classList.add('open');
+        console.log('Opened details for prospect:', prospectId);
+    }
+    
+    return false; // Prevent default behavior
+}
+
+// Sanitize a string for safe display in HTML
+function sanitize(str) {
+    return str.replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }
