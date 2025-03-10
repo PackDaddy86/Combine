@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSS Test Page</title>
+    <style>
+        .test-box {
+            border: 1px solid #333;
+            padding: 20px;
+            margin: 20px;
+        }
+    </style>
+    <!-- Load the CSS files individually to test them -->
+    <link rel="stylesheet" href="/assets/css/main.css">
+</head>
+<body>
+    <h1>CSS Test Page</h1>
+    
+    <div class="test-box">
+        <h2>Main.css Test</h2>
+        <p>This test checks if main.css is loaded properly. If it is, this text should have custom styling.</p>
+        <button class="primary-button">This should be styled</button>
+    </div>
+    
+    <div class="test-box">
+        <h2>Direct CSS Content</h2>
+        <pre id="css-content"></pre>
+    </div>
+
+    <script>
+        // Load and display CSS content directly to check if it's accessible
+        fetch('/assets/css/main.css')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById('css-content').textContent = data.substring(0, 500) + '...';
+                console.log('CSS loaded successfully');
+            })
+            .catch(error => {
+                document.getElementById('css-content').textContent = 'Error loading CSS: ' + error.message;
+                console.error('Error loading CSS:', error);
+            });
+    </script>
+</body>
+</html>

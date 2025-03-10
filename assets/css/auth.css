@@ -70,6 +70,8 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   font-size: 1rem;
+  color: #333; /* Added text color for better visibility */
+  background-color: #fff; /* Ensuring background is white */
 }
 
 .auth-button {

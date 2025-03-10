@@ -114,6 +114,7 @@
     font-size: 0.9rem;
     background-color: #fff;
     transition: border-color 0.2s, box-shadow 0.2s;
+    color: #333;
 }
 
 .input-group input:focus,
@@ -193,7 +194,7 @@
 
 .big-board-title {
     font-size: 2rem;
-    color: #fff;
+    color: #013369;
     margin: 0;
 }
 
@@ -484,141 +485,6 @@
 }
 
 .detail-button {
-    background-color: #FF9900;
-    color: #013369;
-    border: none;
-    border-radius: 4px;
-    padding: 8px 15px;
-    margin-left: 10px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-.detail-button:hover {
-    background-color: #ffb040;
-}
-
-/* Form Section styles */
-.form-section-heading {
-    margin: 20px 0 10px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    padding-top: 15px;
-}
-
-.form-section-heading h3 {
-    font-size: 1rem;
-    color: #F7C625;
-    margin: 0;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-}
-
-.form-section-heading h3 i {
-    transition: transform 0.3s ease;
-}
-
-.form-section-heading h3 i.open {
-    transform: rotate(180deg);
-}
-
-.detailed-fields {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.5s ease;
-}
-
-.detailed-fields.open {
-    max-height: 1000px;
-}
-
-/* Style the collapsible section fields */
-.field-collapse {
-    background-color: rgba(0, 25, 60, 0.7);
-    color: white;
-}
-
-.field-toggle {
-    color: white;
-}
-
-.prospect-detail-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.prospect-detail-section {
-    background-color: white;
-    border-radius: 5px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.prospect-detail-title {
-    background-color: #013369;
-    color: white;
-    padding: 10px 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-weight: bold;
-}
-
-.prospect-detail-title span {
-    display: flex;
-    align-items: center;
-}
-
-.field-toggle {
-    cursor: pointer;
-    margin-left: 10px;
-    transition: transform 0.3s ease;
-}
-
-.field-toggle.open {
-    transform: rotate(180deg);
-}
-
-.field-collapse {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-}
-
-.field-collapse.open {
-    max-height: 300px;
-}
-
-.prospect-detail-content {
-    padding: 10px;
-}
-
-.prospect-detail-textarea {
-    width: 100%;
-    min-height: 100px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    resize: vertical;
-    font-family: inherit;
-}
-
-.prospect-detail-textarea:focus {
-    border-color: #013369;
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(1, 51, 105, 0.2);
-}
-
-.detail-buttons {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.detail-button {
     padding: 8px 15px;
     background-color: #013369;
     color: white;
@@ -729,6 +595,33 @@
 
 .prospect-drag-over {
     border-top: 2px solid #ff9900;
+}
+
+/* Drag and Drop Styles */
+.dragging {
+    opacity: 0.6;
+    background-color: #f0f8ff !important;
+    cursor: grabbing;
+}
+
+.drop-target {
+    border-top: 2px solid #007bff;
+    position: relative;
+}
+
+.drop-target::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: #007bff;
+}
+
+/* Make table rows look grabbable */
+#prospects-table tbody tr {
+    cursor: grab;
 }
 
 /* Authentication Notice Styles */
@@ -971,6 +864,7 @@
     transition: border-color 0.2s, box-shadow 0.2s;
     background-color: rgba(255, 255, 255, 0.9);
     height: 32px;
+    color: #333;
 }
 
 .prospect-detail-input:focus {
@@ -1042,4 +936,365 @@
 .prospect-detail-section[data-field-key^="benchPress"] .prospect-detail-title {
     font-size: 0.9rem;
     padding: 5px 8px;
+}
+
+/* Editable Summary Value Input Styling */
+.summary-value-input {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    width: calc(100% - 20px);
+    transition: border-color 0.3s;
+    background-color: #fff;
+    color: #333;
+}
+
+.summary-value-input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+/* Height input fields */
+.height-inputs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.height-ft, .height-in {
+    width: 40px; 
+    text-align: center;
+}
+
+/* Save indicator styling */
+.save-feedback {
+    font-size: 12px;
+    color: #28a745;
+    margin-top: 5px;
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    background-color: #e8f5e9;
+    padding: 8px 12px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 1000;
+    animation: fadeInOut 2s forwards;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Make prospect summary fields more robust */
+.prospect-summary-field {
+    margin-bottom: 10px;
+    flex: 1;
+    min-width: 150px;
+}
+
+.summary-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Make sure all input fields have dark text on light backgrounds */
+input, textarea, .form-control, select {
+    color: #333 !important;
+}
+
+.form-control.field-name-input, 
+.form-control.field-value-input {
+    background-color: #fff;
+    color: #333;
+    border: 1px solid #ddd;
+    padding: 8px 12px;
+    border-radius: 4px;
+    width: calc(100% - 24px);
+    margin-bottom: 8px;
+}
+
+.form-control.field-name-input:focus, 
+.form-control.field-value-input:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+/* Filter Controls */
+.filter-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.filter-section {
+    display: flex;
+    flex-direction: column;
+    min-width: 150px;
+}
+
+.filter-section label {
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #555;
+}
+
+.filter-select, .filter-input {
+    padding: 8px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.9rem;
+}
+
+.filter-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #013369;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 15px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    align-self: flex-start;
+    margin-top: 29px; /* Aligns with other inputs when accounting for their labels */
+}
+
+.filter-btn:hover {
+    background-color: #002244;
+}
+
+.filter-btn i {
+    margin-right: 5px;
+}
+
+/* Sortable Table Headers */
+.sortable {
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+}
+
+.sortable:hover {
+    background-color: #013369;
+    color: #ffffff;
+}
+
+.sortable i {
+    font-size: 0.8rem;
+    margin-left: 5px;
+    color: #aaa;
+}
+
+.sortable.sort-asc i,
+.sortable.sort-desc i {
+    color: #FF9900;
+}
+
+.sortable:hover i {
+    color: #ffffff;
+}
+
+.sortable.sort-asc i::before {
+    content: "\f0de"; /* fa-sort-up */
+    color: #FF9900;
+}
+
+.sortable.sort-desc i::before {
+    content: "\f0dd"; /* fa-sort-down */
+    color: #FF9900;
+}
+
+.detail-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.detail-button {
+    background-color: #FF9900;
+    color: #013369;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 15px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.detail-button:hover {
+    background-color: #ffb040;
+}
+
+/* Form Section styles */
+.form-section-heading {
+    margin: 20px 0 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 15px;
+}
+
+.form-section-heading h3 {
+    font-size: 1rem;
+    color: #F7C625;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+.form-section-heading h3 i {
+    transition: transform 0.3s ease;
+}
+
+.form-section-heading h3 i.open {
+    transform: rotate(180deg);
+}
+
+.detailed-fields {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease;
+}
+
+.detailed-fields.open {
+    max-height: 1000px;
+}
+
+/* Style the collapsible section fields */
+.field-collapse {
+    background-color: rgba(0, 25, 60, 0.7);
+    color: white;
+}
+
+.field-toggle {
+    color: white;
+}
+
+.prospect-detail-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.prospect-detail-section {
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.prospect-detail-title {
+    background-color: #013369;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+.prospect-detail-title span {
+    display: flex;
+    align-items: center;
+}
+
+.field-toggle {
+    cursor: pointer;
+    margin-left: 10px;
+    transition: transform 0.3s ease;
+}
+
+.field-toggle.open {
+    transform: rotate(180deg);
+}
+
+.field-collapse {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.field-collapse.open {
+    max-height: 300px;
+}
+
+.prospect-detail-content {
+    padding: 10px;
+}
+
+.prospect-detail-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+}
+
+.prospect-detail-textarea:focus {
+    border-color: #013369;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(1, 51, 105, 0.2);
+}
+
+.detail-buttons {
+    margin-top: 20px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.detail-button {
+    padding: 8px 15px;
+    background-color: #013369;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: background-color 0.3s;
+}
+
+.detail-button:hover {
+    background-color: #00285e;
+}
+
+.detail-button i {
+    font-size: 12px;
+}
+
+.add-field-form {
+    display: none;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 4px;
+}
+
+.field-name-input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
 }

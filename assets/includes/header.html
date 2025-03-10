@@ -10,9 +10,9 @@
         
         <ul class="nav-links">
             <li><a href="/index.html">Home</a></li>
-            <li><a href="/combine/">Combine</a></li>
-            <li><a href="/prospects.html">Prospects</a></li>
-            <li><a href="/combine/leaderboard/">Leaderboard</a></li>
+            <li><a href="/prospects.html">My Board</a></li>
+            <li><a href="/combine.html">Combine</a></li>
+            <li><a href="/rankings.html">Leaderboard</a></li>
             <li><a href="/profile.html" id="profile-link" class="profile-link">My Profile</a></li>
             <li><a href="/login.html" id="auth-link" class="auth-button">Login / Sign Up</a></li>
         </ul>
@@ -108,6 +108,12 @@
         box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
         transition: all 0.3s ease;
         border: 2px solid transparent;
+        /* Adjust to align with other nav items */
+        display: inline-block;
+        margin-top: 0;
+        margin-bottom: 0;
+        vertical-align: middle;
+        line-height: normal;
     }
     
     .auth-button:hover {
@@ -135,6 +141,13 @@
         color: #ff9900;
         font-weight: 500;
         transition: color 0.3s;
+        /* Add consistent styling with auth-button */
+        padding: 0.6rem 1.2rem;
+        display: inline-block;
+        margin-top: 0;
+        margin-bottom: 0;
+        vertical-align: middle;
+        line-height: normal;
     }
     
     .profile-link:hover {

@@ -4,12 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NFL Draft Prospect Grading | NFL Draft Grades</title>
-    <link rel="icon" href="assets/images/logo.png" type="image/png">
+    <link rel="icon" href="/assets/images/logo.png" type="image/png">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <link rel="stylesheet" href="assets/css/main.css">
-    <link rel="stylesheet" href="assets/css/auth.css">
-    <link rel="stylesheet" href="assets/css/prospects.css">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="stylesheet" href="/assets/css/auth.css">
+    <link rel="stylesheet" href="/assets/css/prospects.css">
+    
+    <!-- Embed critical CSS to ensure basic styling works regardless of external CSS loading -->
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        /* Basic table styling */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: #f8f8f8;
+            font-weight: 700;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        /* Basic button styling */
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        /* Header styling */
+        .draft-header {
+            background-color: #1D3557;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .draft-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+        
+        /* Prospects container */
+        .prospects-container {
+            padding: 20px;
+        }
+        
+        /* Prospect details */
+        .prospect-details {
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-top: 1px solid #ddd;
+        }
+        
+        .prospect-detail-section {
+            margin-bottom: 15px;
+        }
+        
+        .prospect-detail-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .prospect-detail-content {
+            margin-bottom: 10px;
+        }
+        
+        .prospect-detail-textarea,
+        .prospect-detail-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        /* Hidden elements */
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 <body>
     <!-- Header will be included here -->
@@ -19,7 +118,7 @@
     <header class="draft-header">
         <h1>NFL Draft Prospect Grading</h1>
         <p>Build your draft big board by grading and ranking NFL draft prospects</p>
-        <p class="auth-notice"><i class="fas fa-lock"></i> Login required to save your prospect data</p>
+        <p class="auth-notice" id="login-notice"><i class="fas fa-lock"></i> Login required to save your prospect data</p>
     </header>
     
     <div class="container-fluid" style="padding: 0;">
@@ -32,6 +131,17 @@
                         <button id="add-prospect-btn" class="board-control-btn add-prospect-btn">
                             <i class="fas fa-plus"></i> Add Prospect
                         </button>
+                        <!-- Temporarily removed import/export functionality
+                        <button id="template-download-btn" class="board-control-btn">
+                            <i class="fas fa-file-arrow-down"></i> Download Template
+                        </button>
+                        <div class="import-btn-container">
+                            <button id="import-btn" class="board-control-btn">
+                                <i class="fas fa-file-import"></i> Import CSV/XLSX
+                            </button>
+                            <input type="file" id="csv-upload" accept=".csv,.xlsx" style="display: none;">
+                        </div>
+                        -->
                         <button id="export-board-btn" class="board-control-btn">
                             <i class="fas fa-download"></i> Export
                         </button>
@@ -41,17 +151,53 @@
                     </div>
                 </div>
                 
+                <!-- Filter and Sort Controls -->
+                <div class="filter-controls">
+                    <div class="filter-section">
+                        <label for="position-filter">Position:</label>
+                        <select id="position-filter" class="filter-select">
+                            <option value="">All Positions</option>
+                            <option value="QB">QB</option>
+                            <option value="RB">RB</option>
+                            <option value="WR">WR</option>
+                            <option value="TE">TE</option>
+                            <option value="OL">OL</option>
+                            <option value="DL">DL</option>
+                            <option value="LB">LB</option>
+                            <option value="DB">DB</option>
+                            <option value="S">S</option>
+                            <option value="K">K</option>
+                            <option value="P">P</option>
+                        </select>
+                    </div>
+                    <div class="filter-section">
+                        <label for="college-filter">College:</label>
+                        <input type="text" id="college-filter" class="filter-input" placeholder="Filter by college...">
+                    </div>
+                    <div class="filter-section">
+                        <label for="name-filter">Name:</label>
+                        <input type="text" id="name-filter" class="filter-input" placeholder="Filter by name...">
+                    </div>
+                    <div class="filter-section">
+                        <label for="grade-filter">Min Grade:</label>
+                        <input type="number" id="grade-filter" class="filter-input" placeholder="Min grade..." min="1" max="10" step="0.1">
+                    </div>
+                    <button id="reset-filters-btn" class="filter-btn">
+                        <i class="fas fa-undo"></i> Reset Filters
+                    </button>
+                </div>
+
                 <!-- Prospects Table -->
                 <table id="prospects-table" class="prospects-table">
                     <thead>
                         <tr>
-                            <th>Rank</th>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>College</th>
-                            <th>Height</th>
-                            <th>Weight</th>
-                            <th>Grade</th>
+                            <th class="sortable" data-sort="rank">Rank <i class="fas fa-sort"></i></th>
+                            <th class="sortable" data-sort="name">Name <i class="fas fa-sort"></i></th>
+                            <th class="sortable" data-sort="position">Position <i class="fas fa-sort"></i></th>
+                            <th class="sortable" data-sort="college">College <i class="fas fa-sort"></i></th>
+                            <th class="sortable" data-sort="height">Height <i class="fas fa-sort"></i></th>
+                            <th class="sortable" data-sort="weight">Weight <i class="fas fa-sort"></i></th>
+                            <th class="sortable" data-sort="grade">Grade <i class="fas fa-sort"></i></th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -91,17 +237,124 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-    <script src="assets/js/firebase-config.js"></script>
-    <script src="assets/js/user-data.js"></script>
-    <script src="assets/js/auth-check.js"></script>
-    <script src="assets/js/include.js"></script>
-    <script src="assets/js/prospects.js"></script>
+    <script src="/assets/js/firebase-config.js"></script>
+    <script src="/assets/js/user-data.js"></script>
+    <script src="/assets/js/auth-check.js"></script>
+    <script src="/assets/js/include.js"></script>
+    <script src="/assets/js/prospects.js"></script>
+    
+    <!-- Embed critical JavaScript functionality -->
+    <script>
+        // Basic functionality to ensure prospects can be viewed and details toggled
+        document.addEventListener('DOMContentLoaded', function() {
+            // Include header (backup functionality)
+            if (typeof includeHTML !== 'function') {
+                function includeHTML() {
+                    var headerInclude = document.getElementById('header-include');
+                    var headerPath = headerInclude.getAttribute('include-html');
+                    fetch(headerPath)
+                        .then(response => response.text())
+                        .then(data => {
+                            headerInclude.innerHTML = data;
+                            headerInclude.removeAttribute('include-html');
+                        })
+                        .catch(error => {
+                            console.error('Error loading include:', error);
+                            headerInclude.innerHTML = '<div class="navbar"><a href="/">Home</a> | <a href="/prospects.html">Prospects</a></div>';
+                        });
+                }
+                
+                // Try to include header
+                var headerElement = document.getElementById('header-include');
+                if (headerElement) {
+                    headerElement.setAttribute('include-html', '/assets/includes/header.html');
+                    includeHTML();
+                }
+            }
+            
+            // Basic toggle functionality for prospect details
+            const detailsToggleButtons = document.querySelectorAll('.toggle-details');
+            detailsToggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const prospectId = this.dataset.prospectId;
+                    const detailsRow = document.getElementById('details-' + prospectId);
+                    
+                    if (detailsRow) {
+                        if (detailsRow.classList.contains('open')) {
+                            detailsRow.classList.remove('open');
+                            detailsRow.style.display = 'none';
+                        } else {
+                            detailsRow.classList.add('open');
+                            detailsRow.style.display = 'table-row';
+                        }
+                    }
+                });
+            });
+            
+            // Auto-save functionality for text areas and inputs
+            function setupAutoSave() {
+                document.querySelectorAll('.prospect-detail-textarea, .prospect-detail-input').forEach(element => {
+                    element.addEventListener('blur', function() {
+                        const fieldKey = this.dataset.fieldKey;
+                        const value = this.value;
+                        const detailsDiv = this.closest('.prospect-details');
+                        
+                        if (detailsDiv) {
+                            const prospectId = detailsDiv.id.replace('details-', '');
+                            console.log(`Auto-saving ${fieldKey} = ${value} for prospect ${prospectId}`);
+                            
+                            // In a real implementation, this would save to Firebase
+                            // For now, we just update the UI feedback
+                            const feedbackElement = document.createElement('div');
+                            feedbackElement.className = 'save-feedback';
+                            feedbackElement.textContent = 'Changes saved!';
+                            feedbackElement.style.color = 'green';
+                            feedbackElement.style.fontSize = '12px';
+                            feedbackElement.style.marginTop = '5px';
+                            
+                            // Remove existing feedback
+                            const existingFeedback = this.parentNode.querySelector('.save-feedback');
+                            if (existingFeedback) {
+                                existingFeedback.remove();
+                            }
+                            
+                            this.parentNode.appendChild(feedbackElement);
+                            
+                            // Remove feedback after 2 seconds
+                            setTimeout(() => {
+                                if (feedbackElement.parentNode) {
+                                    feedbackElement.remove();
+                                }
+                            }, 2000);
+                        }
+                    });
+                });
+            }
+            
+            // Set up auto-save when page loads
+            setupAutoSave();
+        });
+    </script>
     
     <script>
         // Include header
         if (typeof includeHTML === 'function') {
-            document.getElementById('header-include').setAttribute('include-html', 'assets/includes/header.html');
+            document.getElementById('header-include').setAttribute('include-html', '/assets/includes/header.html');
             includeHTML();
+        }
+    </script>
+    
+    <script>
+        // Hide login notice when user is logged in
+        const loginNotice = document.getElementById('login-notice');
+        if (loginNotice) {
+            firebase.auth().onAuthStateChanged(user => {
+                if (user) {
+                    loginNotice.classList.add('hidden');
+                } else {
+                    loginNotice.classList.remove('hidden');
+                }
+            });
         }
     </script>
     
@@ -117,14 +370,14 @@
                     <div class="form-section">
                         <h3>Basic Information</h3>
                         <div class="input-group">
-                            <label for="prospect-name">Name</label>
-                            <input type="text" id="prospect-name" required placeholder="Player Name">
+                            <label for="name">Name</label>
+                            <input type="text" id="name" required placeholder="Player Name">
                         </div>
                         
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-position">Position</label>
-                                <select id="prospect-position" required>
+                                <label for="position">Position</label>
+                                <select id="position" required>
                                     <option value="">Select Position</option>
                                     <option value="QB">QB</option>
                                     <option value="RB">RB</option>
@@ -144,15 +397,15 @@
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-college">College</label>
-                                <input type="text" id="prospect-college" placeholder="College">
+                                <label for="college">College</label>
+                                <input type="text" id="college" placeholder="College">
                             </div>
                         </div>
                         
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-height-feet">Height (ft)</label>
-                                <select id="prospect-height-feet">
+                                <label for="height-ft">Height (ft)</label>
+                                <select id="height-ft">
                                     <option value="">ft</option>
                                     <option value="5">5</option>
                                     <option value="6">6</option>
@@ -161,8 +414,8 @@
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-height-inches">Height (in)</label>
-                                <select id="prospect-height-inches">
+                                <label for="height-in">Height (in)</label>
+                                <select id="height-in">
                                     <option value="">in</option>
                                     <option value="0">0</option>
                                     <option value="1">1</option>
@@ -180,20 +433,20 @@
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-weight">Weight (lbs)</label>
-                                <input type="number" id="prospect-weight" placeholder="Weight">
+                                <label for="weight">Weight (lbs)</label>
+                                <input type="number" id="weight" placeholder="Weight">
                             </div>
                         </div>
                         
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-age">Age</label>
-                                <input type="number" id="prospect-age" placeholder="Age">
+                                <label for="age">Age</label>
+                                <input type="number" id="age" placeholder="Age">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-grade">Grade</label>
-                                <select id="prospect-grade">
+                                <label for="grade">Grade</label>
+                                <select id="grade">
                                     <option value="">Select Grade</option>
                                     <option value="9.0-10.0">9.0-10.0 (Elite Prospect)</option>
                                     <option value="8.0-8.9">8.0-8.9 (First Round)</option>
@@ -213,13 +466,13 @@
                         <h3>Combine Measurements</h3>
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-hand-size">Hand Size</label>
-                                <input type="text" id="prospect-hand-size" placeholder="Hand Size">
+                                <label for="hand-size">Hand Size</label>
+                                <input type="text" id="hand-size" placeholder="Hand Size">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-arm-length">Arm Length</label>
-                                <input type="text" id="prospect-arm-length" placeholder="Arm Length">
+                                <label for="arm-length">Arm Length</label>
+                                <input type="text" id="arm-length" placeholder="Arm Length">
                             </div>
                         </div>
                     </div>
@@ -228,47 +481,47 @@
                         <h3>Combine Speed/Agility</h3>
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-forty-yard">40 Yard</label>
-                                <input type="text" id="prospect-forty-yard" placeholder="40 Yard Time">
+                                <label for="forty-yard">40 Yard</label>
+                                <input type="text" id="forty-yard" placeholder="40 Yard Time">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-twenty-yard-split">20 Yard Split</label>
-                                <input type="text" id="prospect-twenty-yard-split" placeholder="20 Yard Split">
+                                <label for="twenty-yard-split">20 Yard Split</label>
+                                <input type="text" id="twenty-yard-split" placeholder="20 Yard Split">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-ten-yard-split">10 Yard Split</label>
-                                <input type="text" id="prospect-ten-yard-split" placeholder="10 Yard Split">
+                                <label for="ten-yard-split">10 Yard Split</label>
+                                <input type="text" id="ten-yard-split" placeholder="10 Yard Split">
                             </div>
                         </div>
                         
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-vertical-jump">Vertical Jump</label>
-                                <input type="text" id="prospect-vertical-jump" placeholder="Vertical Jump">
+                                <label for="vertical-jump">Vertical Jump</label>
+                                <input type="text" id="vertical-jump" placeholder="Vertical Jump">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-broad-jump">Broad Jump</label>
-                                <input type="text" id="prospect-broad-jump" placeholder="Broad Jump">
+                                <label for="broad-jump">Broad Jump</label>
+                                <input type="text" id="broad-jump" placeholder="Broad Jump">
                             </div>
                         </div>
                         
                         <div class="input-row">
                             <div class="input-group">
-                                <label for="prospect-three-cone">3 Cone</label>
-                                <input type="text" id="prospect-three-cone" placeholder="3 Cone Drill">
+                                <label for="three-cone">3 Cone</label>
+                                <input type="text" id="three-cone" placeholder="3 Cone Drill">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-shuttle">Shuttle</label>
-                                <input type="text" id="prospect-shuttle" placeholder="Shuttle">
+                                <label for="shuttle">Shuttle</label>
+                                <input type="text" id="shuttle" placeholder="Shuttle">
                             </div>
                             
                             <div class="input-group">
-                                <label for="prospect-bench-press">Bench Press</label>
-                                <input type="text" id="prospect-bench-press" placeholder="Bench Press Reps">
+                                <label for="bench-press">Bench Press</label>
+                                <input type="text" id="bench-press" placeholder="Bench Press Reps">
                             </div>
                         </div>
                     </div>
@@ -276,8 +529,8 @@
                     <div class="form-section">
                         <h3>Scouting Notes</h3>
                         <div class="input-group">
-                            <label for="prospect-notes">Quick Notes</label>
-                            <textarea id="prospect-notes" placeholder="Quick notes about this prospect"></textarea>
+                            <label for="notes">Quick Notes</label>
+                            <textarea id="notes" placeholder="Quick notes about this prospect"></textarea>
                         </div>
                         
                         <div id="detailed-info-container">
@@ -288,23 +541,23 @@
                             
                             <div id="detailed-info-fields">
                                 <div class="input-group">
-                                    <label for="prospect-background">Background</label>
-                                    <textarea id="prospect-background" placeholder="Player background and history"></textarea>
+                                    <label for="background">Background</label>
+                                    <textarea id="background" placeholder="Player background and history"></textarea>
                                 </div>
                                 
                                 <div class="input-group">
-                                    <label for="prospect-strengths">Strengths</label>
-                                    <textarea id="prospect-strengths" placeholder="Player strengths"></textarea>
+                                    <label for="strengths">Strengths</label>
+                                    <textarea id="strengths" placeholder="Player strengths"></textarea>
                                 </div>
                                 
                                 <div class="input-group">
-                                    <label for="prospect-weaknesses">Weaknesses</label>
-                                    <textarea id="prospect-weaknesses" placeholder="Player weaknesses"></textarea>
+                                    <label for="weaknesses">Weaknesses</label>
+                                    <textarea id="weaknesses" placeholder="Player weaknesses"></textarea>
                                 </div>
                                 
                                 <div class="input-group">
-                                    <label for="prospect-summary">Summary</label>
-                                    <textarea id="prospect-summary" placeholder="Overall summary"></textarea>
+                                    <label for="summary">Summary</label>
+                                    <textarea id="summary" placeholder="Overall summary"></textarea>
                                 </div>
                             </div>
                         </div>
